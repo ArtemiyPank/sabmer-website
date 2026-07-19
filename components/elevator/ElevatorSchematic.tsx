@@ -115,12 +115,13 @@ export default function ElevatorSchematic({
   });
 
   // ---- staggered disassembly sub-progress (each eased within its window) ----
-  const doorsP = useTransform(progress, [0.26, 0.5], [0, 1], { ease: easeInOut });
-  const operP = useTransform(progress, [0.34, 0.58], [0, 1], { ease: easeInOut });
-  const ceilP = useTransform(progress, [0.44, 0.66], [0, 1], { ease: easeInOut });
-  const wallP = useTransform(progress, [0.48, 0.7], [0, 1], { ease: easeInOut });
-  const frameP = useTransform(progress, [0.62, 0.86], [0, 1], { ease: easeInOut });
-  const labelP = useTransform(progress, [0.78, 0.95], [0, 1], { ease: easeInOut });
+  // starts almost immediately with the first scroll movement
+  const doorsP = useTransform(progress, [0.03, 0.3], [0, 1], { ease: easeInOut });
+  const operP = useTransform(progress, [0.1, 0.38], [0, 1], { ease: easeInOut });
+  const ceilP = useTransform(progress, [0.18, 0.48], [0, 1], { ease: easeInOut });
+  const wallP = useTransform(progress, [0.24, 0.55], [0, 1], { ease: easeInOut });
+  const frameP = useTransform(progress, [0.35, 0.7], [0, 1], { ease: easeInOut });
+  const labelP = useTransform(progress, [0.6, 0.85], [0, 1], { ease: easeInOut });
 
   const f = explode;
   // part offsets (exploded position = base * subProgress * explode)
@@ -138,6 +139,14 @@ export default function ElevatorSchematic({
   const gTRx = useTransform(frameP, (v) => 46 * v * f);
   const gTy = useTransform(frameP, (v) => -40 * v * f);
   const gBy = useTransform(frameP, (v) => 46 * v * f);
+  // extra cab parts
+  const curtLX = useTransform(doorsP, (v) => -16 * v * f);
+  const curtRX = useTransform(doorsP, (v) => 16 * v * f);
+  const trackY = useTransform(operP, (v) => -64 * v * f);
+  const copX = useTransform(operP, (v) => 100 * v * f);
+  const copY = useTransform(operP, (v) => 80 * v * f);
+  const fanX = useTransform(ceilP, (v) => 60 * v * f);
+  const fanY = useTransform(ceilP, (v) => -140 * v * f);
 
   // ---- solid -> blueprint style transition (fills dissolve per stage) ----
   const doorFill = useTransform(doorsP, [0, 0.65], [1, 0]);
@@ -564,6 +573,8 @@ export default function ElevatorSchematic({
           <rect x="288" y="208" width="12" height="14" fill="none" />
           <line x1="300" y1="215" x2="317" y2="215" />
           <line x1="294" y1="222" x2="325" y2="472" opacity="0.7" />
+          {/* retiring cam (landing-door unlocking) */}
+          <path d="M 317 244 L 309 248 L 309 254 L 317 258" fill="none" strokeWidth="1.1" />
           {/* safety plank */}
           <rect x="315" y="458" width="180" height="14" />
           <line x1="315" y1="465" x2="495" y2="465" opacity="0.6" />
@@ -609,7 +620,16 @@ export default function ElevatorSchematic({
           <rect x="329" y="214" width="152" height="14" />
           <circle cx="381" cy="221" r="3" fill="none" opacity="0.7" />
           <circle cx="429" cy="221" r="3" fill="none" opacity="0.7" />
-          <rect x="445" y="206" width="20" height="8" fill="none" strokeWidth="1.2" />
+        </motion.g>
+
+        {/* ---- roof exhaust fan (separate part, flies up-right) ---- */}
+        <motion.g
+          stroke={LINE}
+          strokeWidth="1.2"
+          fill={FILL}
+          style={{ x: fanX, y: fanY, fillOpacity: ceilFill }}
+        >
+          <rect x="445" y="206" width="20" height="8" />
           <line x1="450" y1="206" x2="450" y2="214" opacity="0.6" />
           <line x1="455" y1="206" x2="455" y2="214" opacity="0.6" />
           <line x1="460" y1="206" x2="460" y2="214" opacity="0.6" />
@@ -627,6 +647,32 @@ export default function ElevatorSchematic({
           <circle cx="349" cy="240" r="6" fill="none" />
           <circle cx="461" cy="240" r="6" fill="none" />
           <rect x="448" y="233" width="20" height="14" fill="none" strokeWidth="1.1" />
+        </motion.g>
+
+        {/* ---- door hanger track (detaches upward, under the crosshead) ---- */}
+        <motion.g
+          stroke={LINE}
+          strokeWidth="1.2"
+          fill={FILL2}
+          style={{ y: trackY, fillOpacity: operFill }}
+        >
+          <rect x="337" y="246" width="136" height="4" />
+        </motion.g>
+
+        {/* ---- car operating panel (COP, flies right-down) ---- */}
+        <motion.g
+          stroke={LINE}
+          strokeWidth="1.1"
+          fill={FILL2}
+          style={{ x: copX, y: copY, fillOpacity: operFill }}
+        >
+          <rect x="452" y="290" width="10" height="60" />
+          {[300, 312, 324, 336].map((y) => (
+            <g key={y} fill="none">
+              <circle cx="455" cy={y} r="1.3" />
+              <circle cx="459" cy={y} r="1.3" />
+            </g>
+          ))}
         </motion.g>
 
         {/* ---- side wall panels ---- */}
@@ -660,6 +706,10 @@ export default function ElevatorSchematic({
           <rect x="341" y="256" width="64" height="176" />
           <line x1="373" y1="256" x2="373" y2="432" opacity="0.6" />
           <line x1="403" y1="262" x2="403" y2="426" opacity="0.8" strokeWidth="1" />
+          {/* door interlock / clutch with rollers */}
+          <rect x="345" y="300" width="12" height="30" fill="none" strokeWidth="1.1" />
+          <circle cx="351" cy="306" r="2.5" fill="none" strokeWidth="1" />
+          <circle cx="351" cy="324" r="2.5" fill="none" strokeWidth="1" />
         </motion.g>
         <motion.g
           stroke={LINE}
@@ -673,6 +723,20 @@ export default function ElevatorSchematic({
           <rect x="405" y="256" width="64" height="176" />
           <line x1="437" y1="256" x2="437" y2="432" opacity="0.6" />
           <line x1="407" y1="262" x2="407" y2="426" opacity="0.8" strokeWidth="1" />
+        </motion.g>
+
+        {/* ---- door light curtains (slide out of the door gap) ---- */}
+        <motion.g stroke={LINE} strokeWidth="1.2" fill="none" style={{ x: curtLX }}>
+          <rect x="401" y="260" width="3" height="170" />
+          {[280, 320, 360, 400].map((y) => (
+            <line key={y} x1="401" y1={y} x2="404" y2={y} opacity="0.6" />
+          ))}
+        </motion.g>
+        <motion.g stroke={LINE} strokeWidth="1.2" fill="none" style={{ x: curtRX }}>
+          <rect x="406" y="260" width="3" height="170" />
+          {[280, 320, 360, 400].map((y) => (
+            <line key={y} x1="406" y1={y} x2="409" y2={y} opacity="0.6" />
+          ))}
         </motion.g>
 
         {/* ---- door sill (separates downward, hovers above the plank) ---- */}
@@ -699,6 +763,9 @@ export default function ElevatorSchematic({
           <line x1="329" y1="445" x2="481" y2="445" opacity="0.5" />
           <polygon points="365,452 445,452 437,472 373,472" fill="none" strokeWidth="1.2" />
           <line x1="373" y1="462" x2="437" y2="462" opacity="0.5" />
+          {/* load weighing device under the platform */}
+          <rect x="340" y="452" width="16" height="8" fill="none" strokeWidth="1.1" />
+          <circle cx="348" cy="456" r="1.6" fill="none" strokeWidth="1" />
         </motion.g>
 
         {/* ---- annotations: labels + dimension lines (fade in last) ---- */}
@@ -719,6 +786,17 @@ export default function ElevatorSchematic({
           <text x="280" y="542" textAnchor="middle">PLATFORM</text>
           <text x="240" y="516" textAnchor="end">ROLLER GUIDE</text>
           <text x="240" y="490" textAnchor="end">SAFETY GEAR</text>
+          <text x="515" y="58" textAnchor="middle" fontSize="10">VENT FAN</text>
+          <text x="557" y="448" textAnchor="middle" fontSize="10">COP</text>
+          <text
+            x="405"
+            y="345"
+            fontSize="9"
+            transform="rotate(-90 405 345)"
+            textAnchor="middle"
+          >
+            LIGHT CURTAIN
+          </text>
 
           <g stroke={ACCENT} strokeWidth="1" fill="none" opacity="0.8">
             {/* leader lines */}
