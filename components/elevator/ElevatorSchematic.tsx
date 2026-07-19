@@ -21,10 +21,13 @@ import {
  *   0.9+ — fully exploded, annotation labels & dimension lines visible
  *   1    — cab at the bottom, counterweight at the top
  *
- * Rope path (kept geometrically consistent): car falls @x 401/409 rise to
- * the deflector sheave c(440,110), wrap UNDER it, run up @x 471/479 to the
- * traction sheave c(515,90), wrap OVER it, drop to the counterweight
- * @x 551/559.
+ * Roping is 2:1 underslung (kept geometrically consistent): dead-end hitch
+ * under the slab @x327 -> down along the car's left side -> under the car
+ * via two pulleys on the safety plank (side tangents x327/x470) -> up @x470
+ * (in the gap between the door edge and the wall panel) -> over the traction
+ * sheave c(512.5,95) r42.5 -> down @x555 -> under the counterweight pulley
+ * (tangents x555/x531) -> up @x531 -> dead-end hitch under the slab. The
+ * machine rests on a support beam across the rail tops, tied to the slab.
  *
  * All colors come from CSS vars (--bp-*) so the drawing adapts to theme.
  */
@@ -45,36 +48,36 @@ const PAPER = "var(--bp-paper)";
 
 const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace";
 
-// landing levels: y in viewBox -> elevation label
+// landing levels: y in viewBox -> elevation label. Spaced at exactly 1/3 of
+// CAB_TRAVEL so the car sill lines up with a landing at p = 0, 1/3, 2/3, 1
+// (car sill sits at y≈449 when parked at the top landing).
 const LEVELS: Array<[number, string]> = [
-  [272, "+9.900"],
-  [472, "+6.600"],
-  [672, "+3.300"],
-  [872, "±0.000"],
+  [449, "+9.900"],
+  [559, "+6.600"],
+  [669, "+3.300"],
+  [779, "±0.000"],
 ];
 
 // numbered balloon callouts: [n, cx, cy, tx, ty] (leader: circle -> target)
 const BALLOONS: Array<[number, number, number, number, number]> = [
-  [1, 660, 60, 618, 72],
-  [2, 240, 150, 404, 124],
-  [3, 240, 96, 274, 64],
-  [4, 240, 60, 312, 60],
-  [5, 240, 320, 302, 320],
-  [6, 660, 250, 591, 250],
-  [7, 660, 908, 577, 912],
-  [8, 240, 600, 282, 600],
-  [9, 240, 878, 274, 899],
-  [10, 240, 212, 308, 212],
+  [1, 660, 60, 618, 90],
+  [2, 240, 96, 274, 64],
+  [3, 240, 60, 334, 60],
+  [4, 240, 320, 302, 320],
+  [5, 660, 250, 591, 250],
+  [6, 660, 908, 577, 912],
+  [7, 240, 160, 344, 152],
+  [8, 240, 878, 274, 899],
+  [9, 240, 212, 308, 212],
 ];
 
 const PARTS: string[] = [
   "TRACTION MACHINE",
-  "DEFLECTOR SHEAVE",
   "OVERSPEED GOVERNOR",
   "CONTROL PANEL",
   "CAR GUIDE RAIL",
   "CWT GUIDE RAIL",
-  "OIL BUFFER",
+  "SPRING BUFFER",
   "TRAVELING CABLE",
   "GOV. TENSION PULLEY",
   "FINAL LIMIT SWITCH",
@@ -97,14 +100,18 @@ export default function ElevatorSchematic({
   // ---- vertical travel ----
   const cabY = useTransform(progress, [0, 1], [0, CAB_TRAVEL]);
   const cwY = useTransform(progress, [0, 1], [0, CW_TRAVEL]);
-  const cabRopeY2 = useTransform(cabY, (v) => 174 + v); // deflector -> hitch springs
-  const cwRopeY2 = useTransform(cwY, (v) => CW_TOP + v); // sheave -> cwt hitch
+  // 2:1 roping: rope ends are dead-hitched under the slab; the moving ends
+  // of the four vertical rope runs follow the underslung car pulleys and
+  // the counterweight pulley
+  const carPulY = useTransform(cabY, (v) => 490 + v);
+  const cwPulY = useTransform(cwY, (v) => CW_TOP - 18 + v);
 
-  // traveling cable: junction box on the wall -> underside of the car
+  // traveling cable: fixed at the top control panel -> loop -> underside of
+  // the car (runs the full height of the hoistway behind the cab)
   const travelCableD = useTransform(cabY, (v) => {
     const cb = CAB_BOTTOM + v;
-    const sag = (608 + cb) / 2 + 120;
-    return `M 289 608 C 289 ${sag}, 365 ${sag}, 365 ${cb}`;
+    const sag = Math.min(cb + 90, 924);
+    return `M 357 150 C 357 ${sag}, 365 ${sag}, 365 ${cb}`;
   });
   // compensating chain: underside of the car -> underside of the counterweight
   const compChainD = useTransform(progress, (p) => {
@@ -131,7 +138,7 @@ export default function ElevatorSchematic({
   const sillY = useTransform(doorsP, (v) => 14 * v * f);
   const operY = useTransform(operP, (v) => -22 * v * f);
   const ceilY = useTransform(ceilP, (v) => -105 * v * f);
-  const floorY = useTransform(ceilP, (v) => 58 * v * f);
+  const floorY = useTransform(ceilP, (v) => 66 * v * f);
   const wallLX = useTransform(wallP, (v) => -96 * v * f);
   const wallRX = useTransform(wallP, (v) => 96 * v * f);
   const wallYv = useTransform(wallP, (v) => -88 * v * f);
@@ -140,8 +147,6 @@ export default function ElevatorSchematic({
   const gTy = useTransform(frameP, (v) => -40 * v * f);
   const gBy = useTransform(frameP, (v) => 46 * v * f);
   // extra cab parts
-  const curtLX = useTransform(doorsP, (v) => -16 * v * f);
-  const curtRX = useTransform(doorsP, (v) => 16 * v * f);
   const trackY = useTransform(operP, (v) => -64 * v * f);
   const copX = useTransform(operP, (v) => 100 * v * f);
   const copY = useTransform(operP, (v) => 80 * v * f);
@@ -223,7 +228,16 @@ export default function ElevatorSchematic({
               stroke={SOFT}
               strokeWidth="1"
             />
-            <text x="190" y={y} textAnchor="end" fill={SOFT} letterSpacing="1">
+            <text
+              x="190"
+              y={y}
+              textAnchor="end"
+              fill={SOFT}
+              stroke={PAPER}
+              strokeWidth="3"
+              paintOrder="stroke"
+              letterSpacing="1"
+            >
               {label}
             </text>
           </g>
@@ -232,9 +246,9 @@ export default function ElevatorSchematic({
 
       {/* ================= parts list (top-left drawing corner) ================= */}
       <g stroke={SOFT} fill="none" strokeWidth="1" fontFamily={MONO} opacity="0.85">
-        <rect x="20" y="20" width="188" height="232" />
+        <rect x="20" y="20" width="188" height="211" />
         <line x1="20" y1="42" x2="208" y2="42" />
-        <line x1="48" y1="42" x2="48" y2="252" />
+        <line x1="48" y1="42" x2="48" y2="231" />
         <text x="114" y="35" textAnchor="middle" fill={SOFT} stroke="none" fontSize="9" letterSpacing="2">
           PARTS LIST
         </text>
@@ -308,9 +322,6 @@ export default function ElevatorSchematic({
           </g>
         ))}
 
-        {/* traveling-cable junction box on the wall */}
-        <rect x="282" y="592" width="14" height="16" fill={PAPER} strokeWidth="1.2" />
-
         {/* pit stop switch */}
         <g opacity="0.8">
           <rect x="600" y="898" width="14" height="14" />
@@ -350,87 +361,95 @@ export default function ElevatorSchematic({
             fontSize="9"
             letterSpacing="1"
           >
-            HOISTWAY 1800
+            HOISTWAY 3600
           </text>
         </g>
       </g>
 
       {/* ================= static: MRL machine hanging at the top ================= */}
       <g stroke={LINE} fill="none" strokeWidth="1.2" opacity="0.85">
-        {/* machine bedplate beam under the slab (right end embedded in wall) */}
-        <rect x="430" y="26" width="190" height="16" fill="url(#bp-hatch)" />
-        <rect x="434" y="22" width="4" height="4" />
+        {/* anti-tip stay bracket from the slab to the motor */}
+        <rect x="582" y="22" width="16" height="52" strokeWidth="1.3" />
+        <line x1="582" y1="34" x2="598" y2="34" opacity="0.5" />
+        <line x1="582" y1="46" x2="598" y2="46" opacity="0.5" />
 
-        {/* gearless machine: housing drum behind the traction sheave */}
-        <circle cx="515" cy="90" r="48" opacity="0.6" />
-        {/* traction sheave with rope grooves + hub */}
-        <circle cx="515" cy="90" r="40" strokeWidth="1.6" />
-        <circle cx="515" cy="90" r="35" opacity="0.6" />
-        <circle cx="515" cy="90" r="7" strokeWidth="1.4" />
-        <line x1="515" y1="55" x2="515" y2="125" opacity="0.5" />
-        <line x1="480" y1="90" x2="550" y2="90" opacity="0.5" />
+        {/* machine support beam resting on the rail tops (slot for ropes) */}
+        <rect x="500" y="146" width="26" height="12" fill="url(#bp-hatch)" />
+        <rect x="560" y="146" width="65" height="12" fill="url(#bp-hatch)" />
+        <line x1="500" y1="146" x2="526" y2="146" />
+        <line x1="560" y1="146" x2="625" y2="146" />
+        <line x1="500" y1="158" x2="526" y2="158" />
+        <line x1="560" y1="158" x2="625" y2="158" />
+        {/* mounting chocks under the sheave rim and the motor */}
+        <rect x="503" y="141" width="16" height="5" />
+        <rect x="585" y="142" width="15" height="4" />
+
+        {/* traction sheave with rope grooves, hub and spokes */}
+        <circle cx="512.5" cy="95" r="42.5" strokeWidth="1.6" />
+        <circle cx="512.5" cy="95" r="38" opacity="0.6" />
+        <circle cx="512.5" cy="95" r="8" strokeWidth="1.4" />
+        {[0, 60, 120].map((a) => (
+          <line
+            key={a}
+            x1={512.5 + 33 * Math.cos((a * Math.PI) / 180)}
+            y1={95 + 33 * Math.sin((a * Math.PI) / 180)}
+            x2={512.5 - 33 * Math.cos((a * Math.PI) / 180)}
+            y2={95 - 33 * Math.sin((a * Math.PI) / 180)}
+            opacity="0.5"
+          />
+        ))}
         {/* center marks */}
         <line
-          x1="460"
-          y1="90"
-          x2="570"
-          y2="90"
+          x1="465"
+          y1="95"
+          x2="560"
+          y2="95"
           strokeDasharray="10 3 2 3"
           opacity="0.35"
         />
         <line
-          x1="515"
-          y1="36"
-          x2="515"
+          x1="512.5"
+          y1="46"
+          x2="512.5"
           y2="144"
           strokeDasharray="10 3 2 3"
           opacity="0.35"
         />
+        {/* drive axle: motor -> sheave hub */}
+        <line x1="520" y1="88" x2="563" y2="88" />
+        <line x1="520" y1="102" x2="563" y2="102" />
 
         {/* PM motor housing with cooling fins + terminal box */}
-        <rect x="563" y="60" width="55" height="60" strokeWidth="1.4" />
+        <rect x="563" y="74" width="55" height="68" strokeWidth="1.4" />
         {[572, 581, 590, 599, 608].map((x) => (
-          <line key={x} x1={x} y1="66" x2={x} y2="114" opacity="0.55" />
+          <line key={x} x1={x} y1="80" x2={x} y2="136" opacity="0.55" />
         ))}
-        <rect x="588" y="48" width="24" height="12" />
+        <rect x="600" y="62" width="18" height="12" />
         {/* conduit run: terminal box -> control panel */}
-        <path d="M 600 48 V 26 H 352 V 40" strokeDasharray="3 4" opacity="0.5" />
+        <path d="M 609 62 V 25 H 362 V 40" strokeDasharray="3 4" opacity="0.5" />
 
-        {/* deflector sheave on a hanger rod (rope wraps under it) */}
-        <rect x="438" y="46" width="4" height="62" />
-        <circle cx="440" cy="110" r="35" strokeWidth="1.5" />
-        <circle cx="440" cy="110" r="30" opacity="0.6" />
-        <circle cx="440" cy="110" r="6" strokeWidth="1.4" />
-        <line
-          x1="398"
-          y1="110"
-          x2="482"
-          y2="110"
-          strokeDasharray="10 3 2 3"
-          opacity="0.35"
-        />
-        <line
-          x1="440"
-          y1="68"
-          x2="440"
-          y2="152"
-          strokeDasharray="10 3 2 3"
-          opacity="0.35"
-        />
+        {/* 2:1 roping dead-end hitches under the slab (car side / cwt side) */}
+        {[327, 531].map((x) => (
+          <g key={x} strokeWidth="1.3">
+            <rect x={x - 8} y="22" width="16" height="8" fill={PAPER} />
+            <line x1={x - 5} y1="30" x2={x - 5} y2="36" opacity="0.7" />
+            <line x1={x + 5} y1="30" x2={x + 5} y2="36" opacity="0.7" />
+          </g>
+        ))}
 
         {/* control panels hanging from the slab */}
         <g strokeWidth="1.3">
-          <line x1="320" y1="22" x2="320" y2="40" />
-          <line x1="358" y1="22" x2="358" y2="40" />
-          <rect x="312" y="40" width="55" height="70" fill={PAPER} />
-          <rect x="316" y="45" width="47" height="60" />
+          <line x1="342" y1="22" x2="342" y2="40" />
+          <line x1="380" y1="22" x2="380" y2="40" />
+          <rect x="334" y="40" width="55" height="70" fill={PAPER} />
+          <rect x="338" y="45" width="47" height="60" />
           {[56, 63, 70].map((y) => (
-            <line key={y} x1="323" y1={y} x2="355" y2={y} opacity="0.55" />
+            <line key={y} x1="345" y1={y} x2="377" y2={y} opacity="0.55" />
           ))}
-          <circle cx="357" cy="88" r="1.8" />
-          <rect x="318" y="118" width="34" height="32" fill={PAPER} />
-          <line x1="326" y1="118" x2="326" y2="110" />
-          <line x1="344" y1="118" x2="344" y2="110" />
+          <circle cx="379" cy="88" r="1.8" />
+          <rect x="340" y="118" width="34" height="32" fill={PAPER} />
+          <line x1="348" y1="118" x2="348" y2="110" />
+          <line x1="366" y1="118" x2="366" y2="110" />
         </g>
 
         {/* overspeed governor under the slab + rope loop down to pit tension */}
@@ -505,14 +524,27 @@ export default function ElevatorSchematic({
           <rect x="582" y={CW_TOP + 4} width="11" height="12" fill="none" />
           <rect x="517" y={CW_TOP + 154} width="11" height="12" fill="none" />
           <rect x="582" y={CW_TOP + 154} width="11" height="12" fill="none" />
-          {/* rope hitch */}
-          <rect x="549" y={CW_TOP - 8} width="12" height="8" fill="none" />
+          {/* 2:1 pulley on top of the counterweight */}
+          <g fill="none">
+            <line x1="537" y1={CW_TOP} x2="540" y2={CW_TOP - 12} />
+            <line x1="549" y1={CW_TOP} x2="546" y2={CW_TOP - 12} />
+            <circle cx="543" cy={CW_TOP - 18} r="12" strokeWidth="1.4" />
+            <circle cx="543" cy={CW_TOP - 18} r="3" />
+            <path
+              d={`M 555 ${CW_TOP - 18} A 12 12 0 0 1 531 ${CW_TOP - 18}`}
+              strokeWidth="1.8"
+              opacity="0.9"
+            />
+          </g>
         </motion.g>
         <motion.g style={{ opacity: annO }}>
           <text
             x="665"
             y={CW_TOP + 84}
             fill={ACCENT}
+            stroke={PAPER}
+            strokeWidth="4"
+            paintOrder="stroke"
             fontFamily={MONO}
             fontSize="11"
             letterSpacing="1.5"
@@ -531,17 +563,18 @@ export default function ElevatorSchematic({
         </motion.g>
       </motion.g>
 
-      {/* ================= ropes (car -> deflector -> sheave -> cwt) ============ */}
-      <g stroke={LINE} strokeWidth="1.5" fill="none" opacity="0.9">
-        {/* static wraps: under the deflector, up, over the traction sheave */}
-        <path d="M 401 110 A 39 39 0 0 0 479 110 L 479 90 A 36 36 0 0 1 551 90" />
-        <path d="M 409 110 A 31 31 0 0 0 471 110 L 471 90 A 44 44 0 0 1 559 90" />
-        {/* car side falls */}
-        <motion.line x1="401" y1="110" x2="401" y2={cabRopeY2} />
-        <motion.line x1="409" y1="110" x2="409" y2={cabRopeY2} />
-        {/* counterweight side falls */}
-        <motion.line x1="551" y1="90" x2="551" y2={cwRopeY2} />
-        <motion.line x1="559" y1="90" x2="559" y2={cwRopeY2} />
+      {/* ================= ropes: 2:1 underslung roping ================= */}
+      {/* hitch 1 -> down behind the car -> under car pulleys -> up -> over the
+          traction sheave -> down -> under the cwt pulley -> up -> hitch 2 */}
+      <g stroke={LINE} strokeWidth="1.8" fill="none" opacity="0.9">
+        {/* wrap over the traction sheave */}
+        <path d="M 470 95 A 42.5 42.5 0 0 1 555 95" />
+        {/* car side: dead-end run + riser to the sheave */}
+        <motion.line x1="327" y1="30" x2="327" y2={carPulY} />
+        <motion.line x1="470" y1="95" x2="470" y2={carPulY} />
+        {/* counterweight side: fall from the sheave + dead-end run */}
+        <motion.line x1="555" y1="95" x2="555" y2={cwPulY} />
+        <motion.line x1="531" y1="30" x2="531" y2={cwPulY} />
       </g>
 
       {/* ================= the cab (travels down + explodes) ================= */}
@@ -553,16 +586,6 @@ export default function ElevatorSchematic({
           fill={FILL2}
           style={{ fillOpacity: frameFill }}
         >
-          {/* rope hitch plate + suspension springs */}
-          <rect x="380" y="174" width="50" height="4" fill="none" />
-          {[387, 405, 423].map((x) => (
-            <polyline
-              key={x}
-              fill="none"
-              strokeWidth="1.1"
-              points={`${x},178 ${x - 3},180 ${x + 3},183 ${x - 3},186 ${x},188`}
-            />
-          ))}
           {/* crosshead */}
           <rect x="315" y="188" width="180" height="14" />
           <line x1="315" y1="195" x2="495" y2="195" opacity="0.6" />
@@ -572,20 +595,67 @@ export default function ElevatorSchematic({
           {/* governor rope clamp + safety linkage pull rod */}
           <rect x="288" y="208" width="12" height="14" fill="none" />
           <line x1="300" y1="215" x2="317" y2="215" />
-          <line x1="294" y1="222" x2="325" y2="472" opacity="0.7" />
+          <line x1="294" y1="222" x2="329" y2="468" opacity="0.7" />
           {/* retiring cam (landing-door unlocking) */}
           <path d="M 317 244 L 309 248 L 309 254 L 317 258" fill="none" strokeWidth="1.1" />
           {/* safety plank */}
           <rect x="315" y="458" width="180" height="14" />
           <line x1="315" y1="465" x2="495" y2="465" opacity="0.6" />
-          {/* progressive safety gears under the plank */}
-          <g strokeWidth="1.2">
-            <rect x="322" y="472" width="20" height="14" fill="none" />
-            <line x1="326" y1="486" x2="334" y2="472" opacity="0.7" />
-            <rect x="468" y="472" width="20" height="14" fill="none" />
-            <line x1="472" y1="486" x2="480" y2="472" opacity="0.7" />
+          {/* progressive safety gear on the plank ends: housing on each rail,
+              wedge gibs both sides of the blade, clamp spring pack on top,
+              synchronization shaft + release lever pulled by the governor rope */}
+          <g strokeWidth="1.1">
+            {[305, 505].map((rx) => (
+              <g key={rx}>
+                <rect
+                  x={rx - 12}
+                  y="474"
+                  width="24"
+                  height="22"
+                  fill="none"
+                  strokeWidth="1.2"
+                />
+                <polyline
+                  fill="none"
+                  points={`${rx - 10},478 ${rx - 6},475 ${rx - 2},481 ${rx + 2},475 ${rx + 6},481 ${rx + 10},478`}
+                />
+                <polygon
+                  points={`${rx - 9},482 ${rx - 4},482 ${rx - 4},494`}
+                  fill="none"
+                />
+                <polygon
+                  points={`${rx + 9},482 ${rx + 4},482 ${rx + 4},494`}
+                  fill="none"
+                />
+              </g>
+            ))}
+            <line x1="317" y1="476" x2="493" y2="476" />
+            <circle cx="321" cy="476" r="2.2" fill="none" />
+            <circle cx="489" cy="476" r="2.2" fill="none" />
+            <line x1="321" y1="476" x2="329" y2="468" />
+          </g>
+
+          {/* underslung rope pulleys on the safety plank (near both ends) */}
+          <g strokeWidth="1.3">
+            <line x1="331" y1="472" x2="334" y2="482" />
+            <line x1="343" y1="472" x2="340" y2="482" />
+            <circle cx="337" cy="490" r="10" fill="none" strokeWidth="1.4" />
+            <circle cx="337" cy="490" r="3" fill="none" />
+            <line x1="454" y1="472" x2="457" y2="482" />
+            <line x1="466" y1="472" x2="463" y2="482" />
+            <circle cx="460" cy="490" r="10" fill="none" strokeWidth="1.4" />
+            <circle cx="460" cy="490" r="3" fill="none" />
           </g>
         </motion.g>
+
+        {/* rope run under the car: down the wraps, along the bottom tangents */}
+        <path
+          d="M 327 490 A 10 10 0 0 0 337 500 L 460 500 A 10 10 0 0 0 470 490"
+          stroke={LINE}
+          strokeWidth="1.8"
+          fill="none"
+          opacity="0.9"
+        />
 
         {/* ---- roller guides (4, pop out diagonally) ---- */}
         {(
@@ -725,20 +795,6 @@ export default function ElevatorSchematic({
           <line x1="407" y1="262" x2="407" y2="426" opacity="0.8" strokeWidth="1" />
         </motion.g>
 
-        {/* ---- door light curtains (slide out of the door gap) ---- */}
-        <motion.g stroke={LINE} strokeWidth="1.2" fill="none" style={{ x: curtLX }}>
-          <rect x="401" y="260" width="3" height="170" />
-          {[280, 320, 360, 400].map((y) => (
-            <line key={y} x1="401" y1={y} x2="404" y2={y} opacity="0.6" />
-          ))}
-        </motion.g>
-        <motion.g stroke={LINE} strokeWidth="1.2" fill="none" style={{ x: curtRX }}>
-          <rect x="406" y="260" width="3" height="170" />
-          {[280, 320, 360, 400].map((y) => (
-            <line key={y} x1="406" y1={y} x2="409" y2={y} opacity="0.6" />
-          ))}
-        </motion.g>
-
         {/* ---- door sill (separates downward, hovers above the plank) ---- */}
         <motion.g
           stroke={LINE}
@@ -768,10 +824,13 @@ export default function ElevatorSchematic({
           <circle cx="348" cy="456" r="1.6" fill="none" strokeWidth="1" />
         </motion.g>
 
-        {/* ---- annotations: labels + dimension lines (fade in last) ---- */}
+        {/* ---- annotations: labels + dimension lines (fade in last) ----
+             text gets a paper-colored halo so it stays readable over ropes */}
         <motion.g
           fill={ACCENT}
-          stroke="none"
+          stroke={PAPER}
+          strokeWidth="4"
+          paintOrder="stroke"
           fontFamily={MONO}
           fontSize="11"
           letterSpacing="1.5"
@@ -788,23 +847,14 @@ export default function ElevatorSchematic({
           <text x="240" y="490" textAnchor="end">SAFETY GEAR</text>
           <text x="515" y="58" textAnchor="middle" fontSize="10">VENT FAN</text>
           <text x="557" y="448" textAnchor="middle" fontSize="10">COP</text>
-          <text
-            x="405"
-            y="345"
-            fontSize="9"
-            transform="rotate(-90 405 345)"
-            textAnchor="middle"
-          >
-            LIGHT CURTAIN
-          </text>
 
           <g stroke={ACCENT} strokeWidth="1" fill="none" opacity="0.8">
             {/* leader lines */}
             <line x1="244" y1="512" x2="252" y2="512" />
-            <line x1="244" y1="486" x2="320" y2="479" />
+            <line x1="244" y1="486" x2="292" y2="483" />
             {/* dimension: car width */}
-            <line x1="329" y1="514" x2="329" y2="552" />
-            <line x1="481" y1="514" x2="481" y2="552" />
+            <line x1="329" y1="522" x2="329" y2="552" />
+            <line x1="481" y1="522" x2="481" y2="552" />
             <line
               x1="333"
               y1="546"
@@ -835,7 +885,7 @@ export default function ElevatorSchematic({
             transform="rotate(-90 345 330)"
             textAnchor="middle"
           >
-            H 2560
+            H 2650
           </text>
         </motion.g>
       </motion.g>
