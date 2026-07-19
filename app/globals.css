@@ -1,8 +1,42 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* page */
+  --background: #eef3fb;
+  --foreground: #0f1f42;
+  --card: rgba(255, 255, 255, 0.62);
+  --card-border: rgba(30, 64, 175, 0.18);
+
+  /* blueprint schematic — light: blue lines on paper */
+  --bp-paper: #eef3fb;
+  --bp-line: #1d3f9e;
+  --bp-line-soft: rgba(29, 63, 158, 0.45);
+  --bp-accent: #0e7490;
+  --bp-fill: #c9daf6;
+  --bp-fill-2: #adc6ee;
+  --bp-grid: rgba(30, 64, 175, 0.06);
+  --bp-grid-major: rgba(30, 64, 175, 0.11);
+  --bp-layer-opacity: 0.9;
+}
+
+.dark {
+  --background: #0a1733;
+  --foreground: #dbe7ff;
+  --card: rgba(10, 25, 58, 0.55);
+  --card-border: rgba(125, 180, 255, 0.18);
+
+  /* blueprint schematic — dark: cyan lines on deep navy */
+  --bp-paper: #0a1733;
+  --bp-line: #8fc2ff;
+  --bp-line-soft: rgba(143, 194, 255, 0.45);
+  --bp-accent: #4adeff;
+  --bp-fill: #13315f;
+  --bp-fill-2: #1b3f77;
+  --bp-grid: rgba(125, 180, 255, 0.07);
+  --bp-grid-major: rgba(125, 180, 255, 0.13);
+  --bp-layer-opacity: 0.95;
 }
 
 @theme inline {
@@ -12,15 +46,18 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
