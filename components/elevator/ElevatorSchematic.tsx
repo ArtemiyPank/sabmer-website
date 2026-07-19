@@ -37,7 +37,6 @@ const CAB_TRAVEL = 330; // cab: top of shaft -> bottom
 const CW_TRAVEL = -516; // counterweight: resting on its buffer -> top of shaft
 const CW_TOP = 716; // counterweight initial top edge (on buffer, bottom of shaft)
 const CAB_BOTTOM = 480; // initial y of the safety-plank underside
-const CW_BOTTOM = CW_TOP + 170;
 
 const LINE = "var(--bp-line)";
 const SOFT = "var(--bp-line-soft)";
@@ -66,7 +65,7 @@ const BALLOONS: Array<[number, number, number, number, number]> = [
   [4, 240, 320, 302, 320],
   [5, 660, 250, 591, 250],
   [6, 660, 908, 577, 912],
-  [7, 240, 160, 344, 152],
+  [7, 240, 276, 296, 290],
   [8, 240, 878, 274, 899],
   [9, 240, 212, 308, 212],
 ];
@@ -106,19 +105,17 @@ export default function ElevatorSchematic({
   const carPulY = useTransform(cabY, (v) => 490 + v);
   const cwPulY = useTransform(cwY, (v) => CW_TOP - 18 + v);
 
-  // traveling cable: fixed at the top control panel -> loop -> underside of
-  // the car (runs the full height of the hoistway behind the cab)
+  // traveling cable: from the control panel at the very top, down the gap
+  // between the left wall and the car (visible), then loops under the car
+  // to its underside connection
   const travelCableD = useTransform(cabY, (v) => {
     const cb = CAB_BOTTOM + v;
-    const sag = Math.min(cb + 90, 924);
-    return `M 357 150 C 357 ${sag}, 365 ${sag}, 365 ${cb}`;
-  });
-  // compensating chain: underside of the car -> underside of the counterweight
-  const compChainD = useTransform(progress, (p) => {
-    const cb = CAB_BOTTOM + CAB_TRAVEL * p;
-    const cwB = CW_BOTTOM + CW_TRAVEL * p;
-    const sag = Math.min(Math.max(cb, cwB) + 55, 926);
-    return `M 445 ${cb} C 445 ${sag}, 535 ${sag}, 535 ${cwB}`;
+    return [
+      "M 357 150",
+      "C 357 200, 298 210, 298 270",
+      `L 298 ${cb - 40}`,
+      `C 298 ${cb + 45}, 365 ${cb + 45}, 365 ${cb}`,
+    ].join(" ");
   });
 
   // ---- staggered disassembly sub-progress (each eased within its window) ----
@@ -486,16 +483,14 @@ export default function ElevatorSchematic({
         })}
       </g>
 
-      {/* ================= traveling cable & compensating chain ================= */}
-      <g fill="none" opacity="0.75">
-        <motion.path d={travelCableD} stroke={LINE} strokeWidth="1.4" />
-        <motion.path
-          d={compChainD}
-          stroke={LINE}
-          strokeWidth="1.3"
-          strokeDasharray="3 3"
-        />
-      </g>
+      {/* ================= traveling cable ================= */}
+      <motion.path
+        d={travelCableD}
+        stroke={LINE}
+        strokeWidth="2"
+        fill="none"
+        opacity="0.8"
+      />
 
       {/* ================= counterweight (travels up) ================= */}
       <motion.g style={{ y: cwY, willChange: "transform" }}>
