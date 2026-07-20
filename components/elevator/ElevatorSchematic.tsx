@@ -587,10 +587,12 @@ export default function ElevatorSchematic({
           {/* uprights */}
           <rect x="317" y="202" width="8" height="256" />
           <rect x="485" y="202" width="8" height="256" />
-          {/* governor rope clamp + safety linkage pull rod */}
+          {/* governor rope clamp + safety linkage: horizontal link from the
+              clamp, vertical pull rod along the upright, link to the lever */}
           <rect x="288" y="208" width="12" height="14" fill="none" />
-          <line x1="300" y1="215" x2="317" y2="215" />
-          <line x1="294" y1="222" x2="329" y2="468" opacity="0.7" />
+          <line x1="300" y1="215" x2="313" y2="215" />
+          <line x1="313" y1="215" x2="313" y2="470" opacity="0.8" />
+          <line x1="313" y1="470" x2="321" y2="476" />
           {/* retiring cam (landing-door unlocking) */}
           <path d="M 317 244 L 309 248 L 309 254 L 317 258" fill="none" strokeWidth="1.1" />
           {/* safety plank */}
