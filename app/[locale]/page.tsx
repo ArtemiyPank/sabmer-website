@@ -28,14 +28,14 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
       <main className="mx-auto max-w-6xl px-4 md:px-6">
         {/* ---- Hero ---- */}
         <section className="flex min-h-svh items-center pt-16">
-          <div className="max-w-xl">
+          <div className="max-w-xl max-md:rounded-2xl max-md:border max-md:p-6 max-md:backdrop-blur-md max-md:[background-color:var(--card)] max-md:[border-color:var(--card-border)]">
             <p
               className="text-sm font-medium uppercase tracking-[0.3em]"
               style={{ color: "var(--bp-accent)" }}
             >
               SABMER
             </p>
-            <h1 className="mt-4 text-4xl font-bold leading-tight md:text-5xl">
+            <h1 className="mt-4 text-3xl font-bold leading-tight sm:text-4xl md:text-5xl">
               {t("Hero.tagline")}
             </h1>
             <p className="mt-6 max-w-md leading-relaxed opacity-80">
