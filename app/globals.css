@@ -57,6 +57,13 @@
   }
 }
 
+/* Stable height for the fixed schematic layer: 100lvh ignores the mobile
+   URL-bar collapse, so the drawing never rescales mid-scroll */
+.backdrop-viewport {
+  height: 100vh;
+  height: 100lvh;
+}
+
 html {
   scroll-behavior: smooth;
 }
