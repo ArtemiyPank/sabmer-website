@@ -1,0 +1,95 @@
+{
+  "Meta": {
+    "title": "SABMER — Elevator Installation",
+    "description": "Professional elevator installation subcontracting: installation, modernization and handover support. Certified crews, experience with equipment from leading manufacturers."
+  },
+  "Header": {
+    "about": "About",
+    "founders": "Founders",
+    "careers": "Careers",
+    "contacts": "Contacts",
+    "themeToggle": "Toggle theme",
+    "langSwitch": "Change language"
+  },
+  "Hero": {
+    "tagline": "Professional elevator installation subcontracting",
+    "sub": "We install, modernize and hand over elevator equipment for general contractors and manufacturers. On time and up to standard.",
+    "ctaContact": "Contact us",
+    "ctaCareers": "Careers"
+  },
+  "About": {
+    "title": "About the company",
+    "text": "SABMER is an elevator installation subcontractor. We work alongside manufacturers and general contractors: providing certified crews, keeping schedules and taking responsibility for installation quality at every stage.",
+    "cards": {
+      "c1t": "Traction & MRL installation",
+      "c1d": "Complete installation of machine-room and machine-room-less elevators.",
+      "c2t": "Modernization",
+      "c2d": "Equipment replacement and upgrades of existing elevators.",
+      "c3t": "Commissioning support",
+      "c3d": "Adjustment, testing and support through final acceptance.",
+      "c4t": "Major OEM equipment",
+      "c4d": "Experience with equipment from leading manufacturers.",
+      "c5t": "Certified crews",
+      "c5d": "Installers with valid certifications and licenses.",
+      "c6t": "Reliable timelines",
+      "c6d": "Precise project planning and regular reporting."
+    }
+  },
+  "Founders": {
+    "title": "Founders",
+    "amirName": "Amir",
+    "amirRole": "Co-founder, Commercial Director",
+    "amirBio": "Over 15 years in the elevator industry. Responsible for client relations, contracts and company growth. Built partnerships with leading elevator equipment manufacturers.",
+    "vovaName": "Vova",
+    "vovaRole": "Co-founder, Technical Director",
+    "vovaBio": "Mechanical engineer who worked his way up from installer to project manager. Responsible for installation methods, crew training and on-site quality control."
+  },
+  "Careers": {
+    "title": "Careers",
+    "intro": "We are growing and looking for people who want to build elevators the right way. What we offer:",
+    "offers": {
+      "o1": "Official employment",
+      "o2": "Training and certification",
+      "o3": "Strict safety standards",
+      "o4": "Tools and workwear provided",
+      "o5": "Competitive pay"
+    },
+    "rolesTitle": "Open positions",
+    "roles": {
+      "r1": "Elevator installer",
+      "r2": "Installation crew leader",
+      "r3": "Elevator electromechanic"
+    },
+    "apply": "Apply"
+  },
+  "Contacts": {
+    "title": "Contacts",
+    "phoneLabel": "Phone",
+    "phone": "+972 50-000-0000",
+    "emailLabel": "Email",
+    "email": "info@sabmer.example",
+    "addressLabel": "Address",
+    "address": "Rishon LeZion, Israel",
+    "form": {
+      "title": "Write to us",
+      "name": "Name",
+      "company": "Company (optional)",
+      "email": "Email",
+      "phone": "Phone",
+      "type": "I am contacting as:",
+      "typeClient": "Client",
+      "typeSupplier": "Supplier",
+      "typeJobseeker": "Job seeker",
+      "message": "Message",
+      "submit": "Send",
+      "sending": "Sending…",
+      "success": "Thank you! Your message has been sent.",
+      "error": "Sending failed. Please try again.",
+      "required": "Required field",
+      "invalidEmail": "Invalid email"
+    }
+  },
+  "Footer": {
+    "rights": "All rights reserved."
+  }
+}

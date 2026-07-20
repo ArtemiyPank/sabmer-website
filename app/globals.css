@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
   /* page */
@@ -21,7 +21,7 @@
   --bp-layer-opacity: 0.9;
 }
 
-.dark {
+:root[data-theme="dark"] {
   --background: #0a1733;
   --foreground: #dbe7ff;
   --card: rgba(10, 25, 58, 0.55);
@@ -42,8 +42,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-rubik);
 }
 
 html {

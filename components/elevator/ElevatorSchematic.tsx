@@ -166,7 +166,8 @@ export default function ElevatorSchematic({
       viewBox="0 0 900 1000"
       className="h-full w-auto"
       aria-hidden="true"
-      style={{ overflow: "hidden" }}
+      // the schematic never mirrors or reorders its text in RTL locales
+      style={{ overflow: "hidden", direction: "ltr" }}
     >
       <defs>
         <pattern
