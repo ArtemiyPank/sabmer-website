@@ -164,7 +164,9 @@ export default function ElevatorSchematic({
   return (
     <svg
       viewBox="0 0 900 1000"
-      className="h-full w-auto"
+      // shrink-0: on narrow screens keep full height and crop the sides
+      // (the hoistway stays centered) instead of letterboxing to width
+      className="h-full w-auto shrink-0"
       aria-hidden="true"
       // the schematic never mirrors or reorders its text in RTL locales
       style={{ overflow: "hidden", direction: "ltr" }}
