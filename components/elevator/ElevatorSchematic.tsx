@@ -59,12 +59,12 @@ const LEVELS: Array<[number, string]> = [
 
 // numbered balloon callouts: [n, cx, cy, tx, ty] (leader: circle -> target)
 const BALLOONS: Array<[number, number, number, number, number]> = [
-  [1, 660, 60, 618, 90],
+  [1, 672, 60, 618, 90],
   [2, 240, 96, 274, 64],
   [3, 240, 60, 334, 60],
   [4, 240, 320, 302, 320],
-  [5, 660, 250, 591, 250],
-  [6, 660, 908, 577, 912],
+  [5, 672, 340, 591, 340],
+  [6, 672, 908, 577, 912],
   [7, 240, 276, 296, 290],
   [8, 240, 878, 274, 899],
   [9, 240, 212, 308, 212],
@@ -187,6 +187,16 @@ export default function ElevatorSchematic({
           orient="auto-start-reverse"
         >
           <path d="M0,0 L6,3 L0,6 Z" fill={ACCENT} />
+        </marker>
+        <marker
+          id="dim-arrow-soft"
+          markerWidth="8"
+          markerHeight="8"
+          refX="6"
+          refY="3"
+          orient="auto-start-reverse"
+        >
+          <path d="M0,0 L6,3 L0,6 Z" fill={SOFT} />
         </marker>
       </defs>
 
@@ -319,10 +329,19 @@ export default function ElevatorSchematic({
           </g>
         ))}
 
-        {/* pit stop switch */}
+        {/* pit stop switch on a stand */}
         <g opacity="0.8">
-          <rect x="600" y="898" width="14" height="14" />
-          <line x1="614" y1="905" x2="620" y2="905" />
+          <rect x="466" y="898" width="14" height="14" />
+          <line x1="473" y1="912" x2="473" y2="940" />
+        </g>
+
+        {/* pit access ladder on the right wall */}
+        <g opacity="0.7">
+          <line x1="600" y1="846" x2="600" y2="938" />
+          <line x1="612" y1="846" x2="612" y2="938" />
+          {[854, 866, 878, 890, 902, 914, 926].map((y) => (
+            <line key={y} x1="600" y1={y} x2="612" y2={y} />
+          ))}
         </g>
 
         {/* buffers (car @405, cwt @555) */}
@@ -461,6 +480,108 @@ export default function ElevatorSchematic({
           <line x1="279" y1="913" x2="297" y2="913" opacity="0.6" />
           <line x1="279" y1="920" x2="297" y2="920" opacity="0.6" />
         </g>
+      </g>
+
+      {/* ================= section dimension chain (OH / TRAVEL / PIT) ========= */}
+      <g stroke={SOFT} fill="none" strokeWidth="1" fontFamily={MONO} opacity="0.85">
+        {(
+          [
+            [22, 449, "OH 4500", 235],
+            [449, 779, "TRAVEL 9900", 614],
+            [779, 940, "PIT 1700", 860],
+          ] as const
+        ).map(([y1, y2, label, my]) => (
+          <g key={label}>
+            <line
+              x1="655"
+              y1={y1 + 4}
+              x2="655"
+              y2={y2 - 4}
+              markerStart="url(#dim-arrow-soft)"
+              markerEnd="url(#dim-arrow-soft)"
+            />
+            <line x1="649" y1={y1} x2="661" y2={y1} />
+            <line x1="649" y1={y2} x2="661" y2={y2} />
+            <text
+              x="668"
+              y={my}
+              fontSize="9"
+              letterSpacing="1"
+              fill={SOFT}
+              stroke="none"
+              textAnchor="middle"
+              transform={`rotate(-90 668 ${my})`}
+            >
+              {label}
+            </text>
+          </g>
+        ))}
+      </g>
+
+      {/* ================= floor level table ================= */}
+      <g stroke={SOFT} fill="none" strokeWidth="1" fontFamily={MONO} opacity="0.85">
+        <rect x="700" y="742" width="184" height="118" />
+        <line x1="700" y1="764" x2="884" y2="764" />
+        <line x1="728" y1="764" x2="728" y2="860" />
+        <line x1="808" y1="764" x2="808" y2="860" />
+        <text x="792" y="757" textAnchor="middle" fill={SOFT} stroke="none" fontSize="9" letterSpacing="2">
+          LEVELS
+        </text>
+        {(
+          [
+            ["4", "+9.900", "3300"],
+            ["3", "+6.600", "3300"],
+            ["2", "+3.300", "3300"],
+            ["1", "±0.000", "—"],
+          ] as const
+        ).map(([n, lvl, h], i) => (
+          <g key={n} fill={SOFT} stroke="none" fontSize="8.5">
+            {i > 0 && (
+              <line
+                x1="700"
+                y1={764 + i * 24}
+                x2="884"
+                y2={764 + i * 24}
+                stroke={SOFT}
+                opacity="0.5"
+              />
+            )}
+            <text x="714" y={780 + i * 24} textAnchor="middle">{n}</text>
+            <text x="768" y={780 + i * 24} textAnchor="middle">{lvl}</text>
+            <text x="846" y={780 + i * 24} textAnchor="middle">{h}</text>
+          </g>
+        ))}
+      </g>
+
+      {/* ================= section caption + approval stamp ================= */}
+      <text
+        x="450"
+        y="994"
+        textAnchor="middle"
+        fill={SOFT}
+        fontFamily={MONO}
+        fontSize="10"
+        letterSpacing="3"
+        opacity="0.9"
+      >
+        SECTION A-A · SCALE 1:50
+      </text>
+      <g
+        transform="rotate(-7 125 330)"
+        stroke={ACCENT}
+        fill="none"
+        strokeWidth="1.2"
+        fontFamily={MONO}
+        opacity="0.65"
+      >
+        <rect x="58" y="306" width="134" height="46" rx="3" />
+        <rect x="62" y="310" width="126" height="38" rx="2" />
+        <text x="125" y="326" textAnchor="middle" fill={ACCENT} stroke="none" fontSize="11" letterSpacing="2">
+          APPROVED
+        </text>
+        <text x="125" y="341" textAnchor="middle" fill={ACCENT} stroke="none" fontSize="7.5" letterSpacing="1">
+          FOR EXECUTION · 17.08.2025
+        </text>
       </g>
 
       {/* ================= balloon callouts (parts list refs) ================= */}
@@ -897,18 +1018,21 @@ export default function ElevatorSchematic({
       >
         <rect x="690" y="880" width="194" height="88" />
         <rect x="694" y="884" width="186" height="80" />
-        <text x="700" y="902" fill={SOFT} stroke="none" fontSize="9" letterSpacing="1">
-          MRL TRACTION ELEVATOR — G.A.
-        </text>
-        <text x="700" y="920" fill={SOFT} stroke="none" fontSize="9" letterSpacing="1">
-          DWG NO. EL-2041
-        </text>
-        <text x="700" y="938" fill={SOFT} stroke="none" fontSize="9" letterSpacing="1">
-          SCALE 1:50 · REV C
-        </text>
-        <text x="700" y="956" fill={SOFT} stroke="none" fontSize="9" letterSpacing="1">
-          SHEET 1 OF 1
-        </text>
+        <line x1="790" y1="884" x2="790" y2="964" />
+        {(
+          [
+            ["DWG NO. EL-2041", "MRL TRACTION LIFT"],
+            ["CAPACITY 1000 KG", "GENERAL ARRANGEMENT"],
+            ["SPEED 1.6 M/S", "SECTION A-A · 1:50"],
+            ["STOPS 4 · 11 KW", "REV C · SHEET 1/1"],
+            ["TRAVEL 9900 MM", "DRAWN · APPROVED"],
+          ] as const
+        ).map(([l, r], i) => (
+          <g key={l} fill={SOFT} stroke="none" fontSize="8" letterSpacing="0.5">
+            <text x="700" y={899 + i * 16}>{l}</text>
+            <text x="796" y={899 + i * 16}>{r}</text>
+          </g>
+        ))}
       </g>
     </svg>
   );
