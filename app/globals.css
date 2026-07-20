@@ -45,6 +45,18 @@
   --font-sans: var(--font-rubik);
 }
 
+/* On phones the info cards are more transparent and less blurred, so the
+   blueprint schematic stays clearly visible behind the content */
+@media (max-width: 767px) {
+  :root {
+    --card: rgba(255, 255, 255, 0.38);
+    --blur-md: 3px;
+  }
+  :root[data-theme="dark"] {
+    --card: rgba(8, 20, 46, 0.32);
+  }
+}
+
 html {
   scroll-behavior: smooth;
 }

@@ -28,7 +28,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
       <main className="mx-auto max-w-6xl px-4 md:px-6">
         {/* ---- Hero ---- */}
         <section className="flex min-h-svh items-center pt-16">
-          <div className="max-w-xl max-md:rounded-2xl max-md:border max-md:p-6 max-md:backdrop-blur-md max-md:[background-color:var(--card)] max-md:[border-color:var(--card-border)]">
+          <div className="w-full max-w-xl max-md:rounded-2xl max-md:border max-md:p-6 max-md:backdrop-blur-md max-md:[background-color:var(--card)] max-md:[border-color:var(--card-border)]">
             <p
               className="text-sm font-medium uppercase tracking-[0.3em]"
               style={{ color: "var(--bp-accent)" }}
