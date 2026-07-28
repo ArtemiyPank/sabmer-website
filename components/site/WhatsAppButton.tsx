@@ -31,9 +31,9 @@ export default function WhatsAppButton({
         rel="noopener noreferrer"
         aria-label={t("whatsapp")}
         className="flex h-9 w-9 items-center justify-center rounded-full border transition-opacity hover:opacity-80"
-        style={{ borderColor: "var(--card-border)", color: "#25D366" }}
+        style={{ borderColor: "var(--card-border)" }}
       >
-        <WaIcon className="h-5 w-5" />
+        <WaIcon className="h-5 w-5 opacity-80" />
       </a>
     );
   }
@@ -43,8 +43,11 @@ export default function WhatsAppButton({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-      style={{ backgroundColor: "#25D366" }}
+      className="inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-80"
+      style={{
+        borderColor: "var(--card-border)",
+        color: "var(--bp-accent)",
+      }}
     >
       <WaIcon className="h-5 w-5" />
       {t("whatsapp")}
