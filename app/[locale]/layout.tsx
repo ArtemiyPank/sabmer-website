@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
+import { SITE_URL } from "@/lib/site";
 import "../globals.css";
 
 // Rubik covers Latin, Cyrillic and Hebrew — one family for all locales
@@ -26,15 +27,25 @@ export async function generateMetadata({
 }: LayoutProps<"/[locale]">): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Meta" });
+  const languages = Object.fromEntries(
+    routing.locales.map((l) => [l, `/${l}`])
+  );
   return {
+    metadataBase: new URL(SITE_URL),
     title: t("title"),
     description: t("description"),
+    alternates: {
+      canonical: `/${locale}`,
+      languages: { ...languages, "x-default": `/${routing.defaultLocale}` },
+    },
     openGraph: {
       title: t("title"),
       description: t("description"),
       siteName: "SABMER",
+      url: `/${locale}`,
       locale,
       type: "website",
+      images: [{ url: "/og.png", width: 1200, height: 630 }],
     },
   };
 }

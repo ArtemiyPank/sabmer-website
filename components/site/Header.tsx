@@ -1,10 +1,11 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import FloorIndicator from "./FloorIndicator";
 import LanguageSwitcher from "./LanguageSwitcher";
 import ThemeToggle from "./ThemeToggle";
 
-const SECTIONS = ["about", "founders", "careers", "contacts"] as const;
+const SECTIONS = ["about", "projects", "founders", "careers", "contacts"] as const;
 
 export default function Header() {
   const t = useTranslations("Header");
@@ -33,6 +34,7 @@ export default function Header() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
+          <FloorIndicator />
           <LanguageSwitcher />
           <ThemeToggle />
         </div>
