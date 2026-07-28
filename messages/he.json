@@ -10,7 +10,9 @@
     "contacts": "צור קשר",
     "themeToggle": "החלפת ערכת נושא",
     "langSwitch": "החלפת שפה",
-    "projects": "פרויקטים"
+    "projects": "פרויקטים",
+    "floorNav": "מיקום התא: פתיחת לוח קומות",
+    "floorGoTo": "מעבר לקומה {floor}"
   },
   "Hero": {
     "tagline": "קבלנות משנה מקצועית להתקנת מעליות",

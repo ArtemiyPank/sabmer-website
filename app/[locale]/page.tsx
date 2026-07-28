@@ -308,6 +308,9 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
                   <dd className="mt-0.5">{t("Contacts.address")}</dd>
                 </div>
               </dl>
+              <div className="mt-6">
+                <WhatsAppButton />
+              </div>
             </div>
             <div className={card}>
               <ContactForm />
@@ -315,8 +318,6 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
           </div>
         </section>
       </main>
-
-      <WhatsAppButton />
 
       {/* ---- Footer ---- */}
       <footer
@@ -331,6 +332,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
             © {year} SABMER. {t("Footer.rights")}
           </p>
           <div className="flex items-center gap-2">
+            <WhatsAppButton variant="icon" />
             <LanguageSwitcher />
             <ThemeToggle />
           </div>

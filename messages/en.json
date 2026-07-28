@@ -10,7 +10,9 @@
     "contacts": "Contacts",
     "themeToggle": "Toggle theme",
     "langSwitch": "Change language",
-    "projects": "Projects"
+    "projects": "Projects",
+    "floorNav": "Car position: open floor panel",
+    "floorGoTo": "Go to floor {floor}"
   },
   "Hero": {
     "tagline": "Professional elevator installation subcontracting",
