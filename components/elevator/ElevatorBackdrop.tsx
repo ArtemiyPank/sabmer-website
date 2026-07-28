@@ -36,9 +36,13 @@ export default function ElevatorBackdrop() {
   );
 
   useEffect(() => {
+    // keep in sync with .backdrop-viewport top offset in globals.css
+    const HEADER_OFFSET = 60;
     const measure = () => {
-      // the layer itself is 100lvh tall — use it as the stable yardstick
-      const lvh = layerRef.current?.offsetHeight || window.innerHeight;
+      // the layer is (100lvh - header) tall — recover the stable lvh from it
+      const lvh = layerRef.current
+        ? layerRef.current.offsetHeight + HEADER_OFFSET
+        : window.innerHeight;
       rangeRef.current = Math.max(
         document.documentElement.scrollHeight - lvh,
         1
@@ -69,7 +73,7 @@ export default function ElevatorBackdrop() {
     <div
       ref={layerRef}
       aria-hidden="true"
-      className="backdrop-viewport fixed inset-x-0 top-0 -z-10 flex justify-center overflow-hidden"
+      className="backdrop-viewport fixed inset-x-0 -z-10 flex justify-center overflow-hidden"
       style={{
         opacity: "var(--bp-layer-opacity)",
         backgroundColor: "var(--bp-paper)",

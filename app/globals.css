@@ -58,10 +58,12 @@
 }
 
 /* Stable height for the fixed schematic layer: 100lvh ignores the mobile
-   URL-bar collapse, so the drawing never rescales mid-scroll */
+   URL-bar collapse, so the drawing never rescales mid-scroll.
+   Offset below the sticky header (60px) so it never covers the drawing. */
 .backdrop-viewport {
-  height: 100vh;
-  height: 100lvh;
+  top: 60px;
+  height: calc(100vh - 60px);
+  height: calc(100lvh - 60px);
 }
 
 html {
