@@ -17,15 +17,23 @@ const SECTIONS = [
   ["contacts", "contacts"],
 ] as const;
 
-function currentSection(): (typeof SECTIONS)[number][1] {
-  const pos = window.scrollY + window.innerHeight * 0.35;
-  let key: (typeof SECTIONS)[number][1] = "home";
+type SectionKey = (typeof SECTIONS)[number][1];
+
+function sectionAt(scrollTop: number): SectionKey {
+  const pos = scrollTop + window.innerHeight * 0.35;
+  let key: SectionKey = "home";
   for (const [id, k] of SECTIONS) {
     const el = document.getElementById(id);
     if (el && el.offsetTop <= pos) key = k;
   }
   return key;
 }
+
+const floorTarget = (floor: number) => {
+  const p = (TOP_FLOOR - floor) / (TOP_FLOOR - 1);
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  return p * max;
+};
 
 /**
  * Elevator car position indicator in the header, driven by scroll progress
@@ -38,14 +46,14 @@ export default function FloorIndicator() {
   const { scrollYProgress } = useScroll();
   const [floor, setFloor] = useState(TOP_FLOOR);
   const [dir, setDir] = useState<"up" | "down" | null>(null);
-  const [section, setSection] =
-    useState<(typeof SECTIONS)[number][1]>("home");
+  const [section, setSection] = useState<SectionKey>("home");
   const [open, setOpen] = useState(false);
+  const [panelLabels, setPanelLabels] = useState<Record<number, SectionKey>>({});
   const rootRef = useRef<HTMLDivElement>(null);
 
   // initial section (e.g. when landing on an #anchor mid-page)
   useEffect(() => {
-    setSection(currentSection());
+    setSection(sectionAt(window.scrollY));
   }, []);
 
   useMotionValueEvent(scrollYProgress, "change", (v) => {
@@ -57,8 +65,16 @@ export default function FloorIndicator() {
       if (next !== prev) setDir(next < prev ? "down" : "up");
       return next;
     });
-    setSection(currentSection());
+    setSection(sectionAt(window.scrollY));
   });
+
+  const openPanel = () => {
+    // label each floor with the section the ride will arrive at
+    setPanelLabels(
+      Object.fromEntries(FLOORS.map((f) => [f, sectionAt(floorTarget(f))]))
+    );
+    setOpen((o) => !o);
+  };
 
   // close the panel on outside click / Escape
   useEffect(() => {
@@ -89,7 +105,7 @@ export default function FloorIndicator() {
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={openPanel}
         aria-label={t("floorNav")}
         aria-expanded={open}
         aria-haspopup="true"
@@ -122,16 +138,29 @@ export default function FloorIndicator() {
               onClick={() => goTo(f)}
               aria-label={t("floorGoTo", { floor: f })}
               aria-current={f === floor ? "true" : undefined}
-              className="flex h-9 w-9 items-center justify-center rounded-full border font-mono text-sm transition-all hover:scale-105 active:scale-95"
-              style={{
-                borderColor:
-                  f === floor ? "var(--bp-accent)" : "var(--card-border)",
-                color: f === floor ? "var(--bp-accent)" : "inherit",
-                boxShadow:
-                  f === floor ? "0 0 6px var(--bp-accent)" : undefined,
-              }}
+              className="group flex w-full items-center gap-3 rounded-lg px-1.5 py-1 text-start transition-opacity hover:opacity-90"
             >
-              {f}
+              <span
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border font-mono text-sm transition-transform group-hover:scale-105 group-active:scale-95"
+                style={{
+                  borderColor:
+                    f === floor ? "var(--bp-accent)" : "var(--card-border)",
+                  color: f === floor ? "var(--bp-accent)" : "inherit",
+                  boxShadow:
+                    f === floor ? "0 0 6px var(--bp-accent)" : undefined,
+                }}
+              >
+                {f}
+              </span>
+              <span
+                className="whitespace-nowrap text-sm"
+                style={{
+                  color: f === floor ? "var(--bp-accent)" : "inherit",
+                  opacity: f === floor ? 1 : 0.75,
+                }}
+              >
+                {panelLabels[f] ? t(panelLabels[f]) : ""}
+              </span>
             </button>
           ))}
         </div>
