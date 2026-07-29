@@ -9,7 +9,11 @@
     "careers": "Careers",
     "contacts": "Contacts",
     "themeToggle": "Toggle theme",
-    "langSwitch": "Change language"
+    "langSwitch": "Change language",
+    "projects": "Projects",
+    "floorNav": "Car position: open floor panel",
+    "floorGoTo": "Go to floor {floor}",
+    "home": "Home"
   },
   "Hero": {
     "tagline": "Professional elevator installation subcontracting",
@@ -34,6 +38,16 @@
       "c6t": "Reliable timelines",
       "c6d": "Precise project planning and regular reporting."
     }
+  },
+  "Projects": {
+    "title": "Projects",
+    "intro": "Typical projects our crews deliver:",
+    "p1n": "Residential building · 9 floors",
+    "p1d": "Two 1000 kg MRL elevators · turnkey installation and handover",
+    "p2n": "Business center · 18 floors",
+    "p2d": "Four traction elevators, 1.6 m/s · installation and adjustment",
+    "p3n": "Modernization · 6 stops",
+    "p3d": "Machine, controller and door replacement"
   },
   "Founders": {
     "title": "Founders",
@@ -87,7 +101,8 @@
       "error": "Sending failed. Please try again.",
       "required": "Required field",
       "invalidEmail": "Invalid email"
-    }
+    },
+    "whatsapp": "Chat on WhatsApp"
   },
   "Footer": {
     "rights": "All rights reserved."

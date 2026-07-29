@@ -7,10 +7,89 @@ import Header from "@/components/site/Header";
 import LanguageSwitcher from "@/components/site/LanguageSwitcher";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import ContactForm from "@/components/site/ContactForm";
+import WhatsAppButton from "@/components/site/WhatsAppButton";
+import { SITE_URL } from "@/lib/site";
 
 const card =
   "rounded-2xl border p-6 backdrop-blur-md md:p-8 " +
   "[background-color:var(--card)] [border-color:var(--card-border)]";
+
+/** Mini blueprint thumbnail: building cross-section with a hoistway */
+function ProjectThumb({ floors }: { floors: number }) {
+  const h = 96;
+  const floorH = h / floors;
+  return (
+    <svg
+      viewBox="0 0 160 120"
+      className="h-28 w-full"
+      aria-hidden="true"
+      style={{ direction: "ltr" }}
+    >
+      <rect
+        x="18"
+        y="12"
+        width="124"
+        height={h}
+        fill="none"
+        stroke="var(--bp-line)"
+        strokeWidth="1.5"
+      />
+      {Array.from({ length: floors - 1 }, (_, i) => (
+        <line
+          key={i}
+          x1="18"
+          y1={12 + (i + 1) * floorH}
+          x2="142"
+          y2={12 + (i + 1) * floorH}
+          stroke="var(--bp-line-soft)"
+          strokeWidth="1"
+        />
+      ))}
+      {/* hoistway with the cab */}
+      <rect
+        x="96"
+        y="12"
+        width="26"
+        height={h}
+        fill="none"
+        stroke="var(--bp-accent)"
+        strokeWidth="1.5"
+      />
+      <rect
+        x="100"
+        y={16 + floorH}
+        width="18"
+        height={Math.min(floorH * 1.4, 30)}
+        fill="none"
+        stroke="var(--bp-accent)"
+        strokeWidth="1.5"
+      />
+      <line
+        x1="109"
+        y1="12"
+        x2="109"
+        y2={16 + floorH}
+        stroke="var(--bp-accent)"
+        strokeWidth="1"
+      />
+      {/* windows */}
+      {Array.from({ length: floors }, (_, r) =>
+        [0, 1, 2].map((c) => (
+          <rect
+            key={`${r}-${c}`}
+            x={28 + c * 20}
+            y={12 + r * floorH + floorH * 0.3}
+            width="10"
+            height={floorH * 0.4}
+            fill="none"
+            stroke="var(--bp-line-soft)"
+            strokeWidth="1"
+          />
+        ))
+      )}
+    </svg>
+  );
+}
 
 export default async function Home({ params }: PageProps<"/[locale]">) {
   const { locale } = await params;
@@ -20,8 +99,31 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
   const t = await getTranslations();
   const year = new Date().getFullYear();
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: "SABMER",
+    description: t("Meta.description"),
+    url: `${SITE_URL}/${locale}`,
+    telephone: t("Contacts.phone"),
+    email: t("Contacts.email"),
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Rishon LeZion",
+      addressCountry: "IL",
+    },
+    founder: [
+      { "@type": "Person", name: t("Founders.amirName") },
+      { "@type": "Person", name: t("Founders.vovaName") },
+    ],
+  };
+
   return (
     <div id="top">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <ElevatorBackdrop />
       <Header />
 
@@ -75,6 +177,33 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
                 <h3 className="font-semibold">{t(`About.cards.${c}t`)}</h3>
                 <p className="mt-2 text-sm leading-relaxed opacity-75">
                   {t(`About.cards.${c}d`)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ---- Projects ---- */}
+        <section id="projects" className="scroll-mt-24 py-16 md:py-24">
+          <div className={`${card} max-w-3xl`}>
+            <h2 className="text-3xl font-bold">{t("Projects.title")}</h2>
+            <p className="mt-4 leading-relaxed opacity-85">
+              {t("Projects.intro")}
+            </p>
+          </div>
+          <div className="mt-6 grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {(
+              [
+                ["p1", 9],
+                ["p2", 18],
+                ["p3", 6],
+              ] as const
+            ).map(([p, floors]) => (
+              <div key={p} className={card}>
+                <ProjectThumb floors={Math.min(floors, 9)} />
+                <h3 className="mt-4 font-semibold">{t(`Projects.${p}n`)}</h3>
+                <p className="mt-2 text-sm leading-relaxed opacity-75">
+                  {t(`Projects.${p}d`)}
                 </p>
               </div>
             ))}
@@ -179,6 +308,9 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
                   <dd className="mt-0.5">{t("Contacts.address")}</dd>
                 </div>
               </dl>
+              <div className="mt-6">
+                <WhatsAppButton />
+              </div>
             </div>
             <div className={card}>
               <ContactForm />
@@ -200,6 +332,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
             © {year} SABMER. {t("Footer.rights")}
           </p>
           <div className="flex items-center gap-2">
+            <WhatsAppButton variant="icon" />
             <LanguageSwitcher />
             <ThemeToggle />
           </div>
