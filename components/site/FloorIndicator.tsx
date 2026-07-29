@@ -53,7 +53,10 @@ export default function FloorIndicator() {
 
   // initial section (e.g. when landing on an #anchor mid-page)
   useEffect(() => {
-    setSection(sectionAt(window.scrollY));
+    const id = requestAnimationFrame(() =>
+      setSection(sectionAt(window.scrollY))
+    );
+    return () => cancelAnimationFrame(id);
   }, []);
 
   useMotionValueEvent(scrollYProgress, "change", (v) => {
