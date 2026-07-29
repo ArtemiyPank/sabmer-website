@@ -7,6 +7,26 @@ import { useTranslations } from "next-intl";
 const TOP_FLOOR = 4;
 const FLOORS = [4, 3, 2, 1] as const;
 
+// section anchors in page order -> Header translation keys
+const SECTIONS = [
+  ["top", "home"],
+  ["about", "about"],
+  ["projects", "projects"],
+  ["founders", "founders"],
+  ["careers", "careers"],
+  ["contacts", "contacts"],
+] as const;
+
+function currentSection(): (typeof SECTIONS)[number][1] {
+  const pos = window.scrollY + window.innerHeight * 0.35;
+  let key: (typeof SECTIONS)[number][1] = "home";
+  for (const [id, k] of SECTIONS) {
+    const el = document.getElementById(id);
+    if (el && el.offsetTop <= pos) key = k;
+  }
+  return key;
+}
+
 /**
  * Elevator car position indicator in the header, driven by scroll progress
  * and matching the landing levels on the schematic. Clicking it opens a
@@ -18,8 +38,15 @@ export default function FloorIndicator() {
   const { scrollYProgress } = useScroll();
   const [floor, setFloor] = useState(TOP_FLOOR);
   const [dir, setDir] = useState<"up" | "down" | null>(null);
+  const [section, setSection] =
+    useState<(typeof SECTIONS)[number][1]>("home");
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  // initial section (e.g. when landing on an #anchor mid-page)
+  useEffect(() => {
+    setSection(currentSection());
+  }, []);
 
   useMotionValueEvent(scrollYProgress, "change", (v) => {
     const next = Math.min(
@@ -30,6 +57,7 @@ export default function FloorIndicator() {
       if (next !== prev) setDir(next < prev ? "down" : "up");
       return next;
     });
+    setSection(currentSection());
   });
 
   // close the panel on outside click / Escape
@@ -72,6 +100,9 @@ export default function FloorIndicator() {
           {dir === "down" ? "▼" : dir === "up" ? "▲" : "•"}
         </span>
         {floor}
+        <span className="hidden max-w-32 truncate text-xs opacity-70 sm:inline">
+          · {t(section)}
+        </span>
       </button>
 
       {open && (

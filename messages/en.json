@@ -12,7 +12,8 @@
     "langSwitch": "Change language",
     "projects": "Projects",
     "floorNav": "Car position: open floor panel",
-    "floorGoTo": "Go to floor {floor}"
+    "floorGoTo": "Go to floor {floor}",
+    "home": "Home"
   },
   "Hero": {
     "tagline": "Professional elevator installation subcontracting",

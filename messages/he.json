@@ -12,7 +12,8 @@
     "langSwitch": "החלפת שפה",
     "projects": "פרויקטים",
     "floorNav": "מיקום התא: פתיחת לוח קומות",
-    "floorGoTo": "מעבר לקומה {floor}"
+    "floorGoTo": "מעבר לקומה {floor}",
+    "home": "ראשי"
   },
   "Hero": {
     "tagline": "קבלנות משנה מקצועית להתקנת מעליות",
