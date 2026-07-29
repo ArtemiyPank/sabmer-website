@@ -127,9 +127,10 @@ export default function FloorIndicator() {
       {open && (
         <div
           role="menu"
-          className="absolute end-0 top-full z-50 mt-2 flex flex-col gap-1.5 rounded-xl border p-2 backdrop-blur-md"
+          className="absolute end-0 top-full z-50 mt-2 flex flex-col gap-1.5 rounded-xl border p-2 shadow-lg"
           style={{
-            backgroundColor: "var(--card)",
+            // solid paper background so labels stay readable over the drawing
+            backgroundColor: "var(--bp-paper)",
             borderColor: "var(--card-border)",
           }}
         >
@@ -144,7 +145,7 @@ export default function FloorIndicator() {
               className="group flex w-full items-center gap-3 rounded-lg px-1.5 py-1 text-start transition-opacity hover:opacity-90"
             >
               <span
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border font-mono text-sm transition-transform group-hover:scale-105 group-active:scale-95"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border font-mono text-sm transition-transform group-hover:scale-105 group-active:scale-95"
                 style={{
                   borderColor:
                     f === floor ? "var(--bp-accent)" : "var(--card-border)",
