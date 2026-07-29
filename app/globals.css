@@ -50,10 +50,11 @@
 @media (max-width: 767px) {
   :root {
     --card: rgba(255, 255, 255, 0.38);
-    --blur-md: 3px;
+    --blur-md: 4px;
   }
+  /* dark needs more body behind light text, or the drawing bleeds through */
   :root[data-theme="dark"] {
-    --card: rgba(8, 20, 46, 0.32);
+    --card: rgba(8, 20, 46, 0.55);
   }
 }
 
