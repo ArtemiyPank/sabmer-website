@@ -11,7 +11,6 @@ const FLOORS = [4, 3, 2, 1] as const;
 const SECTIONS = [
   ["top", "home"],
   ["about", "about"],
-  ["projects", "projects"],
   ["founders", "founders"],
   ["careers", "careers"],
   ["contacts", "contacts"],

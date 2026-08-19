@@ -10,7 +10,6 @@
     "contacts": "Contacts",
     "themeToggle": "Toggle theme",
     "langSwitch": "Change language",
-    "projects": "Projects",
     "floorNav": "Car position: open floor panel",
     "floorGoTo": "Go to floor {floor}",
     "home": "Home"
@@ -23,31 +22,7 @@
   },
   "About": {
     "title": "About the company",
-    "text": "SABMER is an elevator installation subcontractor. We work alongside manufacturers and general contractors: providing certified crews, keeping schedules and taking responsibility for installation quality at every stage.",
-    "cards": {
-      "c1t": "Traction & MRL installation",
-      "c1d": "Complete installation of machine-room and machine-room-less elevators.",
-      "c2t": "Modernization",
-      "c2d": "Equipment replacement and upgrades of existing elevators.",
-      "c3t": "Commissioning support",
-      "c3d": "Adjustment, testing and support through final acceptance.",
-      "c4t": "Major OEM equipment",
-      "c4d": "Experience with equipment from leading manufacturers.",
-      "c5t": "Certified crews",
-      "c5d": "Installers with valid certifications and licenses.",
-      "c6t": "Reliable timelines",
-      "c6d": "Precise project planning and regular reporting."
-    }
-  },
-  "Projects": {
-    "title": "Projects",
-    "intro": "Typical projects our crews deliver:",
-    "p1n": "Residential building · 9 floors",
-    "p1d": "Two 1000 kg MRL elevators · turnkey installation and handover",
-    "p2n": "Business center · 18 floors",
-    "p2d": "Four traction elevators, 1.6 m/s · installation and adjustment",
-    "p3n": "Modernization · 6 stops",
-    "p3d": "Machine, controller and door replacement"
+    "text": "SABMER is an elevator installation subcontractor. We work alongside manufacturers and general contractors: providing certified crews, keeping schedules and taking responsibility for installation quality at every stage."
   },
   "Founders": {
     "title": "Founders",

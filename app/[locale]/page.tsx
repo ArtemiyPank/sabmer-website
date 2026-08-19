@@ -8,88 +8,12 @@ import LanguageSwitcher from "@/components/site/LanguageSwitcher";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import ContactForm from "@/components/site/ContactForm";
 import WhatsAppButton from "@/components/site/WhatsAppButton";
+import HeroFade from "@/components/site/HeroFade";
 import { SITE_URL } from "@/lib/site";
 
 const card =
   "rounded-2xl border p-6 backdrop-blur-md md:p-8 " +
   "[background-color:var(--card)] [border-color:var(--card-border)]";
-
-/** Mini blueprint thumbnail: building cross-section with a hoistway */
-function ProjectThumb({ floors }: { floors: number }) {
-  const h = 96;
-  const floorH = h / floors;
-  return (
-    <svg
-      viewBox="0 0 160 120"
-      className="h-28 w-full"
-      aria-hidden="true"
-      style={{ direction: "ltr" }}
-    >
-      <rect
-        x="18"
-        y="12"
-        width="124"
-        height={h}
-        fill="none"
-        stroke="var(--bp-line)"
-        strokeWidth="1.5"
-      />
-      {Array.from({ length: floors - 1 }, (_, i) => (
-        <line
-          key={i}
-          x1="18"
-          y1={12 + (i + 1) * floorH}
-          x2="142"
-          y2={12 + (i + 1) * floorH}
-          stroke="var(--bp-line-soft)"
-          strokeWidth="1"
-        />
-      ))}
-      {/* hoistway with the cab */}
-      <rect
-        x="96"
-        y="12"
-        width="26"
-        height={h}
-        fill="none"
-        stroke="var(--bp-accent)"
-        strokeWidth="1.5"
-      />
-      <rect
-        x="100"
-        y={16 + floorH}
-        width="18"
-        height={Math.min(floorH * 1.4, 30)}
-        fill="none"
-        stroke="var(--bp-accent)"
-        strokeWidth="1.5"
-      />
-      <line
-        x1="109"
-        y1="12"
-        x2="109"
-        y2={16 + floorH}
-        stroke="var(--bp-accent)"
-        strokeWidth="1"
-      />
-      {/* windows */}
-      {Array.from({ length: floors }, (_, r) =>
-        [0, 1, 2].map((c) => (
-          <rect
-            key={`${r}-${c}`}
-            x={28 + c * 20}
-            y={12 + r * floorH + floorH * 0.3}
-            width="10"
-            height={floorH * 0.4}
-            fill="none"
-            stroke="var(--bp-line-soft)"
-            strokeWidth="1"
-          />
-        ))
-      )}
-    </svg>
-  );
-}
 
 export default async function Home({ params }: PageProps<"/[locale]">) {
   const { locale } = await params;
@@ -130,7 +54,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
       <main className="mx-auto max-w-6xl px-4 md:px-6">
         {/* ---- Hero ---- */}
         <section className="flex min-h-svh items-center pt-16">
-          <div className="w-full max-w-xl max-md:rounded-2xl max-md:border max-md:p-6 max-md:backdrop-blur-md max-md:[background-color:var(--card)] max-md:[border-color:var(--card-border)]">
+          <HeroFade className="w-full max-w-xl max-md:rounded-2xl max-md:border max-md:p-6 max-md:backdrop-blur-md max-md:[background-color:var(--card)] max-md:[border-color:var(--card-border)]">
             <p
               className="text-sm font-medium uppercase tracking-[0.3em]"
               style={{ color: "var(--bp-accent)" }}
@@ -162,8 +86,11 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
                 {t("Hero.ctaCareers")}
               </a>
             </div>
-          </div>
+          </HeroFade>
         </section>
+
+        {/* mobile viewing window: the schematic plays on a clean stage */}
+        <div aria-hidden="true" className="h-[45svh] md:hidden" />
 
         {/* ---- About ---- */}
         <section id="about" className="scroll-mt-24 py-16 md:py-24">
@@ -171,44 +98,9 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
             <h2 className="text-3xl font-bold">{t("About.title")}</h2>
             <p className="mt-4 leading-relaxed opacity-85">{t("About.text")}</p>
           </div>
-          <div className="mt-6 grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {(["c1", "c2", "c3", "c4", "c5", "c6"] as const).map((c) => (
-              <div key={c} className={card}>
-                <h3 className="font-semibold">{t(`About.cards.${c}t`)}</h3>
-                <p className="mt-2 text-sm leading-relaxed opacity-75">
-                  {t(`About.cards.${c}d`)}
-                </p>
-              </div>
-            ))}
-          </div>
         </section>
 
-        {/* ---- Projects ---- */}
-        <section id="projects" className="scroll-mt-24 py-16 md:py-24">
-          <div className={`${card} max-w-3xl`}>
-            <h2 className="text-3xl font-bold">{t("Projects.title")}</h2>
-            <p className="mt-4 leading-relaxed opacity-85">
-              {t("Projects.intro")}
-            </p>
-          </div>
-          <div className="mt-6 grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {(
-              [
-                ["p1", 9],
-                ["p2", 18],
-                ["p3", 6],
-              ] as const
-            ).map(([p, floors]) => (
-              <div key={p} className={card}>
-                <ProjectThumb floors={Math.min(floors, 9)} />
-                <h3 className="mt-4 font-semibold">{t(`Projects.${p}n`)}</h3>
-                <p className="mt-2 text-sm leading-relaxed opacity-75">
-                  {t(`Projects.${p}d`)}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
+        <div aria-hidden="true" className="h-[45svh] md:hidden" />
 
         {/* ---- Founders ---- */}
         <section id="founders" className="scroll-mt-24 py-16 md:py-24">
@@ -241,6 +133,8 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
             ))}
           </div>
         </section>
+
+        <div aria-hidden="true" className="h-[45svh] md:hidden" />
 
         {/* ---- Careers ---- */}
         <section id="careers" className="scroll-mt-24 py-16 md:py-24">
@@ -280,6 +174,8 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
             </a>
           </div>
         </section>
+
+        <div aria-hidden="true" className="h-[45svh] md:hidden" />
 
         {/* ---- Contacts ---- */}
         <section id="contacts" className="scroll-mt-24 py-16 md:py-24">
