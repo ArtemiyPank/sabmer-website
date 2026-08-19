@@ -8,7 +8,7 @@ import LanguageSwitcher from "@/components/site/LanguageSwitcher";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import ContactForm from "@/components/site/ContactForm";
 import WhatsAppButton from "@/components/site/WhatsAppButton";
-import HeroFade from "@/components/site/HeroFade";
+import FadeCard from "@/components/site/FadeCard";
 import { SITE_URL } from "@/lib/site";
 
 const card =
@@ -54,7 +54,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
       <main className="mx-auto max-w-6xl px-4 md:px-6">
         {/* ---- Hero ---- */}
         <section className="flex min-h-svh items-center pt-16">
-          <HeroFade className="w-full max-w-xl max-md:rounded-2xl max-md:border max-md:p-6 max-md:backdrop-blur-md max-md:[background-color:var(--card)] max-md:[border-color:var(--card-border)]">
+          <FadeCard className="w-full max-w-xl max-md:rounded-2xl max-md:border max-md:p-6 max-md:backdrop-blur-md max-md:[background-color:var(--card)] max-md:[border-color:var(--card-border)]">
             <p
               className="text-sm font-medium uppercase tracking-[0.3em]"
               style={{ color: "var(--bp-accent)" }}
@@ -86,30 +86,32 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
                 {t("Hero.ctaCareers")}
               </a>
             </div>
-          </HeroFade>
+          </FadeCard>
         </section>
 
         {/* mobile viewing window: the schematic plays on a clean stage */}
-        <div aria-hidden="true" className="h-[45svh] md:hidden" />
+        <div aria-hidden="true" className="h-[30svh] md:hidden" />
 
         {/* ---- About ---- */}
         <section id="about" className="scroll-mt-24 py-16 md:py-24">
-          <div className={`${card} max-w-3xl`}>
+          <FadeCard className={`${card} max-w-3xl`}>
             <h2 className="text-3xl font-bold">{t("About.title")}</h2>
             <p className="mt-4 leading-relaxed opacity-85">{t("About.text")}</p>
-          </div>
+          </FadeCard>
         </section>
 
-        <div aria-hidden="true" className="h-[45svh] md:hidden" />
+        <div aria-hidden="true" className="h-[30svh] md:hidden" />
 
         {/* ---- Founders ---- */}
         <section id="founders" className="scroll-mt-24 py-16 md:py-24">
-          <h2 className={`${card} inline-block text-3xl font-bold`}>
-            {t("Founders.title")}
-          </h2>
+          <FadeCard className="inline-block">
+            <h2 className={`${card} text-3xl font-bold`}>
+              {t("Founders.title")}
+            </h2>
+          </FadeCard>
           <div className="mt-6 grid max-w-4xl gap-4 md:grid-cols-2">
             {(["amir", "vova"] as const).map((f) => (
-              <div key={f} className={card}>
+              <FadeCard key={f} className={card}>
                 <div
                   className="flex h-20 w-20 items-center justify-center rounded-full border text-2xl font-bold"
                   style={{
@@ -129,16 +131,16 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
                 <p className="mt-3 text-sm leading-relaxed opacity-80">
                   {t(`Founders.${f}Bio`)}
                 </p>
-              </div>
+              </FadeCard>
             ))}
           </div>
         </section>
 
-        <div aria-hidden="true" className="h-[45svh] md:hidden" />
+        <div aria-hidden="true" className="h-[30svh] md:hidden" />
 
         {/* ---- Careers ---- */}
         <section id="careers" className="scroll-mt-24 py-16 md:py-24">
-          <div className={`${card} max-w-3xl`}>
+          <FadeCard className={`${card} max-w-3xl`}>
             <h2 className="text-3xl font-bold">{t("Careers.title")}</h2>
             <p className="mt-4 leading-relaxed opacity-85">
               {t("Careers.intro")}
@@ -172,15 +174,15 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
             >
               {t("Careers.apply")}
             </a>
-          </div>
+          </FadeCard>
         </section>
 
-        <div aria-hidden="true" className="h-[45svh] md:hidden" />
+        <div aria-hidden="true" className="h-[30svh] md:hidden" />
 
         {/* ---- Contacts ---- */}
         <section id="contacts" className="scroll-mt-24 py-16 md:py-24">
           <div className="grid max-w-4xl gap-4 md:grid-cols-[1fr_1.4fr]">
-            <div className={card}>
+            <FadeCard className={card}>
               <h2 className="text-3xl font-bold">{t("Contacts.title")}</h2>
               <dl className="mt-6 space-y-4 text-sm">
                 <div>
@@ -207,10 +209,10 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
               <div className="mt-6">
                 <WhatsAppButton />
               </div>
-            </div>
-            <div className={card}>
+            </FadeCard>
+            <FadeCard className={card}>
               <ContactForm />
-            </div>
+            </FadeCard>
           </div>
         </section>
       </main>
