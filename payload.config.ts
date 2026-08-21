@@ -10,7 +10,11 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 export default buildConfig({
   secret: process.env.PAYLOAD_SECRET || "",
   db: postgresAdapter({
-    pool: { connectionString: process.env.DATABASE_URI || "" },
+    // DATABASE_URI (local dev) or DATABASE_URL (injected by Vercel/Neon)
+    pool: {
+      connectionString:
+        process.env.DATABASE_URI || process.env.DATABASE_URL || "",
+    },
   }),
   editor: lexicalEditor(),
   sharp,
