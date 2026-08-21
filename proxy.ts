@@ -7,5 +7,5 @@ export default createMiddleware(routing);
 
 export const config = {
   // Skip API routes, Next internals and files with an extension
-  matcher: ["/((?!api|_next|.*\\..*).*)"],
+  matcher: ["/((?!api|admin|_next|.*\\..*).*)"],
 };
