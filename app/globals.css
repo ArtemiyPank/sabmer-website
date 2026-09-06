@@ -292,6 +292,11 @@ html[data-ui="inscribed"] .sheet[data-keep] {
   border-radius: 0;
   backdrop-filter: none;
 }
+/* the copy is read from the drawing, so each section gets a screenful of
+   scroll to itself: that is the dwell time of one note */
+html[data-ui="inscribed"] main section {
+  min-height: 105svh;
+}
 @media (min-width: 768px) {
   html[data-ui="inscribed"] main section > * {
     max-width: 30rem;

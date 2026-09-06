@@ -23,223 +23,233 @@ import {
 } from "../dims";
 
 /**
- * The page copy written into the machine itself: every section is a drafting
- * note bolted to one component of the elevator — the sling, a cab panel, a
- * car door, the counterweight, the platform — and it rides that component as
- * the car explodes. Each note has its own stretch of the scroll, so the text
- * arrives with the part it belongs to and leaves before the next one lands.
+ * The page copy written into the machine: every section belongs to one
+ * component of the elevator — the sling, a cab panel, a car door, the
+ * counterweight, the car top — and a leader line runs from the text to that
+ * component and keeps tracking it while the car comes apart.
  *
- * The notes are real DOM (drei `<Html>`) inside the aria-hidden backdrop, so
- * they are a visual presentation of the flow sections, which stay in the page
- * for assistive technology and for search engines.
+ * The note itself sits in a fixed, comfortable spot beside the drawing: text
+ * that follows a part around the screen ends up small and clipped at the
+ * edges. Only the leader and its anchor dot are projected from 3D every
+ * frame. Sections cross-fade in the order the parts separate.
+ *
+ * Everything sits in one canvas-sized drei <Html> overlay (its own DOM root,
+ * so plain HTML and SVG render normally) inside the aria-hidden backdrop: the
+ * flow sections stay in the page for assistive technology and crawlers.
  */
 
 type Anchor = {
   note: SiteNote;
-  /** car-local (or world, for the counterweight) anchor point */
+  /** car-local (or world, for the counterweight) point the leader points at */
   at: V3;
-  /** which exploded assembly carries it; "cwt" rides the counterweight */
+  /** which exploded assembly carries that point; "cwt" rides the counterweight */
   group: "cwt" | Exclude<keyof Explosion, "shoeOut" | "safetyOut">;
-  side: "left" | "right";
   /** progress window: fade in over [0]..[1], fade out over [2]..[3] */
   win: [number, number, number, number];
 };
 
-const LINE = "var(--bp-line)";
-const ACCENT = "var(--bp-accent)";
-const HTML_STYLE: React.CSSProperties = { pointerEvents: "none", left: 0, top: 0 };
-
-/** how far the note sits from its anchor, and how wide it is */
-const LEAD = 150; // long enough to clear the drawing and land the note in the margin
-const LEAD_MOBILE = 30;
-
 function noteAnchors(n: SiteNotes): Anchor[] {
   const list: Anchor[] = [
-    { note: n.hero, at: [-0.72, CROSSHEAD_Y + 0.1, 0], group: "crosshead", side: "left", win: [0, 0.04, 0.12, 0.18] },
-    { note: n.about, at: [-CAB_X, 1.5, -0.1], group: "wallL", side: "left", win: [0.12, 0.18, 0.34, 0.4] },
+    { note: n.hero, at: [-0.72, CROSSHEAD_Y + 0.1, 0], group: "crosshead", win: [0, 0.02, 0.14, 0.17] },
+    { note: n.about, at: [-CAB_X, 1.5, -0.1], group: "wallL", win: [0.14, 0.17, 0.32, 0.35] },
   ];
   if (n.founders[0]) {
-    list.push({ note: n.founders[0], at: [-0.21, 1.75, DOOR_Z], group: "doorL", side: "left", win: [0.34, 0.4, 0.52, 0.58] });
+    list.push({ note: n.founders[0], at: [-0.21, 1.75, DOOR_Z], group: "doorL", win: [0.32, 0.35, 0.5, 0.53] });
   }
   if (n.founders[1]) {
-    list.push({ note: n.founders[1], at: [0.21, 1.15, DOOR_Z], group: "doorR", side: "right", win: [0.52, 0.58, 0.68, 0.74] });
+    list.push({ note: n.founders[1], at: [0.21, 1.15, DOOR_Z], group: "doorR", win: [0.5, 0.53, 0.66, 0.69] });
   }
   list.push(
-    { note: n.careers, at: [CWT_X, CWT_H * 0.6, CWT_Z], group: "cwt", side: "right", win: [0.68, 0.74, 0.84, 0.9] },
-    // the last note rides the car top, which stays in frame while the camera pulls back
-    { note: n.contacts, at: [-0.3, CAB_H + 0.3, 0.3], group: "ceiling", side: "left", win: [0.84, 0.9, 1.3, 1.4] }
+    { note: n.careers, at: [CWT_X, CWT_H * 0.6, CWT_Z], group: "cwt", win: [0.66, 0.69, 0.83, 0.86] },
+    // the last note points at the car top, which stays in frame as the camera pulls back
+    { note: n.contacts, at: [-0.3, CAB_H + 0.3, 0.3], group: "ceiling", win: [0.83, 0.86, 1.3, 1.4] }
   );
   return list;
 }
 
-/** world position of an anchor at progress `p` */
-function poseAnchor(o: THREE.Object3D, a: Anchor, p: number, e: Explosion) {
+/** world position of the anchored point at progress `p` */
+function anchorAt(v: THREE.Vector3, a: Anchor, p: number, e: Explosion) {
   if (a.group === "cwt") {
-    o.position.set(a.at[0], cwtY(p) + a.at[1], a.at[2]);
+    v.set(a.at[0], cwtY(p) + a.at[1], a.at[2]);
     return;
   }
   const off = e[a.group];
-  o.position.set(a.at[0] + off[0], carY(p) + a.at[1] + off[1], a.at[2] + off[2]);
+  v.set(a.at[0] + off[0], carY(p) + a.at[1] + off[1], a.at[2] + off[2]);
 }
 
-function initialAt(a: Anchor, p: number, explode: number): V3 {
-  const o = new THREE.Object3D();
-  poseAnchor(o, a, p, explosion(p, explode));
-  return [o.position.x, o.position.y, o.position.z];
-}
-
-/** 0..1 presence of a note: fades in with its part and out before the next */
+/** 0..1 presence of a note: fades in with its part and out as the next arrives */
 function presence(p: number, [a, b, c, d]: Anchor["win"]) {
   return stagger(p, a, b) * (1 - stagger(p, c, d));
 }
 
-/** one note: anchor dot, leader to the part, and the text on a paper wash */
-function Note({
-  note,
-  side,
-  mobile,
-  innerRef,
-  opacity,
-}: {
-  note: SiteNote;
-  side: "left" | "right";
-  mobile: boolean;
-  innerRef: (el: HTMLDivElement | null) => void;
-  opacity: number;
-}) {
-  const lead = mobile ? LEAD_MOBILE : LEAD;
-  const width = mobile ? "min(84vw, 320px)" : 290;
-  const right = side === "right";
-  return (
-    <div ref={innerRef} style={{ position: "relative", width: 0, height: 0, opacity, willChange: "opacity" }}>
-      <span
-        style={{
-          position: "absolute",
-          left: -3.5,
-          top: -3.5,
-          width: 7,
-          height: 7,
-          borderRadius: "50%",
-          background: ACCENT,
-        }}
-      />
-      <span
-        style={
-          mobile
-            ? { position: "absolute", left: -0.5, top: 5, width: 1, height: lead, background: "var(--bp-line-soft)" }
-            : { position: "absolute", left: right ? 5 : -lead - 5, top: -0.5, width: lead, height: 1, background: "var(--bp-line-soft)" }
-        }
-      />
-      <div
-        style={{
-          position: "absolute",
-          top: mobile ? lead + 8 : -18,
-          left: mobile ? 0 : right ? lead + 8 : undefined,
-          right: mobile ? undefined : right ? undefined : lead + 8,
-          transform: mobile ? `translateX(calc(-50% ${right ? "-" : "+"} 55px))` : undefined,
-          width,
-          padding: mobile ? "10px 12px" : "12px 16px",
-          background: "color-mix(in srgb, var(--bp-paper) 76%, transparent)",
-          [right ? "borderLeft" : "borderRight"]: `2px solid ${ACCENT}`,
-          boxShadow: "0 0 0 1px var(--bp-line-soft) inset",
-        }}
-      >
-        <div
-          style={{
-            font: `600 ${mobile ? 9 : 10}px/1 ui-monospace, SFMono-Regular, monospace`,
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
-            color: ACCENT,
-          }}
-        >
-          {note.n} · {note.caption ?? "SABMER"}
-        </div>
-        <div
-          style={{
-            marginTop: 6,
-            font: `700 ${mobile ? 14 : 17}px/1.25 var(--font-rubik), sans-serif`,
-            color: LINE,
-          }}
-        >
-          {note.title}
-        </div>
-        {note.body && (
-          <p style={{ marginTop: 6, font: `${mobile ? 12 : 13}px/1.5 var(--font-rubik), sans-serif`, opacity: 0.85 }}>
-            {note.body}
-          </p>
-        )}
-        {note.items && (
-          <ul style={{ marginTop: 6, listStyle: "none", padding: 0 }}>
-            {note.items.map((it) => (
-              <li key={it} style={{ font: `${mobile ? 12 : 13}px/1.6 var(--font-rubik), sans-serif`, opacity: 0.85 }}>
-                <span style={{ color: ACCENT }}>·</span> {it}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  );
-}
+const ACCENT = "var(--bp-accent)";
+const LINE = "var(--bp-line)";
 
 export default function Inscribed({ notes }: { notes: SiteNotes }) {
-  const { progress, explode, mobile } = useScene();
+  const { mobile } = useScene();
   const invalidate = useThree((s) => s.invalidate);
   const anchors = useMemo(() => noteAnchors(notes), [notes]);
-  const divs = useRef<Array<HTMLDivElement | null>>([]);
-  const groups = useRef<Array<THREE.Group | null>>([]);
-  const p0 = progress.get();
 
-  // <Html> mounts its portals over the next few commits and the canvas renders
-  // on demand, so ask for the frames that place and fade the notes; without
-  // them a note that mounted late would stay at its first-render opacity
+  const cards = useRef<Array<HTMLDivElement | null>>([]);
+  const leaders = useRef<Array<SVGGElement | null>>([]);
+  const lines = useRef<Array<SVGLineElement | null>>([]);
+  const dots = useRef<Array<SVGCircleElement | null>>([]);
+  const v = useRef(new THREE.Vector3()).current;
+  const box = useRef({ w: 0, h: 0, edgeX: 0, edgeY: 0 }).current;
+
+  // the canvas renders on demand, so ask for a frame once the portal is up
   useEffect(() => {
-    let n = 0;
-    let id = 0;
-    const tick = () => {
-      invalidate();
-      if (++n < 5) id = requestAnimationFrame(tick);
-    };
-    tick();
+    invalidate();
+    const id = requestAnimationFrame(invalidate);
     return () => cancelAnimationFrame(id);
   }, [invalidate]);
 
-  useProgressFrame((p, ex) => {
+  useProgressFrame((p, ex, state) => {
+    const { width, height } = state.size;
+    if (box.w !== width || box.h !== height) {
+      box.w = width;
+      box.h = height;
+      // where the leader leaves the card — kept in step with the CSS below,
+      // which parks the card in the margin beside the drawing
+      const pad = (mobile ? 0.04 : 0.035) * width;
+      const cardW = mobile ? width - 2 * pad : Math.min(0.3 * width, 400);
+      box.edgeX = pad + cardW;
+      box.edgeY = mobile ? height * 0.62 : height * 0.5;
+    }
     const e = explosion(p, ex);
     for (let i = 0; i < anchors.length; i++) {
-      const g = groups.current[i];
-      if (g) poseAnchor(g, anchors[i], p, e);
-      const d = divs.current[i];
-      if (!d) continue;
       const o = presence(p, anchors[i].win);
-      d.style.opacity = String(o);
-      d.style.visibility = o < 0.01 ? "hidden" : "visible";
+      const card = cards.current[i];
+      if (card) {
+        card.style.opacity = String(o);
+        card.style.visibility = o < 0.01 ? "hidden" : "visible";
+      }
+      const leader = leaders.current[i];
+      if (!leader) continue;
+      leader.style.opacity = String(o);
+      if (o < 0.01) {
+        leader.style.visibility = "hidden";
+        continue;
+      }
+      leader.style.visibility = "visible";
+      anchorAt(v, anchors[i], p, e);
+      v.project(state.camera);
+      const x = (v.x * 0.5 + 0.5) * width;
+      const y = (-v.y * 0.5 + 0.5) * height;
+      const line = lines.current[i];
+      const dot = dots.current[i];
+      if (line) {
+        line.setAttribute("x1", String(box.edgeX));
+        line.setAttribute("y1", String(box.edgeY));
+        line.setAttribute("x2", String(x));
+        line.setAttribute("y2", String(y));
+      }
+      if (dot) {
+        dot.setAttribute("cx", String(x));
+        dot.setAttribute("cy", String(y));
+      }
     }
   });
 
+  const pad = mobile ? "4vw" : "3.5vw";
+  const cardStyle: React.CSSProperties = {
+    position: "absolute",
+    insetInlineStart: pad,
+    width: mobile ? `calc(100% - 2 * ${pad})` : "min(30vw, 400px)",
+    top: mobile ? "62%" : "50%",
+    transform: "translateY(-50%)",
+    padding: mobile ? "16px 18px" : "20px 24px",
+    background: "color-mix(in srgb, var(--bp-paper) 82%, transparent)",
+    borderInlineStart: `3px solid ${ACCENT}`,
+    boxShadow: "0 0 0 1px var(--bp-line-soft) inset",
+    opacity: 0,
+    visibility: "hidden",
+    willChange: "opacity",
+    pointerEvents: "none",
+  };
+
   return (
-    <group>
-      {anchors.map((a, i) => (
-        <group
-          key={a.note.n + a.note.title}
-          position={initialAt(a, p0, explode)}
-          ref={(el) => {
-            groups.current[i] = el;
-          }}
-        >
-          <Html center zIndexRange={[9, 0]} pointerEvents="none" style={HTML_STYLE}>
-            <Note
-              note={a.note}
-              side={a.side}
-              mobile={mobile}
-              opacity={presence(p0, a.win)}
-              innerRef={(el) => {
-                divs.current[i] = el;
+    <Html
+      fullscreen
+      // pin the overlay to the canvas rect instead of a point in the scene
+      calculatePosition={(_el, _camera, size) => [size.width / 2, size.height / 2]}
+      zIndexRange={[9, 0]}
+      pointerEvents="none"
+      style={{ pointerEvents: "none" }}
+    >
+      <div aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+        {/* leaders, drawn under the cards and re-aimed at their part every frame */}
+        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", overflow: "visible" }}>
+          {anchors.map((a, i) => (
+            <g
+              key={a.note.n}
+              style={{ opacity: 0, visibility: "hidden" }}
+              ref={(el) => {
+                leaders.current[i] = el;
               }}
-            />
-          </Html>
-        </group>
-      ))}
-    </group>
+            >
+              <line
+                stroke="var(--bp-line-soft)"
+                strokeWidth={1}
+                ref={(el) => {
+                  lines.current[i] = el;
+                }}
+              />
+              <circle
+                r={4}
+                fill={ACCENT}
+                ref={(el) => {
+                  dots.current[i] = el;
+                }}
+              />
+            </g>
+          ))}
+        </svg>
+
+        {anchors.map((a, i) => (
+          <div
+            key={a.note.n}
+            style={cardStyle}
+            ref={(el) => {
+              cards.current[i] = el;
+            }}
+          >
+            <div
+              style={{
+                font: "600 11px/1 ui-monospace, SFMono-Regular, monospace",
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: ACCENT,
+              }}
+            >
+              {a.note.n} · {a.note.caption ?? "SABMER"}
+            </div>
+            <div
+              style={{
+                marginTop: 10,
+                font: `700 ${mobile ? 20 : 25}px/1.2 var(--font-rubik), sans-serif`,
+                color: LINE,
+              }}
+            >
+              {a.note.title}
+            </div>
+            {a.note.body && (
+              <p style={{ marginTop: 10, font: `${mobile ? 14 : 15}px/1.55 var(--font-rubik), sans-serif`, opacity: 0.88 }}>
+                {a.note.body}
+              </p>
+            )}
+            {a.note.items && (
+              <ul style={{ marginTop: 10, listStyle: "none", padding: 0 }}>
+                {a.note.items.map((it) => (
+                  <li key={it} style={{ font: `${mobile ? 14 : 15}px/1.7 var(--font-rubik), sans-serif`, opacity: 0.88 }}>
+                    <span style={{ color: ACCENT }}>·</span> {it}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))}
+      </div>
+    </Html>
   );
 }
