@@ -15,10 +15,10 @@ import type { SiteNote, SiteNotes } from "@/lib/site-notes";
  * always in place; the camera tour (see ../tour.ts) simply walks up to one
  * after another as the page scrolls.
  *
- * A plate marked `occluded` is depth-tested like any other surface — the sign
- * in the cab really sits on the back wall, so the closing doors slide over it.
- * The rest draw on top: the sling and the guide rails stand between the lens
- * and those panels and would shred the lettering.
+ * The plates behave like the surfaces they are printed on: depth-tested, so
+ * the closing doors cover the sign in the cab and the passing car covers the
+ * one on the landing, and single-sided, so none of them shows through a wall
+ * or reads backwards from behind.
  */
 
 /** ~1000 px per metre keeps the lettering crisp at the distances of the tour */
@@ -244,15 +244,14 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
               groups.current[i] = el;
             }}
           >
-            <mesh renderOrder={s.occluded ? 2 : 10}>
+            <mesh renderOrder={2}>
               <planeGeometry args={[s.size[0], s.size[1]]} />
               <meshBasicMaterial
                 map={tex}
                 transparent
                 depthWrite={false}
-                depthTest={s.occluded ?? false}
                 toneMapped={false}
-                side={THREE.DoubleSide}
+                side={THREE.FrontSide}
               />
             </mesh>
           </group>

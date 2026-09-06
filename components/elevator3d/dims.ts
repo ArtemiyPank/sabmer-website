@@ -119,9 +119,10 @@ export const GOV_ROPE_X: [number, number] = [GOV_X - GOV_R, GOV_X + GOV_R]; // -
 export const GOV_CLAMP_Y = CROSSHEAD_Y; // rope clamp on the car crosshead (car-local)
 
 // traveling cable: from the car underside, hanging loop, up the left side to
-// the junction box on the left wall plane
-export const TCABLE_CAR: V3 = [-0.45, PLANK_Y - PLANK_H / 2, 0.45]; // car-local anchor
-export const TCABLE_WALL: V3 = [-SHAFT_X + 0.05, 12.0, 0.45]; // junction box
+// the junction box on the left wall plane. It hangs toward the front of the
+// shaft, clear of the governor rope and of the sight lines onto the car flank.
+export const TCABLE_CAR: V3 = [-0.45, PLANK_Y - PLANK_H / 2, 0.62]; // car-local anchor
+export const TCABLE_WALL: V3 = [-SHAFT_X + 0.05, 12.0, 0.62]; // junction box
 export const TCABLE_R = 0.018;
 
 // ---- counterweight (world x/z; y = frame bottom moves) ----------------------------

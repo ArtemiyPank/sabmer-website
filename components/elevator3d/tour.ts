@@ -50,27 +50,21 @@ export type Stop = {
   p: number;
   /** how much room around the plate the shot leaves (1 = plate fills the frame) */
   context?: number;
-  /**
-   * Depth-test the plate against the scene. On for the signs mounted on the
-   * building and inside the cab, which the doors and the passing car have to
-   * cover; off for the two on the car's own flanks, where the sling and the
-   * guide rails stand between the lens and the panel and would shred the
-   * lettering (both are edge-on from the front, so nothing shows through).
-   */
-  occluded?: boolean;
 };
 
 export const STOPS: Stop[] = [
   // 1. the cab interior, read through the open doors before they shut
-  { id: "hero", group: "wallBack", at: [0, 1.56, CAB_BACK + 0.03], face: "square", size: [1, 1.12], pad: 1.2, p: 0.03, context: 2.1, occluded: true },
-  // 2. the flank of the car as it runs down the shaft
-  { id: "about", group: "wallL", at: [-CAB_X - 0.03, 1.2, 0], face: "left", size: [1.2, 1.0], pad: 1.3, p: 0.3, context: 1.25 },
+  { id: "hero", group: "wallBack", at: [0, 1.56, CAB_BACK + 0.03], face: "square", size: [1, 1.12], pad: 1.2, p: 0.03, context: 2.1 },
+  // 2. the flank of the car as it runs down the shaft; the sign sits toward
+  //    the front of the panel, clear of the sling stile, the guide rail and
+  //    the governor rope, which all run down the middle of the car
+  { id: "about", group: "wallL", at: [-CAB_X - 0.09, 1.2, 0.51], face: "left", size: [0.46, 1.02], pad: 1.25, p: 0.36, context: 1.15 },
   // 3. the counterweight, rising past it
   { id: "careers", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.66, 1.02], pad: 1.2, p: 0.55, context: 1.9 },
   // 4. the closed landing doors one floor down
-  { id: "founders", group: "world", at: [0, LEVELS[1] + 1.05, LDOOR_PANEL_Z + 0.03], face: "front", size: [0.84, 1.62], pad: 1.2, p: 0.78, context: 1.25, occluded: true },
+  { id: "founders", group: "world", at: [0, LEVELS[1] + 1.05, LDOOR_PANEL_Z + 0.03], face: "front", size: [0.84, 1.62], pad: 1.2, p: 0.78, context: 1.25 },
   // 5. the pit, straight on: the plate rides the car buffers
-  { id: "contacts", group: "world", at: [0, -1.24, 0.2], face: "square", size: [0.8, 0.66], pad: 1.3, p: 1, context: 2.6, occluded: true },
+  { id: "contacts", group: "world", at: [0, -1.24, 0.2], face: "square", size: [0.8, 0.66], pad: 1.3, p: 1, context: 2.6 },
 ];
 
 /**
@@ -90,8 +84,10 @@ export function travelAt(p: number) {
 /** unit normal of a lettered face, tilted toward the front so the shot reads */
 const NORMALS: Record<Face, V3> = {
   front: [0.22, 0.1, 0.97],
-  left: [-0.88, 0.1, 0.47],
-  right: [0.88, 0.1, 0.47],
+  // three-quarter, not flat side on: a flat one looks past the car through the
+  // traveling cable, which then crosses the sign
+  left: [-0.78, 0.1, 0.62],
+  right: [0.78, 0.1, 0.62],
   // dead square on: the closing frame sits level with the equipment
   square: [0, 0, 1],
 };
@@ -103,8 +99,8 @@ const NORMALS: Record<Face, V3> = {
  */
 const NORMALS_PORTRAIT: Record<Face, V3> = {
   front: [0.12, 0.06, 0.99],
-  left: [-0.97, 0.07, 0.23],
-  right: [0.97, 0.07, 0.23],
+  left: [-0.86, 0.07, 0.5],
+  right: [0.86, 0.07, 0.5],
   square: [0, 0, 1],
 };
 
@@ -195,7 +191,7 @@ function poseOf(s: Stop, p: number, e: Explosion, aspect: number, fov: number, o
   const n = portrait ? NORMALS_PORTRAIT[s.face] : NORMALS[s.face];
   const context = s.context ?? CONTEXT;
   // a portrait frame is already limited by its width: keep barely any margin
-  const room = portrait ? 1 + (s.pad * context - 1) * 0.14 : s.pad * context;
+  const room = portrait ? 1 + (s.pad * context - 1) * 0.4 : s.pad * context;
   const d = frameDistance(s.size, fov, aspect) * room;
   out.pos[0] = out.tgt[0] + n[0] * d;
   out.pos[1] = out.tgt[1] + n[1] * d;
