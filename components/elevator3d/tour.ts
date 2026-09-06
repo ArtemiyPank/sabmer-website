@@ -50,11 +50,18 @@ export type Stop = {
   p: number;
   /** how much room around the plate the shot leaves (1 = plate fills the frame) */
   context?: number;
+  /**
+   * Depth-test the plate against the scene. On for the sign in the cab, which
+   * the closing doors have to slide over; off elsewhere, where the sling and
+   * the guide rails stand between the lens and the panel and would otherwise
+   * shred the lettering.
+   */
+  occluded?: boolean;
 };
 
 export const STOPS: Stop[] = [
   // 1. the cab interior, read through the open doors before they shut
-  { id: "hero", group: "wallBack", at: [0, 1.25, CAB_BACK + 0.03], face: "square", size: [1, 1.45], pad: 1.2, p: 0.03, context: 2 },
+  { id: "hero", group: "wallBack", at: [0, 1.25, CAB_BACK + 0.03], face: "square", size: [1, 1.45], pad: 1.2, p: 0.03, context: 2, occluded: true },
   // 2. the flank of the car as it runs down the shaft
   { id: "about", group: "wallL", at: [-CAB_X - 0.03, 1.2, 0], face: "left", size: [1.2, 1.0], pad: 1.3, p: 0.3, context: 1.25 },
   // 3. the counterweight, rising past it

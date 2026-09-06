@@ -15,8 +15,10 @@ import type { SiteNote, SiteNotes } from "@/lib/site-notes";
  * one to the next as the page scrolls, so a section is read by walking up to
  * the part that carries it.
  *
- * The planes ride their assembly's explosion offsets, so the lettering stays
- * on its part while the car comes apart.
+ * A plate marked `occluded` is depth-tested like any other surface — the sign
+ * in the cab really sits on the back wall, so the closing doors slide over it.
+ * The rest draw on top: the sling and the guide rails stand between the lens
+ * and those panels and would shred the lettering.
  */
 
 /** ~1000 px per metre keeps the lettering crisp at the distances of the tour */
@@ -250,14 +252,14 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
               groups.current[i] = el;
             }}
           >
-            <mesh renderOrder={10}>
+            <mesh renderOrder={s.occluded ? 2 : 10}>
               <planeGeometry args={[s.size[0], s.size[1]]} />
               <meshBasicMaterial
                 map={tex}
                 transparent
                 opacity={0}
                 depthWrite={false}
-                depthTest={false}
+                depthTest={s.occluded ?? false}
                 toneMapped={false}
                 side={THREE.DoubleSide}
                 ref={(el) => {
