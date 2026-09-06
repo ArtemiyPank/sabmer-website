@@ -9,14 +9,16 @@ export type SiteNote = {
   title: string;
   body?: string;
   items?: string[];
-  /** small line under the number (a founder's role) */
+  /** small line beside the number */
   caption?: string;
+  /** sub-entries listed under the title (the two founders share one plate) */
+  blocks?: { title: string; caption?: string; body?: string }[];
 };
 
 export type SiteNotes = {
   hero: SiteNote;
   about: SiteNote;
-  founders: SiteNote[];
+  founders: SiteNote;
   careers: SiteNote;
   contacts: SiteNote;
 };

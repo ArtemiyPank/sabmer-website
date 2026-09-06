@@ -32,12 +32,11 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
   const notes: SiteNotes = {
     hero: { n: "01", title: c.hero.tagline, body: c.hero.sub },
     about: { n: "02", title: c.about.title, body: c.about.text },
-    founders: c.founders.people.map((f, i) => ({
-      n: `03.${i + 1}`,
-      title: f.name,
-      caption: f.role,
-      body: f.bio,
-    })),
+    founders: {
+      n: "03",
+      title: c.founders.title,
+      blocks: c.founders.people.map((f) => ({ title: f.name, caption: f.role, body: f.bio })),
+    },
     careers: { n: "04", title: c.careers.title, body: c.careers.intro, items: c.careers.roles },
     contacts: {
       n: "05",

@@ -114,6 +114,32 @@ function layout(
       y = wrap(ctx, it, x + unit * 1.1, y, inner - unit * 1.1, unit * 1.95, dry);
     }
   }
+  if (note.blocks) {
+    for (const b of note.blocks) {
+      y += unit * 1.1;
+      if (!dry) {
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = c.accent;
+        ctx.fillRect(x, y - unit * 0.75, inner, Math.max(1, unit * 0.05));
+      }
+      ctx.font = F(unit * 1.55, 700);
+      if (!dry) ctx.fillStyle = c.line;
+      y = wrap(ctx, b.title, x, y + unit * 0.5, inner, unit * 1.9, dry);
+      if (b.caption) {
+        ctx.font = `600 ${Math.round(unit * 0.95)}px ui-monospace, SFMono-Regular, monospace`;
+        if (!dry) ctx.fillStyle = c.accent;
+        y = wrap(ctx, b.caption.toUpperCase(), x, y + unit * 0.1, inner, unit * 1.4, dry);
+      }
+      if (b.body) {
+        ctx.font = F(unit * 1.3);
+        if (!dry) {
+          ctx.fillStyle = c.line;
+          ctx.globalAlpha = 0.92;
+        }
+        y = wrap(ctx, b.body, x, y + unit * 0.5, inner, unit * 1.85, dry);
+      }
+    }
+  }
   if (!dry) ctx.globalAlpha = 1;
   return y - y0;
 }
@@ -155,22 +181,7 @@ function noteTexture(note: SiteNote, size: [number, number], c: Colors): THREE.C
   return tex;
 }
 
-function noteOf(notes: SiteNotes, id: Stop["id"]): SiteNote | undefined {
-  switch (id) {
-    case "hero":
-      return notes.hero;
-    case "about":
-      return notes.about;
-    case "founder0":
-      return notes.founders[0];
-    case "founder1":
-      return notes.founders[1];
-    case "careers":
-      return notes.careers;
-    case "contacts":
-      return notes.contacts;
-  }
-}
+const noteOf = (notes: SiteNotes, id: Stop["id"]): SiteNote => notes[id];
 
 export default function Engraved({ notes }: { notes: SiteNotes }) {
   // redraw the plates when the page theme changes, and once webfonts land
@@ -186,10 +197,7 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
   const plates = useMemo(() => {
     void tick;
     const c = readColors();
-    return STOPS.map((s) => {
-      const note = noteOf(notes, s.id);
-      return note ? noteTexture(note, s.size, c) : null;
-    });
+    return STOPS.map((s) => noteTexture(noteOf(notes, s.id), s.size, c));
   }, [notes, tick]);
 
   useEffect(() => () => plates.forEach((t) => t?.dispose()), [plates]);

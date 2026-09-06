@@ -2,8 +2,8 @@
 
 import { useRef } from "react";
 import * as THREE from "three";
-import { useProgressFrame } from "../scene-context";
-import { PULLEY_R, TRAVEL, carY, explosion } from "../dims";
+import { useProgressFrame, useScene } from "../scene-context";
+import { DOOR_OPEN, PULLEY_R, TRAVEL, carY, explosion } from "../dims";
 import { CarPulley, Crosshead, Plank, RollerShoe, SafetyGear, Stile } from "./Car.sling";
 import { BackWall, Ceiling, Platform, Return, SideWall } from "./Car.cab";
 import { DoorHeader, DoorOperator, DoorPanel } from "./Car.doors";
@@ -19,6 +19,9 @@ import { DoorHeader, DoorOperator, DoorPanel } from "./Car.doors";
  */
 
 export default function Car() {
+  // the camera-tour layout runs the doors on its own schedule (a working car,
+  // not an exploded one); otherwise they part with the exploded view
+  const { doors } = useScene();
   const root = useRef<THREE.Group>(null);
   const crosshead = useRef<THREE.Group>(null);
   const stileL = useRef<THREE.Group>(null);
@@ -59,8 +62,14 @@ export default function Car() {
     returnL.current?.position.set(...e.returnL);
     returnR.current?.position.set(...e.returnR);
     header.current?.position.set(...e.header);
-    doorL.current?.position.set(...e.doorL);
-    doorR.current?.position.set(...e.doorR);
+    if (doors) {
+      const open = doors(p) * DOOR_OPEN;
+      doorL.current?.position.set(-open, 0, 0);
+      doorR.current?.position.set(open, 0, 0);
+    } else {
+      doorL.current?.position.set(...e.doorL);
+      doorR.current?.position.set(...e.doorR);
+    }
     operator.current?.position.set(...e.operator);
     // guide shoes and safety gear slide further out along the rails
     if (shoeTL.current) shoeTL.current.position.x = -e.shoeOut;

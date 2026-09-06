@@ -17,6 +17,12 @@ export type SceneSettings = {
   annotations: boolean;
   /** cheaper rendering: no shadows, fewer segments where it matters */
   mobile: boolean;
+  /**
+   * How far the doors stand open (1 = fully) for scroll progress p. Set by the
+   * camera-tour layout, which shows a working elevator instead of an exploded
+   * one; without it the doors follow the exploded view.
+   */
+  doors?: (p: number) => number;
 };
 
 const SceneContext = createContext<SceneSettings | null>(null);

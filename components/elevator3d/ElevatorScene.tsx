@@ -18,7 +18,7 @@ import Pit from "./parts/Pit";
 import Labels from "./parts/Labels";
 import NoteLeaders from "./parts/NoteLeaders";
 import Engraved from "./parts/Engraved";
-import { tourPose } from "./tour";
+import { doorPhase, tourPose } from "./tour";
 import type { SiteNotes } from "@/lib/site-notes";
 
 export type ElevatorSceneProps = {
@@ -123,9 +123,11 @@ export default function ElevatorScene({
   only,
   children,
 }: ElevatorSceneProps) {
+  // the camera tour shows a working elevator: assembled, with doors that open
+  // and close on their own schedule
   const settings = useMemo(
-    () => ({ progress, explode, annotations, mobile }),
-    [progress, explode, annotations, mobile]
+    () => ({ progress, explode, annotations, mobile, doors: notes ? doorPhase : undefined }),
+    [progress, explode, annotations, mobile, notes]
   );
   return (
     <Canvas

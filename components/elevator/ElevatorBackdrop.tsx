@@ -132,13 +132,13 @@ export default function ElevatorBackdrop({ rtl = false, notes }: { rtl?: boolean
       {webgl === false ? (
         <ElevatorSchematic
           progress={p}
-          explode={isMobile ? 0.35 : 1}
+          explode={engraved ? 0 : isMobile ? 0.35 : 1}
           showAnnotations={!isMobile}
         />
       ) : webgl ? (
         <ElevatorScene
           progress={p}
-          explode={isMobile ? 0.35 : 1}
+          explode={engraved ? 0 : isMobile ? 0.35 : 1}
           annotations={!isMobile && !leaders && !engraved}
           mobile={isMobile}
           pan={pan}

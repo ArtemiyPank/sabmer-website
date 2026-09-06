@@ -1,12 +1,14 @@
 /**
- * Camera tour for the "on detail" layout: the page text is lettered onto the
- * surface of real components, and the camera flies from one to the next as
- * the page is scrolled, resting on each while its section is readable.
+ * Camera tour for the "on detail" layout. Here the elevator is not an
+ * exploded diagram but a working machine: it stands at the top landing with
+ * its doors open, closes them, runs down the shaft, and the camera rides
+ * along, stopping at the component that carries each section of the page.
  *
- * Every stop names a flat face of a part that is actually exposed at the
- * moment the camera arrives — the landing door before anything moves, the
- * cab back wall once the doors have slid open, the side panels once they
- * have swung out, and so on.
+ *   1. inside the cab, through the open doors — then the doors close
+ *   2. the car from the side, on the move
+ *   3. the counterweight, coming the other way
+ *   4. a landing further down, on its closed doors
+ *   5. the pit, square on to the equipment — the steady final frame
  */
 
 import {
@@ -25,12 +27,16 @@ import {
   type V3,
 } from "./dims";
 
+/** smootherstep: eases in and out with no kick at either end */
+const smooth = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
+const clamp01 = (t: number) => Math.min(Math.max(t, 0), 1);
+
 /** which way the lettered face looks; also where the camera comes from */
-export type Face = "front" | "left" | "right";
+export type Face = "front" | "left" | "right" | "square";
 
 export type Stop = {
   /** matches the key in SiteNotes */
-  id: "hero" | "about" | "founder0" | "founder1" | "careers" | "contacts";
+  id: "hero" | "about" | "founders" | "careers" | "contacts";
   /** assembly that carries the face, or "world" for parts of the building */
   group: "world" | "cwt" | Exclude<keyof Explosion, "shoeOut" | "safetyOut">;
   /** centre of the lettering, car-local unless the group is "world" / "cwt" */
@@ -47,24 +53,32 @@ export type Stop = {
 };
 
 export const STOPS: Stop[] = [
-  // the top landing door, straight ahead before anything has moved
-  { id: "hero", group: "world", at: [0, LEVELS[3] + 1.05, LDOOR_PANEL_Z + 0.03], face: "front", size: [0.84, 1.28], pad: 1.2, p: 0.02, context: 2.3 },
-  // the cab back wall, in view once the doors have slid fully apart
-  { id: "about", group: "wallBack", at: [0, 1.5, CAB_BACK + 0.03], face: "front", size: [0.95, 0.95], pad: 1.3, p: 0.36, context: 2.2 },
-  // the two cab side panels, once they have swung out of the car
-  { id: "founder0", group: "wallL", at: [-CAB_X - 0.03, 1.2, 0], face: "left", size: [1.15, 0.98], pad: 1.35, p: 0.55, context: 2.2 },
-  { id: "founder1", group: "wallR", at: [CAB_X + 0.03, 1.2, 0], face: "right", size: [1.15, 0.98], pad: 1.35, p: 0.7, context: 2.2 },
-  // the counterweight, rising past the car
-  { id: "careers", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.66, 1.02], pad: 1.2, p: 0.86, context: 1.9 },
-  // the car apron under the sill, at the bottom of the travel
-  { id: "contacts", group: "floor", at: [0, -0.42, SILL_Z[1] + 0.03], face: "front", size: [1.1, 0.62], pad: 1.35, p: 1, context: 2.1 },
+  // 1. the cab interior, read through the open doors before they shut
+  { id: "hero", group: "wallBack", at: [0, 1.45, CAB_BACK + 0.03], face: "front", size: [0.9, 0.95], pad: 1.25, p: 0.03, context: 2.6 },
+  // 2. the flank of the car as it runs down the shaft
+  { id: "about", group: "wallL", at: [-CAB_X - 0.03, 1.2, 0], face: "left", size: [1.2, 1.0], pad: 1.3, p: 0.3, context: 1.7 },
+  // 3. the counterweight, rising past it
+  { id: "careers", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.66, 1.02], pad: 1.2, p: 0.55, context: 1.9 },
+  // 4. the closed landing doors one floor down
+  { id: "founders", group: "world", at: [0, LEVELS[1] + 1.05, LDOOR_PANEL_Z + 0.03], face: "front", size: [0.84, 1.62], pad: 1.2, p: 0.78, context: 1.25 },
+  // 5. the pit, straight on to the whole machine — a steady closing frame
+  { id: "contacts", group: "floor", at: [0, -0.42, SILL_Z[1] + 0.03], face: "square", size: [1.2, 0.72], pad: 1.3, p: 1, context: 2.3 },
 ];
 
+/**
+ * How far the car doors stand open. The tour opens on a car parked at the top
+ * landing with its doors open, then closes them before it sets off.
+ */
+export function doorPhase(p: number) {
+  return 1 - smooth(clamp01((p - 0.09) / 0.09));
+}
 /** unit normal of a lettered face, tilted toward the front so the shot reads */
 const NORMALS: Record<Face, V3> = {
   front: [0.22, 0.1, 0.97],
   left: [-0.88, 0.1, 0.47],
   right: [0.88, 0.1, 0.47],
+  // dead square on: the closing frame sits level with the equipment
+  square: [0, 0, 1],
 };
 
 /** rotation that turns a +z plane onto the face */
@@ -72,6 +86,7 @@ export const FACE_ROT: Record<Face, V3> = {
   front: [0, 0, 0],
   left: [0, -Math.PI / 2, 0],
   right: [0, Math.PI / 2, 0],
+  square: [0, 0, 0],
 };
 
 /** world centre of a stop's lettering at progress `p` */
@@ -94,10 +109,6 @@ export function stopAt(out: V3, s: Stop, p: number, e: Explosion): V3 {
   out[2] = s.at[2] + off[2];
   return out;
 }
-
-/** smootherstep: eases in and out with no kick at either end */
-const smooth = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
-const clamp01 = (t: number) => Math.min(Math.max(t, 0), 1);
 
 /**
  * Where the tour is at progress `p`: index of the stop being looked at, the

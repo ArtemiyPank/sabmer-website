@@ -1,8 +1,10 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useRef } from "react";
+import * as THREE from "three";
 import { Box, Cyl } from "../prims";
 import { Bolt } from "../Bolts";
+import { useProgressFrame, useScene } from "../scene-context";
 import {
   CABINET,
   LANDING_DEPTH,
@@ -10,6 +12,7 @@ import {
   LDOOR_JAMB_X,
   LDOOR_OPEN_W,
   LDOOR_PANEL_Z,
+  DOOR_OPEN,
   LDOOR_SILL_Z,
   LEVELS,
   PIT_FLOOR,
@@ -41,9 +44,23 @@ const HEADER_Y = LDOOR_H + 0.075; // header centre above the opening
 const TRACK_Z = LDOOR_PANEL_Z - 0.17; // hanger track, on the shaft side of the header
 const CABINET_H = 2.0; // controller cabinet height
 
-/** landing door assembly at level `L` (index `i` picks the hall button set) */
+/**
+ * Landing door assembly at level `L` (index `i` picks the hall button set).
+ * The top landing's panels can slide: the camera-tour layout starts with the
+ * car parked there, doors open, and closes them before it sets off.
+ */
 function Landing({ L, i }: { L: number; i: number }) {
   const top = i === LEVELS.length - 1;
+  const { doors } = useScene();
+  const panels = useRef<THREE.Group>(null);
+  useProgressFrame((p) => {
+    const g = panels.current;
+    if (!g || !doors) return;
+    const open = top ? doors(p) * DOOR_OPEN : 0;
+    for (let k = 0; k < g.children.length; k++) {
+      g.children[k].position.x = k === 0 ? -open : open;
+    }
+  });
   const transomY0 = L + LDOOR_H + 0.15;
   const transomY1 = L + (top ? 2.9 : FLOOR_H - SLAB_T);
   return (
@@ -68,12 +85,14 @@ function Landing({ L, i }: { L: number; i: number }) {
       />
 
       {/* translucent panels with their meeting-edge strips */}
-      {[-1, 1].map((sx) => (
-        <Fragment key={sx}>
-          <Box size={[0.45, LDOOR_H, 0.03]} at={[sx * 0.225, LDOOR_H / 2, LDOOR_PANEL_Z]} mat="glass" castShadow={false} />
-          <Box size={[0.012, LDOOR_H, 0.035]} at={[sx * 0.004, LDOOR_H / 2, LDOOR_PANEL_Z]} mat="stainless" />
-        </Fragment>
-      ))}
+      <group ref={panels}>
+        {[-1, 1].map((sx) => (
+          <group key={sx}>
+            <Box size={[0.45, LDOOR_H, 0.03]} at={[sx * 0.225, LDOOR_H / 2, LDOOR_PANEL_Z]} mat="glass" castShadow={false} />
+            <Box size={[0.012, LDOOR_H, 0.035]} at={[sx * 0.004, LDOOR_H / 2, LDOOR_PANEL_Z]} mat="stainless" />
+          </group>
+        ))}
+      </group>
 
       {/* hanger track behind the header: track, hanger plates and rollers per panel */}
       <Box size={[1.3, 0.05, 0.04]} at={[0, LDOOR_H + 0.05, TRACK_Z]} mat="steelDark" />
