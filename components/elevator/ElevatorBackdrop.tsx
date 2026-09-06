@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import dynamic from "next/dynamic";
 import {
   useMotionValue,
   useReducedMotion,
@@ -9,20 +10,49 @@ import {
 } from "framer-motion";
 import ElevatorSchematic from "./ElevatorSchematic";
 
+// three.js + the scene are loaded on the client only, after hydration
+const ElevatorScene = dynamic(() => import("../elevator3d/ElevatorScene"), {
+  ssr: false,
+});
+
+let webglSupport: boolean | null = null;
+function detectWebGL() {
+  if (webglSupport === null) {
+    try {
+      const c = document.createElement("canvas");
+      webglSupport = !!(c.getContext("webgl2") || c.getContext("webgl"));
+    } catch {
+      webglSupport = false;
+    }
+  }
+  return webglSupport;
+}
+const noopSubscribe = () => () => {};
+
+const MOBILE_QUERY = "(max-width: 767px)";
+function subscribeMobile(onChange: () => void) {
+  const mq = window.matchMedia(MOBILE_QUERY);
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+const isMobileSnapshot = () => window.matchMedia(MOBILE_QUERY).matches;
+
 /**
- * Fixed full-height background layer holding the elevator schematic.
- * Native page scroll drives the animation (no scroll-jacking).
+ * Fixed full-height background layer holding the 3D hoistway (with the 2D
+ * blueprint schematic as a fallback when WebGL is unavailable). Native page
+ * scroll drives the animation (no scroll-jacking).
  *
  * Mobile browsers grow/shrink the visual viewport when the URL bar
  * collapses, which would make both the layer size and scrollYProgress
  * jump mid-scroll. To stay stable we:
  *  - size the layer with 100lvh (large viewport height, constant while
- *    the browser chrome shows/hides), so the SVG never rescales;
+ *    the browser chrome shows/hides), so the scene never rescales;
  *  - compute progress as scrollY / (scrollHeight - lvh), a range that
  *    doesn't depend on the current innerHeight.
  *
- * - prefers-reduced-motion: static assembled schematic (progress stays 0)
- * - mobile (<768px): cab still travels, exploded view reduced, no annotations
+ * - prefers-reduced-motion: static assembled scene (progress stays 0)
+ * - mobile (<768px): car still travels, exploded view reduced, no callouts,
+ *   no shadows
  */
 export default function ElevatorBackdrop() {
   const { scrollY } = useScroll();
@@ -60,14 +90,14 @@ export default function ElevatorBackdrop() {
     };
   }, []);
 
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const update = () => setIsMobile(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
+  // resolved before the first client commit, so the Canvas mounts once with
+  // the right settings instead of switching from desktop to mobile
+  const isMobile = useSyncExternalStore(subscribeMobile, isMobileSnapshot, () => false);
+
+  // null during SSR / hydration; false -> 2D schematic fallback
+  const webgl = useSyncExternalStore(noopSubscribe, detectWebGL, () => null);
+
+  const p = reducedMotion ? staticProgress : progress;
 
   return (
     <div
@@ -86,11 +116,20 @@ export default function ElevatorBackdrop() {
         backgroundSize: "125px 125px, 125px 125px, 25px 25px, 25px 25px",
       }}
     >
-      <ElevatorSchematic
-        progress={reducedMotion ? staticProgress : progress}
-        explode={isMobile ? 0.35 : 1}
-        showAnnotations={!isMobile}
-      />
+      {webgl === false ? (
+        <ElevatorSchematic
+          progress={p}
+          explode={isMobile ? 0.35 : 1}
+          showAnnotations={!isMobile}
+        />
+      ) : webgl ? (
+        <ElevatorScene
+          progress={p}
+          explode={isMobile ? 0.35 : 1}
+          annotations={!isMobile}
+          mobile={isMobile}
+        />
+      ) : null}
     </div>
   );
 }
