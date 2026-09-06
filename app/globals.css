@@ -277,29 +277,85 @@ html[data-ui="plain"] .sheet dt {
   }
 }
 
-/* ---- on parts: the copy lives in the drawing, pinned to the components ----
-   The flow sections stay in the page (screen readers and crawlers read them,
-   and they set the scroll length) but are invisible; only the contact form,
-   which has to stay usable, keeps its sheet. */
-html[data-ui="inscribed"] .sheet:not([data-keep]) {
-  /* framer-motion writes the scroll fade as an inline opacity, so this has to win */
-  opacity: 0 !important;
-  pointer-events: none;
-}
-html[data-ui="inscribed"] .sheet[data-keep] {
-  background-color: color-mix(in srgb, var(--bp-paper) 92%, transparent);
-  border-color: var(--bp-line-soft);
+/* ---- on parts: the page IS the annotation of the drawing ----------------
+   The sections stay in the flow (so they scroll exactly with the finger and
+   several share a screen), take the drawing's lettering, and alternate sides
+   so the hoistway keeps the middle of the sheet. A live leader is drawn from
+   each one to the component it describes — see parts/NoteLeaders.tsx. */
+html[data-ui="inscribed"] .sheet {
   border-radius: 0;
+  border-color: var(--bp-line-soft);
+  outline: 1px solid var(--bp-line-soft);
+  outline-offset: 4px;
+  background-color: color-mix(in srgb, var(--bp-paper) 84%, transparent);
   backdrop-filter: none;
+  padding: 1.1rem 1.3rem;
 }
-/* the copy is read from the drawing, so each section gets a screenful of
-   scroll to itself: that is the dwell time of one note */
+html[data-ui="inscribed"] .sheet[data-num]::before {
+  content: attr(data-num);
+  position: absolute;
+  top: -14px;
+  inset-inline-start: 18px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid var(--bp-accent);
+  background-color: var(--bp-paper);
+  color: var(--bp-accent);
+  font: 600 11px/25px ui-monospace, SFMono-Regular, monospace;
+  text-align: center;
+}
+html[data-ui="inscribed"] .sheet[data-label]::after {
+  content: attr(data-label);
+  position: absolute;
+  top: -8px;
+  inset-inline-start: 56px;
+  max-width: calc(100% - 76px);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 0 6px;
+  background-color: var(--bp-paper);
+  color: var(--bp-accent);
+  font: 600 9px/16px ui-monospace, SFMono-Regular, monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+html[data-ui="inscribed"] .sheet-title {
+  font-size: 1.4rem;
+}
+/* tighter sections: two notes fit on a laptop screen, three on a tall one */
 html[data-ui="inscribed"] main section {
-  min-height: 105svh;
+  padding-top: 2.5rem;
+  padding-bottom: 2.5rem;
 }
-@media (min-width: 768px) {
+html[data-ui="inscribed"] main section:first-of-type {
+  min-height: 78svh;
+}
+/* the drawing owns the middle of the sheet; notes flank it, alternating */
+@media (min-width: 900px) {
   html[data-ui="inscribed"] main section > * {
-    max-width: 30rem;
+    max-width: 25rem;
+  }
+  html[data-ui="inscribed"] main section:nth-of-type(even) > * {
     margin-inline-start: auto;
+  }
+  html[data-ui="inscribed"] main section .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* the two founders sit on opposite sides of the hoistway */
+  html[data-ui="inscribed"] #founders .grid > *:nth-child(2) {
+    margin-inline-start: auto;
+  }
+  html[data-ui="inscribed"] #founders .grid {
+    max-width: none;
+  }
+  html[data-ui="inscribed"] #founders .grid > * {
+    max-width: 22rem;
+  }
+}
+@media (max-width: 899px) {
+  html[data-ui="inscribed"] main section > * {
+    max-width: 34rem;
   }
 }

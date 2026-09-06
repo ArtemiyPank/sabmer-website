@@ -18,6 +18,8 @@ export default function FadeCard({
   /** drafting metadata read by the CSS of the callout / title-block layouts */
   "data-num"?: string;
   "data-label"?: string;
+  /** names the elevator component this section annotates (see NoteLeaders) */
+  "data-note"?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
