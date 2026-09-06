@@ -218,7 +218,8 @@ export function explosion(p: number, explode: number): Explosion {
     ceiling: [0, 1.0 * c, 0],
     floor: [0, -0.2 * c, 0],
     wallL: [-0.55 * w, 0.15 * w, 0],
-    wallR: [0.55 * w, 0.15 * w, 0],
+    // toward the camera as well, or it would sweep through the counterweight
+    wallR: [0.55 * w, 0.15 * w, 0.5 * w],
     wallBack: [0, 0.2 * w, -0.28 * w],
     returnL: [-0.3 * w, 0, 0.2 * w],
     returnR: [0.3 * w, 0, 0.2 * w],

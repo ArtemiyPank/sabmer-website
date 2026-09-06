@@ -17,6 +17,9 @@ import Ropes from "./parts/Ropes";
 import Pit from "./parts/Pit";
 import Labels from "./parts/Labels";
 import NoteLeaders from "./parts/NoteLeaders";
+import Engraved from "./parts/Engraved";
+import { tourPose } from "./tour";
+import type { SiteNotes } from "@/lib/site-notes";
 
 export type ElevatorSceneProps = {
   progress: MotionValue<number>;
@@ -29,6 +32,8 @@ export type ElevatorSceneProps = {
   pan?: number;
   /** draw drafting leaders from the page's [data-note] sections to their parts */
   leaders?: boolean;
+  /** letter the page text onto the parts and fly the camera from one to the next */
+  notes?: SiteNotes;
   /** debug: render only these part modules (by name, lower-case) */
   only?: string[];
   children?: React.ReactNode;
@@ -52,12 +57,13 @@ function InvalidateOnProgress({ progress }: { progress: MotionValue<number> }) {
 }
 
 /** deterministic scroll-driven camera: follows the car, pulls back at the end */
-function CameraRig({ pan }: { pan: number }) {
+function CameraRig({ pan, tour }: { pan: number; tour: boolean }) {
   const { mobile } = useScene();
-  useProgressFrame((p, _explode, state) => {
+  useProgressFrame((p, explode, state) => {
     const camera = state.camera as THREE.PerspectiveCamera;
     const { width, height } = state.size;
-    const pose = cameraPose(p, width / Math.max(height, 1), mobile, pan);
+    const aspect = width / Math.max(height, 1);
+    const pose = tour ? tourPose(p, explode, aspect, mobile) : cameraPose(p, aspect, mobile, pan);
     camera.position.set(...pose.position);
     camera.lookAt(pose.target[0], pose.target[1], pose.target[2]);
     if (camera.fov !== pose.fov) {
@@ -113,6 +119,7 @@ export default function ElevatorScene({
   manualCamera = false,
   pan = 0,
   leaders = false,
+  notes,
   only,
   children,
 }: ElevatorSceneProps) {
@@ -141,7 +148,7 @@ export default function ElevatorScene({
           <InvalidateOnProgress progress={progress} />
           {/* mounted before the parts: its priority-0 callback has to pose the camera
               before drei's <Html> (also priority 0) projects the callouts */}
-          {!manualCamera && <CameraRig pan={pan} />}
+          {!manualCamera && <CameraRig pan={pan} tour={!!notes} />}
           <Lights />
           <Suspense fallback={null}>
             <Fasteners>
@@ -150,6 +157,7 @@ export default function ElevatorScene({
               ))}
               {annotations && (!only || only.includes("labels")) && <Labels />}
               {leaders && <NoteLeaders />}
+              {notes && <Engraved notes={notes} />}
               {children}
             </Fasteners>
           </Suspense>

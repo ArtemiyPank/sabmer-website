@@ -279,63 +279,91 @@ html[data-ui="plain"] .sheet dt {
 
 /* ---- on parts: the page IS the annotation of the drawing ----------------
    The sections stay in the flow (so they scroll exactly with the finger and
-   several share a screen), take the drawing's lettering, and alternate sides
-   so the hoistway keeps the middle of the sheet. A live leader is drawn from
-   each one to the component it describes — see parts/NoteLeaders.tsx. */
+   several share a screen) and are drawn as small spec blocks off a technical
+   drawing: a ruled title strip with the sheet number, corner ticks, hairline
+   frame. They alternate sides so the hoistway keeps the middle of the sheet,
+   and a live leader runs from each one to the component it describes — see
+   parts/NoteLeaders.tsx. */
 html[data-ui="inscribed"] .sheet {
   border-radius: 0;
   border-color: var(--bp-line-soft);
-  outline: 1px solid var(--bp-line-soft);
-  outline-offset: 4px;
-  background-color: color-mix(in srgb, var(--bp-paper) 84%, transparent);
+  background-color: color-mix(in srgb, var(--bp-paper) 86%, transparent);
   backdrop-filter: none;
-  padding: 1.1rem 1.3rem;
+  padding: 2.1rem 1rem 1rem;
+  font-size: 0.86rem;
+  line-height: 1.5;
 }
+/* title strip: number and part name, ruled off inside the frame */
 html[data-ui="inscribed"] .sheet[data-num]::before {
-  content: attr(data-num);
+  content: attr(data-num) "   " attr(data-label);
   position: absolute;
-  top: -14px;
-  inset-inline-start: 18px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 1.5px solid var(--bp-accent);
-  background-color: var(--bp-paper);
+  top: 0;
+  inset-inline: 0;
+  padding: 0.45rem 0.8rem;
+  border-bottom: 1px solid var(--bp-line-soft);
+  background-color: color-mix(in srgb, var(--bp-accent) 9%, transparent);
   color: var(--bp-accent);
-  font: 600 11px/25px ui-monospace, SFMono-Regular, monospace;
-  text-align: center;
-}
-html[data-ui="inscribed"] .sheet[data-label]::after {
-  content: attr(data-label);
-  position: absolute;
-  top: -8px;
-  inset-inline-start: 56px;
-  max-width: calc(100% - 76px);
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  padding: 0 6px;
-  background-color: var(--bp-paper);
-  color: var(--bp-accent);
-  font: 600 9px/16px ui-monospace, SFMono-Regular, monospace;
-  letter-spacing: 0.18em;
+  font: 600 9px/1.2 ui-monospace, SFMono-Regular, monospace;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* drawing corner ticks */
+html[data-ui="inscribed"] .sheet::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--bp-line-soft), var(--bp-line-soft)),
+    linear-gradient(var(--bp-line-soft), var(--bp-line-soft)),
+    linear-gradient(var(--bp-line-soft), var(--bp-line-soft)),
+    linear-gradient(var(--bp-line-soft), var(--bp-line-soft)),
+    linear-gradient(var(--bp-line-soft), var(--bp-line-soft)),
+    linear-gradient(var(--bp-line-soft), var(--bp-line-soft)),
+    linear-gradient(var(--bp-line-soft), var(--bp-line-soft)),
+    linear-gradient(var(--bp-line-soft), var(--bp-line-soft));
+  background-repeat: no-repeat;
+  background-size: 9px 1px, 1px 9px, 9px 1px, 1px 9px, 9px 1px, 1px 9px, 9px 1px, 1px 9px;
+  background-position:
+    left top, left top,
+    right top, right top,
+    left bottom, left bottom,
+    right bottom, right bottom;
 }
 html[data-ui="inscribed"] .sheet-title {
-  font-size: 1.4rem;
+  font-size: 1.15rem;
+  line-height: 1.2;
 }
-/* tighter sections: two notes fit on a laptop screen, three on a tall one */
+html[data-ui="inscribed"] .sheet h3 {
+  font-size: 1rem;
+}
+html[data-ui="inscribed"] .sheet p,
+html[data-ui="inscribed"] .sheet li,
+html[data-ui="inscribed"] .sheet dd,
+html[data-ui="inscribed"] .sheet dt {
+  font-size: 0.86rem;
+}
+html[data-ui="inscribed"] .sheet img,
+html[data-ui="inscribed"] .sheet [aria-hidden="true"].rounded-full {
+  width: 3rem;
+  height: 3rem;
+  font-size: 1.1rem;
+}
+/* tighter sections: two or three spec blocks share a screen */
 html[data-ui="inscribed"] main section {
-  padding-top: 2.5rem;
-  padding-bottom: 2.5rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 }
 html[data-ui="inscribed"] main section:first-of-type {
-  min-height: 78svh;
+  min-height: 74svh;
 }
-/* the drawing owns the middle of the sheet; notes flank it, alternating */
+/* the drawing owns the middle of the sheet; blocks flank it, alternating */
 @media (min-width: 900px) {
   html[data-ui="inscribed"] main section > * {
-    max-width: 25rem;
+    max-width: 19rem;
   }
   html[data-ui="inscribed"] main section:nth-of-type(even) > * {
     margin-inline-start: auto;
@@ -343,19 +371,43 @@ html[data-ui="inscribed"] main section:first-of-type {
   html[data-ui="inscribed"] main section .grid {
     grid-template-columns: minmax(0, 1fr);
   }
-  /* the two founders sit on opposite sides of the hoistway */
-  html[data-ui="inscribed"] #founders .grid > *:nth-child(2) {
-    margin-inline-start: auto;
-  }
   html[data-ui="inscribed"] #founders .grid {
     max-width: none;
   }
   html[data-ui="inscribed"] #founders .grid > * {
-    max-width: 22rem;
+    max-width: 18rem;
+  }
+  /* the two founders sit on opposite sides of the hoistway */
+  html[data-ui="inscribed"] #founders .grid > *:nth-child(2) {
+    margin-inline-start: auto;
   }
 }
 @media (max-width: 899px) {
   html[data-ui="inscribed"] main section > * {
-    max-width: 34rem;
+    max-width: 30rem;
+  }
+}
+
+/* ---- on detail: the sections are lettered onto the parts themselves, so the
+   flow copy steps aside (it stays in the page for assistive technology) and
+   only the contact form keeps a sheet */
+html[data-ui="engraved"] .sheet:not([data-keep]) {
+  /* framer-motion writes the scroll fade inline, so this has to win */
+  opacity: 0 !important;
+  pointer-events: none;
+}
+html[data-ui="engraved"] .sheet[data-keep] {
+  border-radius: 0;
+  border-color: var(--bp-line-soft);
+  background-color: color-mix(in srgb, var(--bp-paper) 92%, transparent);
+  backdrop-filter: none;
+}
+html[data-ui="engraved"] main section {
+  min-height: 105svh;
+}
+@media (min-width: 768px) {
+  html[data-ui="engraved"] main section > * {
+    max-width: 26rem;
+    margin-inline-start: auto;
   }
 }

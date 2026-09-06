@@ -10,6 +10,7 @@ import {
 } from "framer-motion";
 import ElevatorSchematic from "./ElevatorSchematic";
 import { UI_PAN, readUi, subscribeUi } from "@/lib/ui-variant";
+import type { SiteNotes } from "@/lib/site-notes";
 
 // three.js + the scene are loaded on the client only, after hydration
 const ElevatorScene = dynamic(() => import("../elevator3d/ElevatorScene"), {
@@ -58,7 +59,7 @@ const isMobileSnapshot = () => window.matchMedia(MOBILE_QUERY).matches;
  * - mobile (<768px): car still travels, exploded view reduced, no callouts,
  *   no shadows
  */
-export default function ElevatorBackdrop({ rtl = false }: { rtl?: boolean }) {
+export default function ElevatorBackdrop({ rtl = false, notes }: { rtl?: boolean; notes: SiteNotes }) {
   const { scrollY } = useScroll();
   const reducedMotion = useReducedMotion();
   const staticProgress = useMotionValue(0);
@@ -103,6 +104,8 @@ export default function ElevatorBackdrop({ rtl = false }: { rtl?: boolean }) {
   // in the "on parts" layout the page sections are the annotation of the
   // drawing, so the technical callouts step aside for them
   const leaders = ui === "inscribed";
+  // "on detail" letters the sections onto the parts and drives its own camera
+  const engraved = ui === "engraved" ? notes : undefined;
 
   // null during SSR / hydration; false -> 2D schematic fallback
   const webgl = useSyncExternalStore(noopSubscribe, detectWebGL, () => null);
@@ -136,10 +139,11 @@ export default function ElevatorBackdrop({ rtl = false }: { rtl?: boolean }) {
         <ElevatorScene
           progress={p}
           explode={isMobile ? 0.35 : 1}
-          annotations={!isMobile && !leaders}
+          annotations={!isMobile && !leaders && !engraved}
           mobile={isMobile}
           pan={pan}
           leaders={leaders}
+          notes={engraved}
         />
       ) : null}
     </div>

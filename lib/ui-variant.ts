@@ -7,7 +7,7 @@
  * a client-side locale switch cannot reset it) plus localStorage.
  */
 
-export const UI_VARIANTS = ["sheets", "callout", "titleblock", "plain", "inscribed"] as const;
+export const UI_VARIANTS = ["sheets", "callout", "titleblock", "plain", "inscribed", "engraved"] as const;
 export type UiVariant = (typeof UI_VARIANTS)[number];
 
 export const UI_LABELS: Record<UiVariant, string> = {
@@ -16,6 +16,7 @@ export const UI_LABELS: Record<UiVariant, string> = {
   titleblock: "TITLE BLOCK",
   plain: "PLAIN",
   inscribed: "ON PARTS",
+  engraved: "ON DETAIL",
 };
 
 /**
@@ -31,6 +32,8 @@ export const UI_PAN: Record<UiVariant, number> = {
   plain: -3.6,
   // the text hangs off the parts themselves, so the drawing stays centred
   inscribed: 0,
+  // the camera tour frames the parts itself
+  engraved: 0,
 };
 
 const listeners = new Set<() => void>();
