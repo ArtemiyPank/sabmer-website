@@ -276,3 +276,25 @@ html[data-ui="plain"] .sheet dt {
       0 0 24px var(--bp-paper);
   }
 }
+
+/* ---- on parts: the copy lives in the drawing, pinned to the components ----
+   The flow sections stay in the page (screen readers and crawlers read them,
+   and they set the scroll length) but are invisible; only the contact form,
+   which has to stay usable, keeps its sheet. */
+html[data-ui="inscribed"] .sheet:not([data-keep]) {
+  /* framer-motion writes the scroll fade as an inline opacity, so this has to win */
+  opacity: 0 !important;
+  pointer-events: none;
+}
+html[data-ui="inscribed"] .sheet[data-keep] {
+  background-color: color-mix(in srgb, var(--bp-paper) 92%, transparent);
+  border-color: var(--bp-line-soft);
+  border-radius: 0;
+  backdrop-filter: none;
+}
+@media (min-width: 768px) {
+  html[data-ui="inscribed"] main section > * {
+    max-width: 30rem;
+    margin-inline-start: auto;
+  }
+}

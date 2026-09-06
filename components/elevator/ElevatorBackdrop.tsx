@@ -10,6 +10,7 @@ import {
 } from "framer-motion";
 import ElevatorSchematic from "./ElevatorSchematic";
 import { UI_PAN, readUi, subscribeUi } from "@/lib/ui-variant";
+import type { SiteNotes } from "@/lib/site-notes";
 
 // three.js + the scene are loaded on the client only, after hydration
 const ElevatorScene = dynamic(() => import("../elevator3d/ElevatorScene"), {
@@ -58,7 +59,7 @@ const isMobileSnapshot = () => window.matchMedia(MOBILE_QUERY).matches;
  * - mobile (<768px): car still travels, exploded view reduced, no callouts,
  *   no shadows
  */
-export default function ElevatorBackdrop({ rtl = false }: { rtl?: boolean }) {
+export default function ElevatorBackdrop({ rtl = false, notes }: { rtl?: boolean; notes?: SiteNotes }) {
   const { scrollY } = useScroll();
   const reducedMotion = useReducedMotion();
   const staticProgress = useMotionValue(0);
@@ -100,6 +101,8 @@ export default function ElevatorBackdrop({ rtl = false }: { rtl?: boolean }) {
   // phones have no room to pan the drawing aside, so only desktop follows the layout
   const ui = useSyncExternalStore(subscribeUi, readUi, () => "sheets" as const);
   const pan = isMobile ? 0 : UI_PAN[ui] * (rtl ? -1 : 1);
+  // the notes replace the flow sections *and* the technical callouts
+  const inscribed = ui === "inscribed" ? notes : undefined;
 
   // null during SSR / hydration; false -> 2D schematic fallback
   const webgl = useSyncExternalStore(noopSubscribe, detectWebGL, () => null);
@@ -133,9 +136,10 @@ export default function ElevatorBackdrop({ rtl = false }: { rtl?: boolean }) {
         <ElevatorScene
           progress={p}
           explode={isMobile ? 0.35 : 1}
-          annotations={!isMobile}
+          annotations={!isMobile && !inscribed}
           mobile={isMobile}
           pan={pan}
+          notes={inscribed}
         />
       ) : null}
     </div>

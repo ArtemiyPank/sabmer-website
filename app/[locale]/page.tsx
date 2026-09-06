@@ -12,6 +12,7 @@ import LayoutSwitcher from "@/components/site/LayoutSwitcher";
 import FadeCard from "@/components/site/FadeCard";
 import { SITE_URL } from "@/lib/site";
 import { getContent } from "@/lib/content";
+import type { SiteNotes } from "@/lib/site-notes";
 
 export const revalidate = 300;
 
@@ -27,6 +28,25 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
   const t = await getTranslations();
   const c = await getContent(locale as "ru" | "he" | "en");
   const year = new Date().getFullYear();
+
+  // the same copy the sections below render, pinned to the parts of the car in
+  // the "on parts" layout
+  const notes: SiteNotes = {
+    hero: { n: "01", title: c.hero.tagline, body: c.hero.sub, caption: "SABMER" },
+    about: { n: "02", title: c.about.title, body: c.about.text },
+    founders: c.founders.people.map((f, i) => ({
+      n: `03.${i + 1}`,
+      title: f.name,
+      caption: f.role,
+      body: f.bio,
+    })),
+    careers: { n: "04", title: c.careers.title, body: c.careers.intro, items: c.careers.roles },
+    contacts: {
+      n: "05",
+      title: c.contacts.title,
+      items: [c.contacts.phone, c.contacts.email, c.contacts.address],
+    },
+  };
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -53,7 +73,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <ElevatorBackdrop rtl={locale === "he"} />
+      <ElevatorBackdrop rtl={locale === "he"} notes={notes} />
       <Header />
       <LayoutSwitcher />
 
@@ -222,7 +242,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
                 <WhatsAppButton />
               </div>
             </FadeCard>
-            <FadeCard className={card} data-num="06" data-label={t("Contacts.form.title")}>
+            <FadeCard className={card} data-num="06" data-label={t("Contacts.form.title")} data-keep="">
               <ContactForm />
             </FadeCard>
           </div>

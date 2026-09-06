@@ -16,6 +16,8 @@ import Counterweight from "./parts/Counterweight";
 import Ropes from "./parts/Ropes";
 import Pit from "./parts/Pit";
 import Labels from "./parts/Labels";
+import Inscribed from "./parts/Inscribed";
+import type { SiteNotes } from "@/lib/site-notes";
 
 export type ElevatorSceneProps = {
   progress: MotionValue<number>;
@@ -26,6 +28,8 @@ export type ElevatorSceneProps = {
   manualCamera?: boolean;
   /** sideways pan of the drawing in metres (see cameraPose) */
   pan?: number;
+  /** page copy pinned to the exploding parts instead of the flow sections */
+  notes?: SiteNotes;
   /** debug: render only these part modules (by name, lower-case) */
   only?: string[];
   children?: React.ReactNode;
@@ -109,6 +113,7 @@ export default function ElevatorScene({
   mobile = false,
   manualCamera = false,
   pan = 0,
+  notes,
   only,
   children,
 }: ElevatorSceneProps) {
@@ -145,6 +150,7 @@ export default function ElevatorScene({
                 <Part key={name} />
               ))}
               {annotations && (!only || only.includes("labels")) && <Labels />}
+              {notes && <Inscribed notes={notes} />}
               {children}
             </Fasteners>
           </Suspense>
