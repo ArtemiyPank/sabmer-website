@@ -56,7 +56,7 @@ export const STOPS: Stop[] = [
   // 1. the cab interior, read through the open doors before they shut
   { id: "hero", group: "wallBack", at: [0, 1.25, CAB_BACK + 0.03], face: "square", size: [1, 1.45], pad: 1.2, p: 0.03, context: 2 },
   // 2. the flank of the car as it runs down the shaft
-  { id: "about", group: "wallL", at: [-CAB_X - 0.03, 1.2, 0], face: "left", size: [1.2, 1.0], pad: 1.3, p: 0.3, context: 1.7 },
+  { id: "about", group: "wallL", at: [-CAB_X - 0.03, 1.2, 0], face: "left", size: [1.2, 1.0], pad: 1.3, p: 0.3, context: 1.25 },
   // 3. the counterweight, rising past it
   { id: "careers", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.66, 1.02], pad: 1.2, p: 0.55, context: 1.9 },
   // 4. the closed landing doors one floor down
@@ -84,6 +84,18 @@ const NORMALS: Record<Face, V3> = {
   left: [-0.88, 0.1, 0.47],
   right: [0.88, 0.1, 0.47],
   // dead square on: the closing frame sits level with the equipment
+  square: [0, 0, 1],
+};
+
+/**
+ * On a portrait screen a landscape plate can never fill the frame, so the
+ * camera squares up to it — less foreshortening means more legible type — and
+ * keeps almost no extra room around it.
+ */
+const NORMALS_PORTRAIT: Record<Face, V3> = {
+  front: [0.12, 0.06, 0.99],
+  left: [-0.97, 0.07, 0.23],
+  right: [0.97, 0.07, 0.23],
   square: [0, 0, 1],
 };
 
@@ -176,12 +188,12 @@ const CONTEXT = 2.25;
 /** camera pose of a single stop */
 function poseOf(s: Stop, p: number, e: Explosion, aspect: number, fov: number, out: { pos: V3; tgt: V3 }) {
   stopAt(out.tgt, s, p, e);
-  const n = NORMALS[s.face];
-  // portrait screens are framed by width and have vertical slack to spare
-  const pad = aspect < 1 ? 1 + (s.pad - 1) * 0.35 : s.pad;
+  const portrait = aspect < 1;
+  const n = portrait ? NORMALS_PORTRAIT[s.face] : NORMALS[s.face];
   const context = s.context ?? CONTEXT;
-  // phones frame by width and already sit further out, so they need less room
-  const d = frameDistance(s.size, fov, aspect) * pad * (aspect < 1 ? 1 + (context - 1) * 0.55 : context);
+  // a portrait frame is already limited by its width: keep barely any margin
+  const room = portrait ? 1 + (s.pad * context - 1) * 0.14 : s.pad * context;
+  const d = frameDistance(s.size, fov, aspect) * room;
   out.pos[0] = out.tgt[0] + n[0] * d;
   out.pos[1] = out.tgt[1] + n[1] * d;
   out.pos[2] = out.tgt[2] + n[2] * d;

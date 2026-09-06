@@ -9,7 +9,6 @@ import {
   useTransform,
 } from "framer-motion";
 import ElevatorSchematic from "./ElevatorSchematic";
-import { UI_PAN, readUi, subscribeUi } from "@/lib/ui-variant";
 import type { SiteNotes } from "@/lib/site-notes";
 
 // three.js + the scene are loaded on the client only, after hydration
@@ -52,14 +51,11 @@ const isMobileSnapshot = () => window.matchMedia(MOBILE_QUERY).matches;
  *  - compute progress as scrollY / (scrollHeight - lvh), a range that
  *    doesn't depend on the current innerHeight.
  *
- * `rtl` mirrors the sideways pan of the drawing, because the text column of
- * every layout sits on the opposite side on the Hebrew locale.
- *
  * - prefers-reduced-motion: static assembled scene (progress stays 0)
  * - mobile (<768px): car still travels, exploded view reduced, no callouts,
  *   no shadows
  */
-export default function ElevatorBackdrop({ rtl = false, notes }: { rtl?: boolean; notes: SiteNotes }) {
+export default function ElevatorBackdrop({ notes }: { notes: SiteNotes }) {
   const { scrollY } = useScroll();
   const reducedMotion = useReducedMotion();
   const staticProgress = useMotionValue(0);
@@ -98,19 +94,22 @@ export default function ElevatorBackdrop({ rtl = false, notes }: { rtl?: boolean
   // resolved before the first client commit, so the Canvas mounts once with
   // the right settings instead of switching from desktop to mobile
   const isMobile = useSyncExternalStore(subscribeMobile, isMobileSnapshot, () => false);
-  // phones have no room to pan the drawing aside, so only desktop follows the layout
-  const ui = useSyncExternalStore(subscribeUi, readUi, () => "sheets" as const);
-  const pan = isMobile ? 0 : UI_PAN[ui] * (rtl ? -1 : 1);
-  // in the "on parts" layout the page sections are the annotation of the
-  // drawing, so the technical callouts step aside for them
-  const leaders = ui === "inscribed";
-  // "on detail" letters the sections onto the parts and drives its own camera
-  const engraved = ui === "engraved" ? notes : undefined;
 
   // null during SSR / hydration; false -> 2D schematic fallback
   const webgl = useSyncExternalStore(noopSubscribe, detectWebGL, () => null);
 
   const p = reducedMotion ? staticProgress : progress;
+
+  // The scene letters the page copy onto the parts and flies the camera from
+  // one to the next, which replaces the flow sections. They are therefore only
+  // hidden while it actually runs: without WebGL, or with reduced motion (the
+  // tour never advances), the page shows its own text instead.
+  const tour = webgl === true && !reducedMotion;
+  useEffect(() => {
+    const el = document.documentElement;
+    if (tour) el.dataset.ui = "engraved";
+    else delete el.dataset.ui;
+  }, [tour]);
 
   return (
     <div
@@ -132,18 +131,16 @@ export default function ElevatorBackdrop({ rtl = false, notes }: { rtl?: boolean
       {webgl === false ? (
         <ElevatorSchematic
           progress={p}
-          explode={engraved ? 0 : isMobile ? 0.35 : 1}
+          explode={0}
           showAnnotations={!isMobile}
         />
       ) : webgl ? (
         <ElevatorScene
           progress={p}
-          explode={engraved ? 0 : isMobile ? 0.35 : 1}
-          annotations={!isMobile && !leaders && !engraved}
+          explode={0}
+          annotations={false}
           mobile={isMobile}
-          pan={pan}
-          leaders={leaders}
-          notes={engraved}
+          notes={notes}
         />
       ) : null}
     </div>

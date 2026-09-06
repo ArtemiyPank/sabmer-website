@@ -254,10 +254,8 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
  * Deterministic camera pose for progress p. The rig frames the car from the
  * front-right and follows it down the shaft; on desktop it pulls back at the
  * end to show the whole hoistway with the exploded car at the bottom landing.
- * `pan` shifts the target sideways (metres) so a layout can park the drawing
- * in the half of the screen its text does not use.
  */
-export function cameraPose(p: number, aspect: number, mobile: boolean, pan = 0): CameraPose {
+export function cameraPose(p: number, aspect: number, mobile: boolean): CameraPose {
   const fov = 32;
   const pull = stagger(p, 0.72, 1);
   // visible height (m) at the target distance
@@ -270,7 +268,7 @@ export function cameraPose(p: number, aspect: number, mobile: boolean, pan = 0):
   const minY = PIT_FLOOR - 0.6 + h / 2;
   const maxY = SHAFT_TOP + 0.9 - h / 2;
   const ty = Math.min(Math.max(carY(p) + 1.2, Math.min(minY, maxY)), Math.max(minY, maxY));
-  const target: V3 = [0.15 + pan, ty, 0];
+  const target: V3 = [0.15, ty, 0];
   const dist = h / 2 / Math.tan((fov / 2) * DEG);
   const position: V3 = [
     target[0] + dist * Math.cos(el) * Math.sin(az),

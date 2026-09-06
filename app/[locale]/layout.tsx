@@ -17,9 +17,7 @@ const rubik = Rubik({
 // Set the theme before first paint: localStorage wins, otherwise system.
 // data-theme is never rendered by React, so client-side re-renders
 // (e.g. locale switching) can't reset the user's choice.
-const themeInitScript =
-  `try{var t=localStorage.getItem("theme");if(!t)t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t;` +
-  `var u=localStorage.getItem("ui")||"sheets";document.documentElement.dataset.ui=u}catch(e){}`;
+const themeInitScript = `try{var t=localStorage.getItem("theme");if(!t)t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t}catch(e){}`;
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
