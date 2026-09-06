@@ -38,24 +38,26 @@ export type Stop = {
   face: Face;
   /** lettered area in metres */
   size: [number, number];
-  /** extra distance: >1 pulls the camera back from a tight fit */
+  /** extra distance: >1 pulls the camera back from a tight fit on the plate */
   pad: number;
   /** scroll progress at which the camera is parked on this stop */
   p: number;
+  /** how much room around the plate the shot leaves (1 = plate fills the frame) */
+  context?: number;
 };
 
 export const STOPS: Stop[] = [
   // the top landing door, straight ahead before anything has moved
-  { id: "hero", group: "world", at: [0, LEVELS[3] + 1.05, LDOOR_PANEL_Z + 0.03], face: "front", size: [0.84, 1.28], pad: 1.2, p: 0.02 },
+  { id: "hero", group: "world", at: [0, LEVELS[3] + 1.05, LDOOR_PANEL_Z + 0.03], face: "front", size: [0.84, 1.28], pad: 1.2, p: 0.02, context: 1.8 },
   // the cab back wall, in view once the doors have slid fully apart
-  { id: "about", group: "wallBack", at: [0, 1.5, CAB_BACK + 0.03], face: "front", size: [0.95, 0.95], pad: 1.3, p: 0.36 },
+  { id: "about", group: "wallBack", at: [0, 1.5, CAB_BACK + 0.03], face: "front", size: [0.95, 0.95], pad: 1.3, p: 0.36, context: 1.7 },
   // the two cab side panels, once they have swung out of the car
-  { id: "founder0", group: "wallL", at: [-CAB_X - 0.03, 1.2, 0], face: "left", size: [1.15, 0.98], pad: 1.35, p: 0.55 },
-  { id: "founder1", group: "wallR", at: [CAB_X + 0.03, 1.2, 0], face: "right", size: [1.15, 0.98], pad: 1.35, p: 0.7 },
+  { id: "founder0", group: "wallL", at: [-CAB_X - 0.03, 1.2, 0], face: "left", size: [1.15, 0.98], pad: 1.35, p: 0.55, context: 1.7 },
+  { id: "founder1", group: "wallR", at: [CAB_X + 0.03, 1.2, 0], face: "right", size: [1.15, 0.98], pad: 1.35, p: 0.7, context: 1.7 },
   // the counterweight, rising past the car
-  { id: "careers", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.6, 1.32], pad: 1.3, p: 0.86 },
+  { id: "careers", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.66, 1.02], pad: 1.2, p: 0.86, context: 1.45 },
   // the car apron under the sill, at the bottom of the travel
-  { id: "contacts", group: "floor", at: [0, -0.42, SILL_Z[1] + 0.03], face: "front", size: [1.1, 0.62], pad: 1.35, p: 1 },
+  { id: "contacts", group: "floor", at: [0, -0.42, SILL_Z[1] + 0.03], face: "front", size: [1.1, 0.62], pad: 1.35, p: 1, context: 1.6 },
 ];
 
 /** unit normal of a lettered face, tilted toward the front so the shot reads */
@@ -101,6 +103,9 @@ const clamp01 = (t: number) => Math.min(Math.max(t, 0), 1);
  * next one, and how far the flight between them has got. The camera rests on
  * a stop for the first two thirds of its slice, then travels.
  */
+/** share of the gap between stops spent parked on the first one */
+const DWELL = 0.42;
+
 export function tourAt(p: number) {
   const last = STOPS.length - 1;
   const q = clamp01(p);
@@ -110,18 +115,23 @@ export function tourAt(p: number) {
   const from = STOPS[i].p;
   const to = STOPS[Math.min(i + 1, last)].p;
   if (i === last || to <= from) return { i: last, next: last, t: 0 };
-  // parked on the stop for the first half of the gap, then the flight
+  // parked on the stop for the first part of the gap, then a long flight
   const local = (q - from) / (to - from);
-  const t = local <= 0.5 ? 0 : smooth(Math.min((local - 0.5) / 0.45, 1));
+  const t = local <= DWELL ? 0 : smooth(Math.min((local - DWELL) / (1 - DWELL), 1));
   return { i, next: i + 1, t };
 }
 
-/** how strongly a stop's lettering shows at progress `p` */
+/**
+ * How strongly a stop's lettering shows. It leaves early in the flight and
+ * the next one only lands at the end of it, so the middle of every transition
+ * is the machine alone — the flight reads as travelling to the next part
+ * rather than as one plate dissolving into another.
+ */
 export function stopOpacity(index: number, p: number) {
   const { i, next, t } = tourAt(p);
   if (index === i && index === next) return 1;
-  if (index === i) return 1 - t;
-  if (index === next) return t;
+  if (index === i) return 1 - smooth(Math.min(t / 0.32, 1));
+  if (index === next) return smooth(Math.max((t - 0.68) / 0.32, 0));
   return 0;
 }
 
@@ -138,12 +148,22 @@ const camTgt: V3 = [0, 0, 0];
 const a: V3 = [0, 0, 0];
 const b: V3 = [0, 0, 0];
 
+/**
+ * How much room around the plate the shot leaves: the point is to arrive at a
+ * *part* of the elevator, so the lettering fills roughly half the frame and
+ * the component carrying it stays in view.
+ */
+const CONTEXT = 1.75;
+
 /** camera pose of a single stop */
 function poseOf(s: Stop, p: number, e: Explosion, aspect: number, fov: number, out: { pos: V3; tgt: V3 }) {
   stopAt(out.tgt, s, p, e);
   const n = NORMALS[s.face];
   // portrait screens are framed by width and have vertical slack to spare
-  const d = frameDistance(s.size, fov, aspect) * (aspect < 1 ? 1 + (s.pad - 1) * 0.35 : s.pad);
+  const pad = aspect < 1 ? 1 + (s.pad - 1) * 0.35 : s.pad;
+  const context = s.context ?? CONTEXT;
+  // phones frame by width and already sit further out, so they need less room
+  const d = frameDistance(s.size, fov, aspect) * pad * (aspect < 1 ? 1 + (context - 1) * 0.55 : context);
   out.pos[0] = out.tgt[0] + n[0] * d;
   out.pos[1] = out.tgt[1] + n[1] * d;
   out.pos[2] = out.tgt[2] + n[2] * d;
@@ -166,5 +186,9 @@ export function tourPose(p: number, explode: number, aspect: number, mobile: boo
     camPos[k] = poseA.pos[k] + (poseB.pos[k] - poseA.pos[k]) * t;
     camTgt[k] = poseA.tgt[k] + (poseB.tgt[k] - poseA.tgt[k]) * t;
   }
+  // dolly out over the middle of the flight: the whole hoistway comes back
+  // into view between two details instead of the lens skimming the steel
+  const out = 1 + 0.8 * Math.sin(Math.PI * t);
+  for (let k = 0; k < 3; k++) camPos[k] = camTgt[k] + (camPos[k] - camTgt[k]) * out;
   return { position: camPos, target: camTgt, fov };
 }
