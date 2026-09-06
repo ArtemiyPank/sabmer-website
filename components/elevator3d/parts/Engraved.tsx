@@ -142,7 +142,8 @@ function noteTexture(note: SiteNote, size: [number, number], c: Colors): THREE.C
   ctx.textBaseline = "alphabetic";
 
   // fit the type to the plate: start large, shrink only as far as needed
-  let unit = w / 26;
+  // larger lettering, so the plate still reads now that the shot is wider
+  let unit = w / 21;
   const needed = layout(ctx, note, pad, pad, inner, unit, c, true);
   if (needed > avail) unit *= Math.max(avail / needed, 0.5);
   const total = needed > avail ? layout(ctx, note, pad, pad, inner, unit, c, true) : needed;

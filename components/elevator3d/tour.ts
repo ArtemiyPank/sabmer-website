@@ -48,16 +48,16 @@ export type Stop = {
 
 export const STOPS: Stop[] = [
   // the top landing door, straight ahead before anything has moved
-  { id: "hero", group: "world", at: [0, LEVELS[3] + 1.05, LDOOR_PANEL_Z + 0.03], face: "front", size: [0.84, 1.28], pad: 1.2, p: 0.02, context: 1.8 },
+  { id: "hero", group: "world", at: [0, LEVELS[3] + 1.05, LDOOR_PANEL_Z + 0.03], face: "front", size: [0.84, 1.28], pad: 1.2, p: 0.02, context: 2.3 },
   // the cab back wall, in view once the doors have slid fully apart
-  { id: "about", group: "wallBack", at: [0, 1.5, CAB_BACK + 0.03], face: "front", size: [0.95, 0.95], pad: 1.3, p: 0.36, context: 1.7 },
+  { id: "about", group: "wallBack", at: [0, 1.5, CAB_BACK + 0.03], face: "front", size: [0.95, 0.95], pad: 1.3, p: 0.36, context: 2.2 },
   // the two cab side panels, once they have swung out of the car
-  { id: "founder0", group: "wallL", at: [-CAB_X - 0.03, 1.2, 0], face: "left", size: [1.15, 0.98], pad: 1.35, p: 0.55, context: 1.7 },
-  { id: "founder1", group: "wallR", at: [CAB_X + 0.03, 1.2, 0], face: "right", size: [1.15, 0.98], pad: 1.35, p: 0.7, context: 1.7 },
+  { id: "founder0", group: "wallL", at: [-CAB_X - 0.03, 1.2, 0], face: "left", size: [1.15, 0.98], pad: 1.35, p: 0.55, context: 2.2 },
+  { id: "founder1", group: "wallR", at: [CAB_X + 0.03, 1.2, 0], face: "right", size: [1.15, 0.98], pad: 1.35, p: 0.7, context: 2.2 },
   // the counterweight, rising past the car
-  { id: "careers", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.66, 1.02], pad: 1.2, p: 0.86, context: 1.45 },
+  { id: "careers", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.66, 1.02], pad: 1.2, p: 0.86, context: 1.9 },
   // the car apron under the sill, at the bottom of the travel
-  { id: "contacts", group: "floor", at: [0, -0.42, SILL_Z[1] + 0.03], face: "front", size: [1.1, 0.62], pad: 1.35, p: 1, context: 1.6 },
+  { id: "contacts", group: "floor", at: [0, -0.42, SILL_Z[1] + 0.03], face: "front", size: [1.1, 0.62], pad: 1.35, p: 1, context: 2.1 },
 ];
 
 /** unit normal of a lettered face, tilted toward the front so the shot reads */
@@ -95,7 +95,8 @@ export function stopAt(out: V3, s: Stop, p: number, e: Explosion): V3 {
   return out;
 }
 
-const smooth = (t: number) => t * t * (3 - 2 * t);
+/** smootherstep: eases in and out with no kick at either end */
+const smooth = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
 const clamp01 = (t: number) => Math.min(Math.max(t, 0), 1);
 
 /**
@@ -104,7 +105,7 @@ const clamp01 = (t: number) => Math.min(Math.max(t, 0), 1);
  * a stop for the first two thirds of its slice, then travels.
  */
 /** share of the gap between stops spent parked on the first one */
-const DWELL = 0.42;
+const DWELL = 0.34;
 
 export function tourAt(p: number) {
   const last = STOPS.length - 1;
@@ -153,7 +154,7 @@ const b: V3 = [0, 0, 0];
  * *part* of the elevator, so the lettering fills roughly half the frame and
  * the component carrying it stays in view.
  */
-const CONTEXT = 1.75;
+const CONTEXT = 2.25;
 
 /** camera pose of a single stop */
 function poseOf(s: Stop, p: number, e: Explosion, aspect: number, fov: number, out: { pos: V3; tgt: V3 }) {
@@ -188,7 +189,7 @@ export function tourPose(p: number, explode: number, aspect: number, mobile: boo
   }
   // dolly out over the middle of the flight: the whole hoistway comes back
   // into view between two details instead of the lens skimming the steel
-  const out = 1 + 0.8 * Math.sin(Math.PI * t);
+  const out = 1 + 1.9 * Math.sin(Math.PI * t);
   for (let k = 0; k < 3; k++) camPos[k] = camTgt[k] + (camPos[k] - camTgt[k]) * out;
   return { position: camPos, target: camTgt, fov };
 }

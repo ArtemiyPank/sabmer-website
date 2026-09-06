@@ -389,18 +389,12 @@ html[data-ui="inscribed"] main section:first-of-type {
 }
 
 /* ---- on detail: the sections are lettered onto the parts themselves, so the
-   flow copy steps aside (it stays in the page for assistive technology) and
-   only the contact form keeps a sheet */
-html[data-ui="engraved"] .sheet:not([data-keep]) {
+   flow copy steps aside — it stays in the page for assistive technology and
+   for crawlers, and sets the scroll length the camera tour runs on */
+html[data-ui="engraved"] .sheet {
   /* framer-motion writes the scroll fade inline, so this has to win */
   opacity: 0 !important;
   pointer-events: none;
-}
-html[data-ui="engraved"] .sheet[data-keep] {
-  border-radius: 0;
-  border-color: var(--bp-line-soft);
-  background-color: color-mix(in srgb, var(--bp-paper) 92%, transparent);
-  backdrop-filter: none;
 }
 html[data-ui="engraved"] main section {
   min-height: 105svh;

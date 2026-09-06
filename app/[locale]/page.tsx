@@ -6,7 +6,6 @@ import ElevatorBackdrop from "@/components/elevator/ElevatorBackdrop";
 import Header from "@/components/site/Header";
 import LanguageSwitcher from "@/components/site/LanguageSwitcher";
 import ThemeToggle from "@/components/site/ThemeToggle";
-import ContactForm from "@/components/site/ContactForm";
 import WhatsAppButton from "@/components/site/WhatsAppButton";
 import LayoutSwitcher from "@/components/site/LayoutSwitcher";
 import FadeCard from "@/components/site/FadeCard";
@@ -212,8 +211,8 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
 
         {/* ---- Contacts ---- */}
         <section id="contacts" className="scroll-mt-24 py-16 md:py-24">
-          <div className="grid max-w-4xl gap-4 md:grid-cols-[1fr_1.4fr]">
-            <FadeCard className={card} data-num="05" data-label={c.contacts.title} data-note="contacts">
+          <div className="grid max-w-4xl gap-4">
+            <FadeCard className={`${card} max-w-md`} data-num="05" data-label={c.contacts.title} data-note="contacts">
               <h2 className="sheet-title">{c.contacts.title}</h2>
               <dl className="mt-6 space-y-4 text-sm">
                 <div>
@@ -240,9 +239,6 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
               <div className="mt-6">
                 <WhatsAppButton />
               </div>
-            </FadeCard>
-            <FadeCard className={card} data-num="06" data-label={t("Contacts.form.title")} data-keep="">
-              <ContactForm />
             </FadeCard>
           </div>
         </section>
