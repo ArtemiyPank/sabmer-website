@@ -9,6 +9,7 @@ import {
   useTransform,
 } from "framer-motion";
 import ElevatorSchematic from "./ElevatorSchematic";
+import { UI_PAN, readUi, subscribeUi } from "@/lib/ui-variant";
 
 // three.js + the scene are loaded on the client only, after hydration
 const ElevatorScene = dynamic(() => import("../elevator3d/ElevatorScene"), {
@@ -50,11 +51,14 @@ const isMobileSnapshot = () => window.matchMedia(MOBILE_QUERY).matches;
  *  - compute progress as scrollY / (scrollHeight - lvh), a range that
  *    doesn't depend on the current innerHeight.
  *
+ * `rtl` mirrors the sideways pan of the drawing, because the text column of
+ * every layout sits on the opposite side on the Hebrew locale.
+ *
  * - prefers-reduced-motion: static assembled scene (progress stays 0)
  * - mobile (<768px): car still travels, exploded view reduced, no callouts,
  *   no shadows
  */
-export default function ElevatorBackdrop() {
+export default function ElevatorBackdrop({ rtl = false }: { rtl?: boolean }) {
   const { scrollY } = useScroll();
   const reducedMotion = useReducedMotion();
   const staticProgress = useMotionValue(0);
@@ -93,6 +97,9 @@ export default function ElevatorBackdrop() {
   // resolved before the first client commit, so the Canvas mounts once with
   // the right settings instead of switching from desktop to mobile
   const isMobile = useSyncExternalStore(subscribeMobile, isMobileSnapshot, () => false);
+  // phones have no room to pan the drawing aside, so only desktop follows the layout
+  const ui = useSyncExternalStore(subscribeUi, readUi, () => "sheets" as const);
+  const pan = isMobile ? 0 : UI_PAN[ui] * (rtl ? -1 : 1);
 
   // null during SSR / hydration; false -> 2D schematic fallback
   const webgl = useSyncExternalStore(noopSubscribe, detectWebGL, () => null);
@@ -128,6 +135,7 @@ export default function ElevatorBackdrop() {
           explode={isMobile ? 0.35 : 1}
           annotations={!isMobile}
           mobile={isMobile}
+          pan={pan}
         />
       ) : null}
     </div>

@@ -45,16 +45,21 @@
   --font-sans: var(--font-rubik);
 }
 
-/* On phones the info cards are more transparent and less blurred, so the
-   blueprint schematic stays clearly visible behind the content */
+/* On phones the drawing is the point: the layer is fully opaque and the info
+   sheets do not blur what is behind them (a blurred backdrop is what makes the
+   drawing look soft on a small screen) */
 @media (max-width: 767px) {
   :root {
-    --card: rgba(255, 255, 255, 0.38);
-    --blur-md: 4px;
+    --card: rgba(255, 255, 255, 0.82);
+    --bp-layer-opacity: 1;
   }
-  /* dark needs more body behind light text, or the drawing bleeds through */
   :root[data-theme="dark"] {
-    --card: rgba(8, 20, 46, 0.55);
+    --card: rgba(8, 20, 46, 0.82);
+  }
+  .sheet,
+  .backdrop-blur-md,
+  .max-md\:backdrop-blur-md {
+    backdrop-filter: none;
   }
 }
 
@@ -81,4 +86,193 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   Info sheets — four presentations of the same content over the blueprint,
+   switched live through `data-ui` on <html> (see lib/ui-variant.ts):
+
+     sheets      frosted cards, the drawing runs behind them (default)
+     callout     drafting callouts: balloon, leader line, paper tint
+     titleblock  a drawing's title block: ruled frame, text column on the
+                 other side of the sheet from the drawing
+     plain       no containers at all — text typeset straight on the paper
+--------------------------------------------------------------------------- */
+
+.sheet {
+  position: relative;
+  border-radius: 1rem;
+  border: 1px solid var(--card-border);
+  background-color: var(--card);
+  padding: 1.5rem;
+  backdrop-filter: blur(12px);
+}
+@media (min-width: 768px) {
+  .sheet {
+    padding: 2rem;
+  }
+}
+/* the section heading takes the drawing's lettering in every variant but the default */
+.sheet-title {
+  font-size: 1.875rem;
+  line-height: 1.15;
+  font-weight: 700;
+}
+
+/* ---- callouts ---- */
+html[data-ui="callout"] .sheet {
+  border-radius: 0;
+  border-color: var(--bp-line-soft);
+  background-color: color-mix(in srgb, var(--bp-paper) 74%, transparent);
+  backdrop-filter: none;
+}
+html[data-ui="callout"] .sheet[data-num]::before {
+  content: attr(data-num);
+  position: absolute;
+  top: -14px;
+  inset-inline-start: 20px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid var(--bp-accent);
+  background-color: var(--bp-paper);
+  color: var(--bp-accent);
+  font: 600 11px/25px ui-monospace, SFMono-Regular, monospace;
+  text-align: center;
+}
+/* leader line running from the sheet toward the drawing, with its anchor dot */
+html[data-ui="callout"] .sheet[data-num]::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  inset-inline-end: -72px;
+  width: 72px;
+  /* lengthened on wide screens, where the drawing is parked further away */
+  height: 9px;
+  background:
+    radial-gradient(circle 3px at calc(100% - 3px) 50%, var(--bp-accent) 99%, transparent 100%) no-repeat,
+    linear-gradient(var(--bp-line-soft), var(--bp-line-soft)) no-repeat center / 100% 1px;
+}
+@media (min-width: 768px) {
+  html[data-ui="callout"] .sheet[data-num]::after {
+    inset-inline-end: -140px;
+    width: 140px;
+  }
+}
+html[data-ui="callout"] .sheet-title {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 1.05rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bp-line);
+}
+
+/* ---- title block ---- */
+html[data-ui="titleblock"] .sheet {
+  border-radius: 0;
+  border-color: var(--bp-line-soft);
+  outline: 1px solid var(--bp-line-soft);
+  outline-offset: 5px;
+  background-color: color-mix(in srgb, var(--bp-paper) 90%, transparent);
+  backdrop-filter: none;
+  padding-top: 3.1rem;
+}
+html[data-ui="titleblock"] .sheet[data-num]::before {
+  content: attr(data-num) " · " attr(data-label);
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  padding: 0.7rem 1.5rem;
+  border-bottom: 1px solid var(--bp-line-soft);
+  color: var(--bp-line);
+  font: 600 10px/1 ui-monospace, SFMono-Regular, monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+html[data-ui="titleblock"] .sheet-title {
+  font-size: 1.6rem;
+}
+/* the text column moves to the far side of the sheet; the drawing takes the other half */
+@media (min-width: 768px) {
+  html[data-ui="titleblock"] main section > * {
+    margin-inline-start: auto;
+  }
+}
+
+/* ---- plain: no containers, the text is lettered on the paper ---- */
+html[data-ui="plain"] .sheet {
+  border: 0;
+  border-radius: 0;
+  background: none;
+  backdrop-filter: none;
+  padding: 0;
+  text-shadow:
+    0 1px 0 var(--bp-paper),
+    0 -1px 0 var(--bp-paper),
+    1px 0 0 var(--bp-paper),
+    -1px 0 0 var(--bp-paper),
+    0 0 10px var(--bp-paper),
+    0 0 18px var(--bp-paper);
+}
+html[data-ui="plain"] .sheet-title {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 1.35rem;
+  color: var(--bp-line);
+}
+/* on wide screens every drawing layout keeps the text in one narrow column so
+   the hoistway owns the other half of the sheet */
+@media (min-width: 768px) {
+  html[data-ui="callout"] main section > *,
+  html[data-ui="plain"] main section > * {
+    max-width: 30rem;
+  }
+  html[data-ui="titleblock"] main section > * {
+    max-width: 32rem;
+  }
+  html[data-ui="callout"] main section .grid,
+  html[data-ui="titleblock"] main section .grid,
+  html[data-ui="plain"] main section .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* form controls always need a solid field, whatever the sheet looks like */
+html[data-ui="callout"] .sheet input,
+html[data-ui="callout"] .sheet select,
+html[data-ui="callout"] .sheet textarea,
+html[data-ui="titleblock"] .sheet input,
+html[data-ui="titleblock"] .sheet select,
+html[data-ui="titleblock"] .sheet textarea,
+html[data-ui="plain"] .sheet input,
+html[data-ui="plain"] .sheet select,
+html[data-ui="plain"] .sheet textarea {
+  background-color: var(--bp-paper);
+  text-shadow: none;
+}
+html[data-ui="plain"] .sheet label,
+html[data-ui="plain"] .sheet dt {
+  text-shadow: none;
+}
+
+/* phones: the text sits directly over the drawing, so every layout needs a
+   little more paper behind it than on a wide screen */
+@media (max-width: 767px) {
+  html[data-ui="callout"] .sheet {
+    background-color: color-mix(in srgb, var(--bp-paper) 90%, transparent);
+  }
+  html[data-ui="titleblock"] .sheet {
+    background-color: color-mix(in srgb, var(--bp-paper) 95%, transparent);
+    outline-offset: 3px;
+  }
+  html[data-ui="plain"] .sheet {
+    text-shadow:
+      0 0 3px var(--bp-paper),
+      0 0 3px var(--bp-paper),
+      0 0 8px var(--bp-paper),
+      0 0 8px var(--bp-paper),
+      0 0 16px var(--bp-paper),
+      0 0 24px var(--bp-paper);
+  }
 }

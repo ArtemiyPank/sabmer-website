@@ -11,9 +11,13 @@ import { motion, useScroll, useTransform } from "framer-motion";
 export default function FadeCard({
   className,
   children,
+  ...rest
 }: {
   className?: string;
   children: React.ReactNode;
+  /** drafting metadata read by the CSS of the callout / title-block layouts */
+  "data-num"?: string;
+  "data-label"?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -29,7 +33,7 @@ export default function FadeCard({
   );
 
   return (
-    <motion.div ref={ref} className={className} style={{ opacity }}>
+    <motion.div ref={ref} className={className} style={{ opacity }} {...rest}>
       {children}
     </motion.div>
   );

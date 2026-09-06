@@ -8,15 +8,16 @@ import LanguageSwitcher from "@/components/site/LanguageSwitcher";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import ContactForm from "@/components/site/ContactForm";
 import WhatsAppButton from "@/components/site/WhatsAppButton";
+import LayoutSwitcher from "@/components/site/LayoutSwitcher";
 import FadeCard from "@/components/site/FadeCard";
 import { SITE_URL } from "@/lib/site";
 import { getContent } from "@/lib/content";
 
 export const revalidate = 300;
 
-const card =
-  "rounded-2xl border p-6 backdrop-blur-md md:p-8 " +
-  "[background-color:var(--card)] [border-color:var(--card-border)]";
+// one class for every text container; `data-ui` on <html> restyles them all
+// (frosted card / drafting callout / title block / bare lettering)
+const card = "sheet";
 
 export default async function Home({ params }: PageProps<"/[locale]">) {
   const { locale } = await params;
@@ -52,20 +53,21 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <ElevatorBackdrop />
+      <ElevatorBackdrop rtl={locale === "he"} />
       <Header />
+      <LayoutSwitcher />
 
       <main className="mx-auto max-w-6xl px-4 md:px-6">
         {/* ---- Hero ---- */}
         <section className="flex min-h-svh items-center pt-16">
-          <FadeCard className="w-full max-w-xl max-md:rounded-2xl max-md:border max-md:p-6 max-md:backdrop-blur-md max-md:[background-color:var(--card)] max-md:[border-color:var(--card-border)]">
+          <FadeCard className="sheet w-full max-w-xl max-md:p-6" data-num="01" data-label={c.hero.tagline}>
             <p
               className="text-sm font-medium uppercase tracking-[0.3em]"
               style={{ color: "var(--bp-accent)" }}
             >
               SABMER
             </p>
-            <h1 className="mt-4 text-3xl font-bold leading-tight sm:text-4xl md:text-5xl">
+            <h1 className="sheet-title mt-4 text-3xl font-bold leading-tight sm:text-4xl md:text-5xl">
               {c.hero.tagline}
             </h1>
             <p className="mt-6 max-w-md leading-relaxed opacity-80">
@@ -98,8 +100,8 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
 
         {/* ---- About ---- */}
         <section id="about" className="scroll-mt-24 py-16 md:py-24">
-          <FadeCard className={`${card} max-w-3xl`}>
-            <h2 className="text-3xl font-bold">{c.about.title}</h2>
+          <FadeCard className={`${card} max-w-3xl`} data-num="02" data-label={c.about.title}>
+            <h2 className="sheet-title">{c.about.title}</h2>
             <p className="mt-4 leading-relaxed opacity-85">{c.about.text}</p>
           </FadeCard>
         </section>
@@ -108,10 +110,8 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
 
         {/* ---- Founders ---- */}
         <section id="founders" className="scroll-mt-24 py-16 md:py-24">
-          <FadeCard className="inline-block">
-            <h2 className={`${card} text-3xl font-bold`}>
-              {c.founders.title}
-            </h2>
+          <FadeCard className={`${card} inline-block`} data-num="03" data-label={c.founders.title}>
+            <h2 className="sheet-title">{c.founders.title}</h2>
           </FadeCard>
           <div className="mt-6 grid max-w-4xl gap-4 md:grid-cols-2">
             {c.founders.people.map((f) => (
@@ -152,8 +152,8 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
 
         {/* ---- Careers ---- */}
         <section id="careers" className="scroll-mt-24 py-16 md:py-24">
-          <FadeCard className={`${card} max-w-3xl`}>
-            <h2 className="text-3xl font-bold">{c.careers.title}</h2>
+          <FadeCard className={`${card} max-w-3xl`} data-num="04" data-label={c.careers.title}>
+            <h2 className="sheet-title">{c.careers.title}</h2>
             <p className="mt-4 leading-relaxed opacity-85">
               {c.careers.intro}
             </p>
@@ -194,8 +194,8 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
         {/* ---- Contacts ---- */}
         <section id="contacts" className="scroll-mt-24 py-16 md:py-24">
           <div className="grid max-w-4xl gap-4 md:grid-cols-[1fr_1.4fr]">
-            <FadeCard className={card}>
-              <h2 className="text-3xl font-bold">{c.contacts.title}</h2>
+            <FadeCard className={card} data-num="05" data-label={c.contacts.title}>
+              <h2 className="sheet-title">{c.contacts.title}</h2>
               <dl className="mt-6 space-y-4 text-sm">
                 <div>
                   <dt className="opacity-60">{t("Contacts.phoneLabel")}</dt>
@@ -222,7 +222,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
                 <WhatsAppButton />
               </div>
             </FadeCard>
-            <FadeCard className={card}>
+            <FadeCard className={card} data-num="06" data-label={t("Contacts.form.title")}>
               <ContactForm />
             </FadeCard>
           </div>

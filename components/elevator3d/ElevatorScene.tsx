@@ -24,6 +24,8 @@ export type ElevatorSceneProps = {
   mobile?: boolean;
   /** debug: skip the scroll camera rig (the caller controls the camera) */
   manualCamera?: boolean;
+  /** sideways pan of the drawing in metres (see cameraPose) */
+  pan?: number;
   /** debug: render only these part modules (by name, lower-case) */
   only?: string[];
   children?: React.ReactNode;
@@ -47,12 +49,12 @@ function InvalidateOnProgress({ progress }: { progress: MotionValue<number> }) {
 }
 
 /** deterministic scroll-driven camera: follows the car, pulls back at the end */
-function CameraRig() {
+function CameraRig({ pan }: { pan: number }) {
   const { mobile } = useScene();
   useProgressFrame((p, _explode, state) => {
     const camera = state.camera as THREE.PerspectiveCamera;
     const { width, height } = state.size;
-    const pose = cameraPose(p, width / Math.max(height, 1), mobile);
+    const pose = cameraPose(p, width / Math.max(height, 1), mobile, pan);
     camera.position.set(...pose.position);
     camera.lookAt(pose.target[0], pose.target[1], pose.target[2]);
     if (camera.fov !== pose.fov) {
@@ -106,6 +108,7 @@ export default function ElevatorScene({
   annotations = true,
   mobile = false,
   manualCamera = false,
+  pan = 0,
   only,
   children,
 }: ElevatorSceneProps) {
@@ -116,7 +119,9 @@ export default function ElevatorScene({
   return (
     <Canvas
       frameloop="demand"
-      dpr={mobile ? [1, 1.5] : [1, 1.75]}
+      // phones are 2-3x: rendering below their pixel ratio is what makes the
+      // drawing look soft, and the scene only draws while the page scrolls
+      dpr={mobile ? [1.5, 3] : [1, 2]}
       shadows={!mobile}
       gl={{
         antialias: true,
@@ -132,7 +137,7 @@ export default function ElevatorScene({
           <InvalidateOnProgress progress={progress} />
           {/* mounted before the parts: its priority-0 callback has to pose the camera
               before drei's <Html> (also priority 0) projects the callouts */}
-          {!manualCamera && <CameraRig />}
+          {!manualCamera && <CameraRig pan={pan} />}
           <Lights />
           <Suspense fallback={null}>
             <Fasteners>

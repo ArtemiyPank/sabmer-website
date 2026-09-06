@@ -16,13 +16,13 @@ import type { V3 } from "./dims";
 export type MatName = Exclude<keyof Materials, "edge" | "edgeStrong" | "palette">;
 
 /**
- * Outlines are one extra (transparent) draw call per mesh — on phones they
- * cost about a quarter of the frame and are barely a pixel wide, so they are
- * dropped there.
+ * Outlines carry the technical-drawing look, so they are drawn on phones too;
+ * `edgeStrong` there because a hairline at 3x pixel ratio would fade out.
  */
-function useEdges(edges: boolean | undefined) {
+function useEdgeMaterial(edges: boolean | undefined) {
+  const m = useMats();
   const { mobile } = useScene();
-  return !!edges && !mobile;
+  return edges ? (mobile ? m.edgeStrong : m.edge) : null;
 }
 
 type Common = {
@@ -63,7 +63,7 @@ export function Box({
   receiveShadow = true,
 }: Common & { size: V3 }) {
   const m = useMats();
-  const showEdges = useEdges(edges);
+  const edgeMat = useEdgeMaterial(edges);
   return (
     <mesh
       geometry={UNIT_BOX}
@@ -74,7 +74,7 @@ export function Box({
       castShadow={castShadow}
       receiveShadow={receiveShadow}
     >
-      {showEdges && <lineSegments geometry={UNIT_BOX_EDGES} material={m.edge} />}
+      {edgeMat && <lineSegments geometry={UNIT_BOX_EDGES} material={edgeMat} />}
     </mesh>
   );
 }
@@ -96,7 +96,7 @@ export function Cyl({
   receiveShadow = true,
 }: Common & { r: number; h: number; seg?: number; axis?: "x" | "y" | "z" }) {
   const m = useMats();
-  const showEdges = useEdges(edges);
+  const edgeMat = useEdgeMaterial(edges);
   const { geom, edges: eg } = unitCyl(seg);
   const axisRot: V3 = axis === "x" ? [0, 0, -Math.PI / 2] : axis === "z" ? [Math.PI / 2, 0, 0] : [0, 0, 0];
   const inner = (
@@ -108,7 +108,7 @@ export function Cyl({
       castShadow={castShadow}
       receiveShadow={receiveShadow}
     >
-      {showEdges && <lineSegments geometry={eg} material={m.edge} />}
+      {edgeMat && <lineSegments geometry={eg} material={edgeMat} />}
     </mesh>
   );
   return rot ? (
