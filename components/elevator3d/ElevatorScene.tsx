@@ -18,7 +18,7 @@ import Pit from "./parts/Pit";
 import Labels from "./parts/Labels";
 import NoteLeaders from "./parts/NoteLeaders";
 import Engraved from "./parts/Engraved";
-import { doorPhase, tourPose } from "./tour";
+import { doorPhase, tourPose, travelAt } from "./tour";
 import type { SiteNotes } from "@/lib/site-notes";
 
 export type ElevatorSceneProps = {
@@ -59,11 +59,12 @@ function InvalidateOnProgress({ progress }: { progress: MotionValue<number> }) {
 /** deterministic scroll-driven camera: follows the car, pulls back at the end */
 function CameraRig({ pan, tour }: { pan: number; tour: boolean }) {
   const { mobile } = useScene();
-  useProgressFrame((p, explode, state) => {
+  useProgressFrame((p, explode, state, scroll) => {
     const camera = state.camera as THREE.PerspectiveCamera;
     const { width, height } = state.size;
     const aspect = width / Math.max(height, 1);
-    const pose = tour ? tourPose(p, explode, aspect, mobile) : cameraPose(p, aspect, mobile, pan);
+    // the tour is scheduled against the page, the scroll rig against travel
+    const pose = tour ? tourPose(scroll, explode, aspect, mobile) : cameraPose(p, aspect, mobile, pan);
     camera.position.set(...pose.position);
     camera.lookAt(pose.target[0], pose.target[1], pose.target[2]);
     if (camera.fov !== pose.fov) {
@@ -126,7 +127,14 @@ export default function ElevatorScene({
   // the camera tour shows a working elevator: assembled, with doors that open
   // and close on their own schedule
   const settings = useMemo(
-    () => ({ progress, explode, annotations, mobile, doors: notes ? doorPhase : undefined }),
+    () => ({
+      progress,
+      explode,
+      annotations,
+      mobile,
+      doors: notes ? doorPhase : undefined,
+      travel: notes ? travelAt : undefined,
+    }),
     [progress, explode, annotations, mobile, notes]
   );
   return (

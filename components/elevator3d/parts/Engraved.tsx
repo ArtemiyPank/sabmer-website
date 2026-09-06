@@ -34,6 +34,18 @@ function readColors(): Colors {
   };
 }
 
+/** largest type size at which the longest word of `text` still fits `maxW` */
+function fitPx(ctx: CanvasRenderingContext2D, text: string, maxW: number, px: number, font: (p: number) => string) {
+  ctx.font = font(px);
+  let longest = 0;
+  for (const w of text.split(/\s+/)) longest = Math.max(longest, ctx.measureText(w).width);
+  if (longest > maxW) {
+    px *= maxW / longest;
+    ctx.font = font(px);
+  }
+  return px;
+}
+
 /** greedy word wrap; returns the y the next block starts at */
 function wrap(
   ctx: CanvasRenderingContext2D,
@@ -96,13 +108,14 @@ function layout(
   y += unit * 2.1;
 
   if (!dry) ctx.fillStyle = c.line;
-  ctx.font = F(unit * 2.3, 700);
-  y = wrap(ctx, note.title, x, y, inner, unit * 2.7, dry);
+  const titlePx = fitPx(ctx, note.title, inner, unit * 2.3, (px) => F(px, 700));
+  y = wrap(ctx, note.title, x, y, inner, titlePx * 1.18, dry);
   y += unit * 0.8;
 
-  ctx.font = F(unit * 1.35);
+  const bodyPx = note.body ? fitPx(ctx, note.body, inner, unit * 1.35, (px) => F(px)) : unit * 1.35;
+  ctx.font = F(bodyPx);
   if (!dry) ctx.globalAlpha = 0.92;
-  if (note.body) y = wrap(ctx, note.body, x, y, inner, unit * 1.95, dry);
+  if (note.body) y = wrap(ctx, note.body, x, y, inner, bodyPx * 1.45, dry);
   if (note.items) {
     y += unit * 0.5;
     for (const it of note.items) {
@@ -122,21 +135,21 @@ function layout(
         ctx.fillStyle = c.accent;
         ctx.fillRect(x, y - unit * 0.75, inner, Math.max(1, unit * 0.05));
       }
-      ctx.font = F(unit * 1.55, 700);
+      const bTitlePx = fitPx(ctx, b.title, inner, unit * 1.55, (px) => F(px, 700));
       if (!dry) ctx.fillStyle = c.line;
-      y = wrap(ctx, b.title, x, y + unit * 0.5, inner, unit * 1.9, dry);
+      y = wrap(ctx, b.title, x, y + unit * 0.5, inner, bTitlePx * 1.22, dry);
       if (b.caption) {
         ctx.font = `600 ${Math.round(unit * 0.95)}px ui-monospace, SFMono-Regular, monospace`;
         if (!dry) ctx.fillStyle = c.accent;
         y = wrap(ctx, b.caption.toUpperCase(), x, y + unit * 0.1, inner, unit * 1.4, dry);
       }
       if (b.body) {
-        ctx.font = F(unit * 1.3);
+        const bBodyPx = fitPx(ctx, b.body, inner, unit * 1.3, (px) => F(px));
         if (!dry) {
           ctx.fillStyle = c.line;
           ctx.globalAlpha = 0.92;
         }
-        y = wrap(ctx, b.body, x, y + unit * 0.5, inner, unit * 1.85, dry);
+        y = wrap(ctx, b.body, x, y + unit * 0.5, inner, bBodyPx * 1.42, dry);
       }
     }
   }
@@ -206,18 +219,19 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
   const mats = useRef<Array<THREE.MeshBasicMaterial | null>>([]);
   const pos = useRef<V3>([0, 0, 0]).current;
 
-  useProgressFrame((p, ex) => {
-    const e = explosion(p, ex);
+  useProgressFrame((_p, ex, _state, scroll) => {
+    // the tour is scheduled against the page; stopAt maps it to travel itself
+    const e = explosion(scroll, ex);
     for (let i = 0; i < STOPS.length; i++) {
       const g = groups.current[i];
       const m = mats.current[i];
-      const o = stopOpacity(i, p);
+      const o = stopOpacity(i, scroll);
       if (m) {
         m.opacity = o;
         m.visible = o > 0.01;
       }
       if (g && o > 0.01) {
-        stopAt(pos, STOPS[i], p, e);
+        stopAt(pos, STOPS[i], scroll, e);
         g.position.set(pos[0], pos[1], pos[2]);
       }
     }

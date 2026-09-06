@@ -4,11 +4,12 @@
  * its doors open, closes them, runs down the shaft, and the camera rides
  * along, stopping at the component that carries each section of the page.
  *
- *   1. inside the cab, through the open doors — then the doors close
+ *   1. square on to the cab, reading the sign inside — then the doors slide
+      shut across it and only afterwards does the car set off
  *   2. the car from the side, on the move
  *   3. the counterweight, coming the other way
  *   4. a landing further down, on its closed doors
- *   5. the pit, square on to the equipment — the steady final frame
+ *   5. the pit, square on to the equipment, the last plate on the buffers
  */
 
 import {
@@ -18,7 +19,6 @@ import {
   CWT_Z,
   LDOOR_PANEL_Z,
   LEVELS,
-  SILL_Z,
   carY,
   cwtY,
   explosion,
@@ -54,15 +54,15 @@ export type Stop = {
 
 export const STOPS: Stop[] = [
   // 1. the cab interior, read through the open doors before they shut
-  { id: "hero", group: "wallBack", at: [0, 1.45, CAB_BACK + 0.03], face: "front", size: [0.9, 0.95], pad: 1.25, p: 0.03, context: 2.6 },
+  { id: "hero", group: "wallBack", at: [0, 1.25, CAB_BACK + 0.03], face: "square", size: [1, 1.45], pad: 1.2, p: 0.03, context: 2 },
   // 2. the flank of the car as it runs down the shaft
   { id: "about", group: "wallL", at: [-CAB_X - 0.03, 1.2, 0], face: "left", size: [1.2, 1.0], pad: 1.3, p: 0.3, context: 1.7 },
   // 3. the counterweight, rising past it
   { id: "careers", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.66, 1.02], pad: 1.2, p: 0.55, context: 1.9 },
   // 4. the closed landing doors one floor down
   { id: "founders", group: "world", at: [0, LEVELS[1] + 1.05, LDOOR_PANEL_Z + 0.03], face: "front", size: [0.84, 1.62], pad: 1.2, p: 0.78, context: 1.25 },
-  // 5. the pit, straight on to the whole machine — a steady closing frame
-  { id: "contacts", group: "floor", at: [0, -0.42, SILL_Z[1] + 0.03], face: "square", size: [1.2, 0.72], pad: 1.3, p: 1, context: 2.3 },
+  // 5. the pit, straight on: the plate rides the car buffers
+  { id: "contacts", group: "world", at: [0, -1.24, 0.2], face: "square", size: [0.8, 0.66], pad: 1.3, p: 1, context: 2.6 },
 ];
 
 /**
@@ -70,7 +70,13 @@ export const STOPS: Stop[] = [
  * landing with its doors open, then closes them before it sets off.
  */
 export function doorPhase(p: number) {
-  return 1 - smooth(clamp01((p - 0.09) / 0.09));
+  return 1 - smooth(clamp01((p - 0.08) / 0.1));
+}
+
+/** the car only starts travelling once the doors have shut */
+const DEPART = 0.19;
+export function travelAt(p: number) {
+  return clamp01((clamp01(p) - DEPART) / (1 - DEPART));
 }
 /** unit normal of a lettered face, tilted toward the front so the shot reads */
 const NORMALS: Record<Face, V3> = {
@@ -99,13 +105,13 @@ export function stopAt(out: V3, s: Stop, p: number, e: Explosion): V3 {
   }
   if (s.group === "cwt") {
     out[0] = s.at[0];
-    out[1] = cwtY(p) + s.at[1];
+    out[1] = cwtY(travelAt(p)) + s.at[1];
     out[2] = s.at[2];
     return out;
   }
   const off = e[s.group];
   out[0] = s.at[0] + off[0];
-  out[1] = carY(p) + s.at[1] + off[1];
+  out[1] = carY(travelAt(p)) + s.at[1] + off[1];
   out[2] = s.at[2] + off[2];
   return out;
 }
@@ -198,9 +204,9 @@ export function tourPose(p: number, explode: number, aspect: number, mobile: boo
     camPos[k] = poseA.pos[k] + (poseB.pos[k] - poseA.pos[k]) * t;
     camTgt[k] = poseA.tgt[k] + (poseB.tgt[k] - poseA.tgt[k]) * t;
   }
-  // dolly out over the middle of the flight: the whole hoistway comes back
-  // into view between two details instead of the lens skimming the steel
-  const out = 1 + 1.9 * Math.sin(Math.PI * t);
+  // dolly far out over the middle of the flight: the whole hoistway comes
+  // back into view between two details instead of the lens skimming the steel
+  const out = 1 + 3.2 * Math.sin(Math.PI * t);
   for (let k = 0; k < 3; k++) camPos[k] = camTgt[k] + (camPos[k] - camTgt[k]) * out;
   return { position: camPos, target: camTgt, fov };
 }

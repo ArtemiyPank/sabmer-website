@@ -23,6 +23,12 @@ export type SceneSettings = {
    * one; without it the doors follow the exploded view.
    */
   doors?: (p: number) => number;
+  /**
+   * Remaps scroll progress to travel progress for the moving parts. The
+   * camera tour holds the car at the top landing while its doors close, so
+   * the machine runs on a different clock than the page.
+   */
+  travel?: (p: number) => number;
 };
 
 const SceneContext = createContext<SceneSettings | null>(null);
@@ -35,19 +41,24 @@ export function useScene(): SceneSettings {
 }
 
 /**
- * Runs `cb(p, explode, state)` on every rendered frame (the canvas renders on
- * demand, i.e. only when progress / theme / size changed). Use it to move
- * and explode objects via refs. `priority` orders callbacks (ascending):
+ * Runs `cb(p, explode, state, scroll)` on every rendered frame (the canvas
+ * renders on demand, i.e. only when progress / theme / size changed). `p` is
+ * travel progress — what the machine follows; `scroll` is the raw page
+ * progress, which the camera tour and the doors run on. Use it to move and
+ * explode objects via refs. `priority` orders callbacks (ascending):
  * parts use the default -1; the camera rig and rope builders use 0 so they
  * run after the objects they follow. drei's <Html> also subscribes at 0, so
  * anything whose screen position it projects must run at -1. Never pass a
  * positive value — R3F would then stop rendering automatically.
  */
 export function useProgressFrame(
-  cb: (p: number, explode: number, state: RootState) => void,
+  cb: (p: number, explode: number, state: RootState, scroll: number) => void,
   priority = -1
 ) {
-  const { progress, explode } = useScene();
+  const { progress, explode, travel } = useScene();
   // useFrame keeps the latest callback in its own ref, so no extra ref here
-  useFrame((state) => cb(progress.get(), explode, state), priority);
+  useFrame((state) => {
+    const scroll = progress.get();
+    cb(travel ? travel(scroll) : scroll, explode, state, scroll);
+  }, priority);
 }

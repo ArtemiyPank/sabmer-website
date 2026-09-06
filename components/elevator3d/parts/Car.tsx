@@ -47,7 +47,7 @@ export default function Car() {
   const pulL = useRef<THREE.Group>(null);
   const pulR = useRef<THREE.Group>(null);
 
-  useProgressFrame((p, explode) => {
+  useProgressFrame((p, explode, _state, scroll) => {
     if (root.current) root.current.position.y = carY(p);
     const e = explosion(p, explode);
     crosshead.current?.position.set(...e.crosshead);
@@ -63,7 +63,7 @@ export default function Car() {
     returnR.current?.position.set(...e.returnR);
     header.current?.position.set(...e.header);
     if (doors) {
-      const open = doors(p) * DOOR_OPEN;
+      const open = doors(scroll) * DOOR_OPEN;
       doorL.current?.position.set(-open, 0, 0);
       doorR.current?.position.set(open, 0, 0);
     } else {

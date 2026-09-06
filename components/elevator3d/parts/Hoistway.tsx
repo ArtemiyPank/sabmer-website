@@ -53,10 +53,10 @@ function Landing({ L, i }: { L: number; i: number }) {
   const top = i === LEVELS.length - 1;
   const { doors } = useScene();
   const panels = useRef<THREE.Group>(null);
-  useProgressFrame((p) => {
+  useProgressFrame((_p, _explode, _state, scroll) => {
     const g = panels.current;
     if (!g || !doors) return;
-    const open = top ? doors(p) * DOOR_OPEN : 0;
+    const open = top ? doors(scroll) * DOOR_OPEN : 0;
     for (let k = 0; k < g.children.length; k++) {
       g.children[k].position.x = k === 0 ? -open : open;
     }
