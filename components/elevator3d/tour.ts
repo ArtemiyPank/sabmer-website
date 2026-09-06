@@ -51,10 +51,11 @@ export type Stop = {
   /** how much room around the plate the shot leaves (1 = plate fills the frame) */
   context?: number;
   /**
-   * Depth-test the plate against the scene. On for the sign in the cab, which
-   * the closing doors have to slide over; off elsewhere, where the sling and
-   * the guide rails stand between the lens and the panel and would otherwise
-   * shred the lettering.
+   * Depth-test the plate against the scene. On for the signs mounted on the
+   * building and inside the cab, which the doors and the passing car have to
+   * cover; off for the two on the car's own flanks, where the sling and the
+   * guide rails stand between the lens and the panel and would shred the
+   * lettering (both are edge-on from the front, so nothing shows through).
    */
   occluded?: boolean;
 };
@@ -67,9 +68,9 @@ export const STOPS: Stop[] = [
   // 3. the counterweight, rising past it
   { id: "careers", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.66, 1.02], pad: 1.2, p: 0.55, context: 1.9 },
   // 4. the closed landing doors one floor down
-  { id: "founders", group: "world", at: [0, LEVELS[1] + 1.05, LDOOR_PANEL_Z + 0.03], face: "front", size: [0.84, 1.62], pad: 1.2, p: 0.78, context: 1.25 },
+  { id: "founders", group: "world", at: [0, LEVELS[1] + 1.05, LDOOR_PANEL_Z + 0.03], face: "front", size: [0.84, 1.62], pad: 1.2, p: 0.78, context: 1.25, occluded: true },
   // 5. the pit, straight on: the plate rides the car buffers
-  { id: "contacts", group: "world", at: [0, -1.24, 0.2], face: "square", size: [0.8, 0.66], pad: 1.3, p: 1, context: 2.6 },
+  { id: "contacts", group: "world", at: [0, -1.24, 0.2], face: "square", size: [0.8, 0.66], pad: 1.3, p: 1, context: 2.6, occluded: true },
 ];
 
 /**
@@ -157,20 +158,6 @@ export function tourAt(p: number) {
   const local = (q - from) / (to - from);
   const t = local <= DWELL ? 0 : smooth(Math.min((local - DWELL) / (1 - DWELL), 1));
   return { i, next: i + 1, t };
-}
-
-/**
- * How strongly a stop's lettering shows. It leaves early in the flight and
- * the next one only lands at the end of it, so the middle of every transition
- * is the machine alone — the flight reads as travelling to the next part
- * rather than as one plate dissolving into another.
- */
-export function stopOpacity(index: number, p: number) {
-  const { i, next, t } = tourAt(p);
-  if (index === i && index === next) return 1;
-  if (index === i) return 1 - smooth(Math.min(t / 0.32, 1));
-  if (index === next) return smooth(Math.max((t - 0.68) / 0.32, 0));
-  return 0;
 }
 
 /**

@@ -4,16 +4,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useProgressFrame } from "../scene-context";
 import { explosion, type V3 } from "../dims";
-import { FACE_ROT, STOPS, stopAt, stopOpacity, type Stop } from "../tour";
+import { FACE_ROT, STOPS, stopAt, type Stop } from "../tour";
 import type { SiteNote, SiteNotes } from "@/lib/site-notes";
 
 /**
  * The page text lettered onto the machine: each section is drawn into a
  * canvas and mapped onto a plane laid on the surface of the component it
- * belongs to — the landing door, the cab back wall, the two side panels, the
- * counterweight, the car apron. The camera tour (see ../tour.ts) flies from
- * one to the next as the page scrolls, so a section is read by walking up to
- * the part that carries it.
+ * belongs to — the cab back wall, the two side panels, the counterweight, a
+ * landing door, the pit buffers. They are permanent fixtures of the drawing,
+ * always in place; the camera tour (see ../tour.ts) simply walks up to one
+ * after another as the page scrolls.
  *
  * A plate marked `occluded` is depth-tested like any other surface — the sign
  * in the cab really sits on the back wall, so the closing doors slide over it.
@@ -218,7 +218,6 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
   useEffect(() => () => plates.forEach((t) => t?.dispose()), [plates]);
 
   const groups = useRef<Array<THREE.Group | null>>([]);
-  const mats = useRef<Array<THREE.MeshBasicMaterial | null>>([]);
   const pos = useRef<V3>([0, 0, 0]).current;
 
   useProgressFrame((_p, ex, _state, scroll) => {
@@ -226,16 +225,9 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
     const e = explosion(scroll, ex);
     for (let i = 0; i < STOPS.length; i++) {
       const g = groups.current[i];
-      const m = mats.current[i];
-      const o = stopOpacity(i, scroll);
-      if (m) {
-        m.opacity = o;
-        m.visible = o > 0.01;
-      }
-      if (g && o > 0.01) {
-        stopAt(pos, STOPS[i], scroll, e);
-        g.position.set(pos[0], pos[1], pos[2]);
-      }
+      if (!g) continue;
+      stopAt(pos, STOPS[i], scroll, e);
+      g.position.set(pos[0], pos[1], pos[2]);
     }
   });
 
@@ -257,14 +249,10 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
               <meshBasicMaterial
                 map={tex}
                 transparent
-                opacity={0}
                 depthWrite={false}
                 depthTest={s.occluded ?? false}
                 toneMapped={false}
                 side={THREE.DoubleSide}
-                ref={(el) => {
-                  mats.current[i] = el;
-                }}
               />
             </mesh>
           </group>
