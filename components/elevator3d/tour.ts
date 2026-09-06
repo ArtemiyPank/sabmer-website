@@ -173,6 +173,13 @@ export function stopOpacity(index: number, p: number) {
   return 0;
 }
 
+/**
+ * How much room around the plate the shot leaves: the point is to arrive at a
+ * *part* of the elevator, so the lettering fills roughly half the frame and
+ * the component carrying it stays in view.
+ */
+const CONTEXT = 2.25;
+
 /** distance that frames a `size` face in a `fov` camera at this aspect */
 function frameDistance(size: [number, number], fov: number, aspect: number) {
   const halfV = Math.tan((fov / 2) * (Math.PI / 180));
@@ -185,13 +192,14 @@ const camPos: V3 = [0, 0, 0];
 const camTgt: V3 = [0, 0, 0];
 const a: V3 = [0, 0, 0];
 const b: V3 = [0, 0, 0];
-
-/**
- * How much room around the plate the shot leaves: the point is to arrive at a
- * *part* of the elevator, so the lettering fills roughly half the frame and
- * the component carrying it stays in view.
- */
-const CONTEXT = 2.25;
+const dirA: V3 = [0, 0, 0];
+const dirB: V3 = [0, 0, 0];
+/** the flight is routed out through the front of the hoistway */
+const FRONT: V3 = [0.06, 0.16, 0.99];
+/** how far out the camera swings over the middle of a flight */
+const LIFTOFF = 3.5;
+/** how strongly the middle of a flight is pulled to the front */
+const SWING = 0.85;
 
 /** camera pose of a single stop */
 function poseOf(s: Stop, p: number, e: Explosion, aspect: number, fov: number, out: { pos: V3; tgt: V3 }) {
@@ -213,6 +221,12 @@ const poseB = { pos: b, tgt: [0, 0, 0] as V3 };
 /**
  * Camera pose for the tour. Mirrors `cameraPose`'s contract so the rig can
  * swap between the two layouts.
+ *
+ * Between stops the pose is split into a direction and a distance rather than
+ * interpolated as a point: two stops on opposite sides of the shaft would
+ * otherwise cancel out and drag the lens straight through the machine. The
+ * direction swings out to the front and the distance grows, so the flight is
+ * an arc around the hoistway with the whole of it in view at the halfway mark.
  */
 export function tourPose(p: number, explode: number, aspect: number, mobile: boolean): CameraPose {
   const fov = mobile ? 42 : 34;
@@ -220,13 +234,32 @@ export function tourPose(p: number, explode: number, aspect: number, mobile: boo
   const { i, next, t } = tourAt(p);
   poseOf(STOPS[i], p, e, aspect, fov, poseA);
   poseOf(STOPS[next], p, e, aspect, fov, poseB);
+
+  let da = 0;
+  let db = 0;
   for (let k = 0; k < 3; k++) {
-    camPos[k] = poseA.pos[k] + (poseB.pos[k] - poseA.pos[k]) * t;
-    camTgt[k] = poseA.tgt[k] + (poseB.tgt[k] - poseA.tgt[k]) * t;
+    dirA[k] = poseA.pos[k] - poseA.tgt[k];
+    dirB[k] = poseB.pos[k] - poseB.tgt[k];
+    da += dirA[k] * dirA[k];
+    db += dirB[k] * dirB[k];
   }
-  // dolly far out over the middle of the flight: the whole hoistway comes
-  // back into view between two details instead of the lens skimming the steel
-  const out = 1 + 3.2 * Math.sin(Math.PI * t);
-  for (let k = 0; k < 3; k++) camPos[k] = camTgt[k] + (camPos[k] - camTgt[k]) * out;
+  da = Math.sqrt(da) || 1;
+  db = Math.sqrt(db) || 1;
+
+  const arc = Math.sin(Math.PI * t);
+  const swing = SWING * arc;
+  let len = 0;
+  for (let k = 0; k < 3; k++) {
+    const d = dirA[k] / da + (dirB[k] / db - dirA[k] / da) * t;
+    camPos[k] = d * (1 - swing) + FRONT[k] * swing;
+    len += camPos[k] * camPos[k];
+  }
+  len = Math.sqrt(len) || 1;
+
+  const dist = (da + (db - da) * t) * (1 + LIFTOFF * arc);
+  for (let k = 0; k < 3; k++) {
+    camTgt[k] = poseA.tgt[k] + (poseB.tgt[k] - poseA.tgt[k]) * t;
+    camPos[k] = camTgt[k] + (camPos[k] / len) * dist;
+  }
   return { position: camPos, target: camTgt, fov };
 }
