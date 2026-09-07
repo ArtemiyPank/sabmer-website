@@ -79,7 +79,11 @@ function CameraRig({ tour }: { tour: boolean }) {
   // flies straight from the first to the destination, and if the visitor
   // interrupts it the camera eases back onto the scroll pose instead of
   // snapping there
-  const riding = useRef(false);
+  // the id of the ride the flight was set up for; -1 when not flying. Keyed on
+  // the id rather than on "was riding", because two presses in a row can
+  // happen without a frame in between, and the camera has to leave from where
+  // the last one left it, not from where the first one started.
+  const rideId = useRef(-1);
   const held = useRef<{ pos: V3; tgt: V3 }>({ pos: [0, 0, 0], tgt: [0, 0, 0] });
   const settleUntil = useRef(0);
   const SETTLE = 450;
@@ -99,15 +103,15 @@ function CameraRig({ tour }: { tour: boolean }) {
     let pose = tourPose(ride.active ? ride.to : scroll, explode, aspect, mobile);
 
     if (ride.active) {
-      if (!riding.current) {
+      if (rideId.current !== ride.id) {
+        rideId.current = ride.id;
         copy3(rideFrom.pos, held.current.pos);
         copy3(rideFrom.tgt, held.current.tgt);
-        riding.current = true;
       }
       pose = blendPoses(rideFrom.pos, rideFrom.tgt, pose.position, pose.target, ride.t, pose.fov);
-    } else if (riding.current) {
-      // the ride ended early: keep where the flight left off and ease back on
-      riding.current = false;
+    } else if (rideId.current !== -1) {
+      // the ride ended: keep where the flight left off and ease back on
+      rideId.current = -1;
       settleUntil.current = state.clock.elapsedTime * 1000 + SETTLE;
       copy3(settleFrom.pos, held.current.pos);
       copy3(settleFrom.tgt, held.current.tgt);

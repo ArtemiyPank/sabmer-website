@@ -16,10 +16,12 @@ let stop: (() => void) | null = null;
  * Published so the 3D camera can fly straight to the destination while a ride
  * is running, instead of walking through every stop the page scrolls past.
  * `to` is the destination as scroll progress, `t` the eased progress of the
- * ride itself — the same curve the page is moving on.
+ * ride itself — the same curve the page is moving on, and `id` counts the
+ * rides so the camera can tell a new one from the one it is already flying
+ * (two presses in a row need not render a frame in between).
  */
-export type Ride = { active: boolean; t: number; to: number };
-const ride: Ride = { active: false, t: 0, to: 0 };
+export type Ride = { active: boolean; t: number; to: number; id: number };
+const ride: Ride = { active: false, t: 0, to: 0, id: 0 };
 export const getRide = (): Ride => ride;
 
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -54,6 +56,7 @@ export function rideTo(top: number) {
   const max = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
   ride.to = Math.min(Math.max((start + delta) / max, 0), 1);
   ride.t = 0;
+  ride.id += 1;
   ride.active = true;
   const interrupt = () => cancelRide();
   // the visitor takes over the moment they touch the page themselves
