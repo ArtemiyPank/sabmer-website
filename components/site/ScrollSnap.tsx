@@ -27,7 +27,7 @@ const REARM = 260; // ms after a hold before a new gesture can be caught
 const HOLD_MAX = 2450; // ms from the catch before the visitor gets the page back
 const STEADY = 5; // notches in a row that do not fade: a hand, not inertia
 const FAST = 1.1; // px/ms over the gesture that counts as a fling
-const MIN_TRAVEL = 380; // px it has to have covered before that means a fling
+const MIN_TRAVEL = 210; // px it has to have covered before that means a fling
 const MIN_EVENTS = 2; // a single jump is not a fling: inertia arrives as a stream
 
 export default function ScrollSnap() {
@@ -118,7 +118,7 @@ export default function ScrollSnap() {
       last = now;
       // the ride re-asserts the scroll position every frame, which is what
       // overrides the inertia the browser is still applying
-      rideTo(target, { ms: CATCH_MS, ignoreWheel: true, ease: easeGentle });
+      rideTo(target, { ms: CATCH_MS, ignoreWheel: true, ease: easeGentle, direct: false });
       if (!frame) frame = requestAnimationFrame(hold);
     };
 

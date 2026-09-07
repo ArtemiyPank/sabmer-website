@@ -102,9 +102,12 @@ function CameraRig({ tour }: { tour: boolean }) {
     }
 
     const ride = getRide();
-    let pose = tourPose(ride.active ? ride.to : scroll, explode, aspect, mobile);
+    // a caught fling is not a flight: it goes to the neighbouring plate, so
+    // the camera takes the ordinary route round the hoistway
+    const flying = ride.active && ride.direct;
+    let pose = tourPose(flying ? ride.to : scroll, explode, aspect, mobile);
 
-    if (ride.active) {
+    if (flying) {
       if (rideId.current !== ride.id) {
         rideId.current = ride.id;
         copy3(rideFrom.pos, held.current.pos);

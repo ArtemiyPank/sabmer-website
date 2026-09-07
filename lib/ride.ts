@@ -20,8 +20,8 @@ let stop: (() => void) | null = null;
  * rides so the camera can tell a new one from the one it is already flying
  * (two presses in a row need not render a frame in between).
  */
-export type Ride = { active: boolean; t: number; to: number; id: number };
-const ride: Ride = { active: false, t: 0, to: 0, id: 0 };
+export type Ride = { active: boolean; t: number; to: number; id: number; direct: boolean };
+const ride: Ride = { active: false, t: 0, to: 0, id: 0, direct: true };
 export const getRide = (): Ride => ride;
 
 /**
@@ -68,10 +68,15 @@ export function cancelRide() {
  *  - `ignoreWheel` keeps the ride alive through the tail of a trackpad fling,
  *    which keeps firing wheel events after the fingers have left
  *  - `ease` overrides the curve the trip is paced on
+ *  - `direct` (the default) flies the camera straight to the destination
+ *    instead of walking it through every stop on the way. Catching a fling
+ *    turns it off: that trip only ever goes to the neighbouring plate, so the
+ *    camera should swing out around the hoistway exactly as it does when the
+ *    page is scrolled there by hand.
  */
 export function rideTo(
   top: number,
-  opts?: { ms?: number; ignoreWheel?: boolean; ease?: (t: number) => number }
+  opts?: { ms?: number; ignoreWheel?: boolean; ease?: (t: number) => number; direct?: boolean }
 ) {
   cancelRide();
   const start = window.scrollY;
@@ -89,6 +94,7 @@ export function rideTo(
   ride.to = Math.min(Math.max((start + delta) / max, 0), 1);
   ride.t = 0;
   ride.id += 1;
+  ride.direct = opts?.direct ?? true;
   ride.active = true;
   const interrupt = () => cancelRide();
   // the visitor takes over the moment they touch the page themselves
