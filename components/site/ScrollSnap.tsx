@@ -20,10 +20,10 @@ import { easeGentle, getRide, rideTo, setHold } from "@/lib/ride";
  * only while the camera tour is running.
  */
 
-const CATCH_MS = 800; // easing into the stop a fling was caught before
+const CATCH_MS = 1050; // easing into the stop a fling was caught before
 const QUIET = 220; // ms without a scroll event: one gesture has ended
 const STILL = 220; // ms without the page being pushed off the stop: momentum spent
-const HOLD_MAX = 2200; // ms from the catch before the visitor gets the page back
+const HOLD_MAX = 2450; // ms from the catch before the visitor gets the page back
 const STEADY = 4; // notches in a row that do not fade: a hand, not inertia
 const FAST = 1.1; // px/ms over the gesture that counts as a fling
 const MIN_TRAVEL = 380; // px it has to have covered before that means a fling

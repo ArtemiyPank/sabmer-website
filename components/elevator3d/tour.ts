@@ -50,15 +50,21 @@ export type Stop = {
   p: number;
   /** how much room around the plate the shot leaves (1 = plate fills the frame) */
   context?: number;
+  /**
+   * How far the camera swings out over the flight that *leaves* this stop,
+   * overriding LIFTOFF. The legs down the cab are close quarters, so they get
+   * a wider arc than the drop through the shaft further down.
+   */
+  liftoff?: number;
 };
 
 export const STOPS: Stop[] = [
   // 1. the cab interior, read through the open doors before they shut
-  { id: "hero", group: "wallBack", at: [0, 1.56, CAB_BACK + 0.03], face: "square", size: [1, 1.12], pad: 1.2, p: 0.03, context: 2.1 },
+  { id: "hero", group: "wallBack", at: [0, 1.56, CAB_BACK + 0.03], face: "square", size: [1, 1.12], pad: 1.2, p: 0.03, context: 2.1, liftoff: 4.7 },
   // 2. the flank of the car as it runs down the shaft; the sign sits toward
   //    the front of the panel, clear of the sling stile, the guide rail and
   //    the governor rope, which all run down the middle of the car
-  { id: "about", group: "wallL", at: [-CAB_X - 0.09, 1.2, 0.55], face: "left", size: [0.46, 1.02], pad: 1.25, p: 0.36, context: 1.15 },
+  { id: "about", group: "wallL", at: [-CAB_X - 0.09, 1.2, 0.55], face: "left", size: [0.46, 1.02], pad: 1.25, p: 0.36, context: 1.15, liftoff: 5.1 },
   // 3. the counterweight, rising past it
   { id: "careers", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.66, 1.02], pad: 1.2, p: 0.55, context: 1.35 },
   // 4. the closed landing doors one floor down
@@ -262,7 +268,7 @@ export function tourPose(p: number, explode: number, aspect: number, mobile: boo
   }
   len = Math.sqrt(len) || 1;
 
-  const dist = (da + (db - da) * t) * (1 + LIFTOFF * arc);
+  const dist = (da + (db - da) * t) * (1 + (STOPS[i].liftoff ?? LIFTOFF) * arc);
   for (let k = 0; k < 3; k++) {
     camTgt[k] = poseA.tgt[k] + (poseB.tgt[k] - poseA.tgt[k]) * t;
     camPos[k] = camTgt[k] + (camPos[k] / len) * dist;
