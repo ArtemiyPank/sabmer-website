@@ -181,6 +181,8 @@ const dirB: V3 = [0, 0, 0];
 const FRONT: V3 = [0.06, 0.16, 0.99];
 /** how far out the camera swings over the middle of a flight */
 const LIFTOFF = 3.5;
+/** the same for a ride, as a multiple of the arrival distance (see blendPoses) */
+const RIDE_LIFT = 1.8;
 /** how strongly the middle of a flight is pulled to the front */
 const SWING = 0.85;
 
@@ -256,6 +258,11 @@ const blendTgt: V3 = [0, 0, 0];
  * destination stop without walking through the ones in between. Same arc as
  * an ordinary flight — direction and distance are blended separately and the
  * path swings out to the front — so it never cuts through the machine.
+ *
+ * The swing is added as a multiple of the *arrival* distance rather than
+ * multiplying the current one: a ride can begin while the camera is already
+ * mid-flight and far out, and multiplying that again would hurl it into the
+ * distance at the first frame.
  */
 export function blendPoses(
   fromPos: V3,
@@ -286,7 +293,7 @@ export function blendPoses(
   }
   len = Math.sqrt(len) || 1;
 
-  const dist = (da + (db - da) * t) * (1 + LIFTOFF * arc);
+  const dist = da + (db - da) * t + RIDE_LIFT * arc * db;
   for (let k = 0; k < 3; k++) {
     blendTgt[k] = fromTgt[k] + (toTgt[k] - fromTgt[k]) * t;
     blendPos[k] = blendTgt[k] + (blendPos[k] / len) * dist;
