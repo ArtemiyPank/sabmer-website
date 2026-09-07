@@ -32,11 +32,11 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
     hero: { n: "01", title: c.hero.tagline, body: c.hero.sub },
     about: { n: "02", title: c.about.title, body: c.about.text },
     founders: {
-      n: "03",
+      n: "04",
       title: c.founders.title,
       blocks: c.founders.people.map((f) => ({ title: f.name, caption: f.role, body: f.bio })),
     },
-    careers: { n: "04", title: c.careers.title, body: c.careers.intro, items: c.careers.roles },
+    careers: { n: "03", title: c.careers.title, body: c.careers.intro, items: c.careers.roles },
     contacts: {
       n: "05",
       title: c.contacts.title,
@@ -123,6 +123,47 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
 
         <div aria-hidden="true" className="h-[30svh] md:hidden" />
 
+        {/* ---- Careers ---- */}
+        <section id="careers" className="scroll-mt-24 py-16 md:py-24">
+          <FadeCard className={`${card} max-w-3xl`}>
+            <h2 className="sheet-title">{c.careers.title}</h2>
+            <p className="mt-4 leading-relaxed opacity-85">
+              {c.careers.intro}
+            </p>
+            <ul className="mt-4 space-y-2">
+              {c.careers.offers.map((offer) => (
+                <li key={offer} className="flex items-center gap-2 text-sm">
+                  <span style={{ color: "var(--bp-accent)" }}>✓</span>
+                  {offer}
+                </li>
+              ))}
+            </ul>
+            <h3 className="mt-8 text-lg font-semibold">
+              {c.careers.rolesTitle}
+            </h3>
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {c.careers.roles.map((role) => (
+                <li
+                  key={role}
+                  className="rounded-full border px-4 py-1.5 text-sm"
+                  style={{ borderColor: "var(--card-border)" }}
+                >
+                  {role}
+                </li>
+              ))}
+            </ul>
+            <a
+              href="#contacts"
+              className="mt-8 inline-block rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "#1e3a8a" }}
+            >
+              {c.careers.apply}
+            </a>
+          </FadeCard>
+        </section>
+
+        <div aria-hidden="true" className="h-[30svh] md:hidden" />
+
         {/* ---- Founders ---- */}
         <section id="founders" className="scroll-mt-24 py-16 md:py-24">
           <FadeCard className={`${card} inline-block`}>
@@ -161,47 +202,6 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
               </FadeCard>
             ))}
           </div>
-        </section>
-
-        <div aria-hidden="true" className="h-[30svh] md:hidden" />
-
-        {/* ---- Careers ---- */}
-        <section id="careers" className="scroll-mt-24 py-16 md:py-24">
-          <FadeCard className={`${card} max-w-3xl`}>
-            <h2 className="sheet-title">{c.careers.title}</h2>
-            <p className="mt-4 leading-relaxed opacity-85">
-              {c.careers.intro}
-            </p>
-            <ul className="mt-4 space-y-2">
-              {c.careers.offers.map((offer) => (
-                <li key={offer} className="flex items-center gap-2 text-sm">
-                  <span style={{ color: "var(--bp-accent)" }}>✓</span>
-                  {offer}
-                </li>
-              ))}
-            </ul>
-            <h3 className="mt-8 text-lg font-semibold">
-              {c.careers.rolesTitle}
-            </h3>
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {c.careers.roles.map((role) => (
-                <li
-                  key={role}
-                  className="rounded-full border px-4 py-1.5 text-sm"
-                  style={{ borderColor: "var(--card-border)" }}
-                >
-                  {role}
-                </li>
-              ))}
-            </ul>
-            <a
-              href="#contacts"
-              className="mt-8 inline-block rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: "#1e3a8a" }}
-            >
-              {c.careers.apply}
-            </a>
-          </FadeCard>
         </section>
 
         <div aria-hidden="true" className="h-[30svh] md:hidden" />

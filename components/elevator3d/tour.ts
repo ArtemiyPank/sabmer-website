@@ -76,6 +76,27 @@ export function doorPhase(p: number) {
   return 1 - smooth(clamp01(p / 0.16));
 }
 
+/** the page anchor each stop belongs to, in the order the tour visits them */
+export const STOP_SECTIONS: { id: Stop["id"]; anchor: string; key: string }[] = [
+  { id: "hero", anchor: "top", key: "home" },
+  { id: "about", anchor: "about", key: "about" },
+  { id: "careers", anchor: "careers", key: "careers" },
+  { id: "founders", anchor: "founders", key: "founders" },
+  { id: "contacts", anchor: "contacts", key: "contacts" },
+];
+
+/** scroll progress at which the camera parks on the stop of this section */
+export function sectionProgress(anchor: string) {
+  const found = STOP_SECTIONS.find((s) => s.anchor === anchor);
+  return found ? (STOPS.find((st) => st.id === found.id)?.p ?? 0) : 0;
+}
+
+/** index of the stop the camera is showing at progress `p` */
+export function currentStop(p: number) {
+  const { i, next, t } = tourAt(p);
+  return t < 0.5 ? i : next;
+}
+
 /** the car only starts travelling once the doors have shut */
 const DEPART = 0.17;
 export function travelAt(p: number) {

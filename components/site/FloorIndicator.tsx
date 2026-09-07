@@ -3,81 +3,40 @@
 import { useEffect, useRef, useState } from "react";
 import { useMotionValueEvent, useScroll } from "framer-motion";
 import { useTranslations } from "next-intl";
-import { rideTo } from "@/lib/ride";
-
-const TOP_FLOOR = 4;
-const FLOORS = [4, 3, 2, 1] as const;
-
-// section anchors in page order -> Header translation keys
-const SECTIONS = [
-  ["top", "home"],
-  ["about", "about"],
-  ["founders", "founders"],
-  ["careers", "careers"],
-  ["contacts", "contacts"],
-] as const;
-
-type SectionKey = (typeof SECTIONS)[number][1];
-
-function sectionAt(scrollTop: number): SectionKey {
-  const pos = scrollTop + window.innerHeight * 0.35;
-  let key: SectionKey = "home";
-  for (const [id, k] of SECTIONS) {
-    const el = document.getElementById(id);
-    if (el && el.offsetTop <= pos) key = k;
-  }
-  return key;
-}
-
-const floorTarget = (floor: number) => {
-  const p = (TOP_FLOOR - floor) / (TOP_FLOOR - 1);
-  const max = document.documentElement.scrollHeight - window.innerHeight;
-  return p * max;
-};
+import { rideToProgress } from "@/lib/ride";
+import { STOP_SECTIONS, STOPS, currentStop } from "@/components/elevator3d/tour";
 
 /**
- * Elevator car position indicator in the header, driven by scroll progress
- * and matching the landing levels on the schematic. Clicking it opens a
- * COP-style floor panel; pressing a floor rides the page (and the cab) to
- * that landing, taking longer the further it has to go.
+ * The car's position indicator in the header. It names the stop of the camera
+ * tour that is on screen, and its panel is the car operating panel: one
+ * button per stop, in the order the tour visits them. Pressing one rides the
+ * page to that stop's exact progress, so the camera always parks on the
+ * matching plate rather than somewhere along the way.
  */
 export default function FloorIndicator() {
   const t = useTranslations("Header");
   const { scrollYProgress } = useScroll();
-  const [floor, setFloor] = useState(TOP_FLOOR);
+  const [stop, setStop] = useState(0);
   const [dir, setDir] = useState<"up" | "down" | null>(null);
-  const [section, setSection] = useState<SectionKey>("home");
   const [open, setOpen] = useState(false);
-  const [panelLabels, setPanelLabels] = useState<Record<number, SectionKey>>({});
   const rootRef = useRef<HTMLDivElement>(null);
 
-  // initial section (e.g. when landing on an #anchor mid-page)
+  // initial stop (e.g. when landing on an #anchor mid-page)
   useEffect(() => {
-    const id = requestAnimationFrame(() =>
-      setSection(sectionAt(window.scrollY))
-    );
+    const id = requestAnimationFrame(() => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      setStop(currentStop(max > 0 ? window.scrollY / max : 0));
+    });
     return () => cancelAnimationFrame(id);
   }, []);
 
   useMotionValueEvent(scrollYProgress, "change", (v) => {
-    const next = Math.min(
-      TOP_FLOOR,
-      Math.max(1, TOP_FLOOR - Math.round(v * (TOP_FLOOR - 1)))
-    );
-    setFloor((prev) => {
-      if (next !== prev) setDir(next < prev ? "down" : "up");
+    const next = currentStop(v);
+    setStop((prev) => {
+      if (next !== prev) setDir(next > prev ? "down" : "up");
       return next;
     });
-    setSection(sectionAt(window.scrollY));
   });
-
-  const openPanel = () => {
-    // label each floor with the section the ride will arrive at
-    setPanelLabels(
-      Object.fromEntries(FLOORS.map((f) => [f, sectionAt(floorTarget(f))]))
-    );
-    setOpen((o) => !o);
-  };
 
   // close the panel on outside click / Escape
   useEffect(() => {
@@ -96,18 +55,19 @@ export default function FloorIndicator() {
     };
   }, [open]);
 
-  const goTo = (target: number) => {
-    // rideTo, not the browser's smooth scroll: a four-floor trip has to take
-    // longer than a one-floor one, or the camera races through the whole tour
-    rideTo(floorTarget(target));
+  const goTo = (index: number) => {
+    rideToProgress(STOPS[index].p);
     setOpen(false);
   };
+
+  const label = (i: number) => t(STOP_SECTIONS[i].key as "home");
+  const num = (i: number) => String(i + 1).padStart(2, "0");
 
   return (
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        onClick={openPanel}
+        onClick={() => setOpen((o) => !o)}
         aria-label={t("floorNav")}
         aria-expanded={open}
         aria-haspopup="true"
@@ -117,9 +77,9 @@ export default function FloorIndicator() {
         <span className="text-xs opacity-70">
           {dir === "down" ? "▼" : dir === "up" ? "▲" : "•"}
         </span>
-        {floor}
+        {num(stop)}
         <span className="hidden max-w-32 truncate text-xs opacity-70 sm:inline">
-          · {t(section)}
+          · {label(stop)}
         </span>
       </button>
 
@@ -133,36 +93,33 @@ export default function FloorIndicator() {
             borderColor: "var(--card-border)",
           }}
         >
-          {FLOORS.map((f) => (
+          {STOP_SECTIONS.map((s, i) => (
             <button
-              key={f}
+              key={s.id}
               type="button"
               role="menuitem"
-              onClick={() => goTo(f)}
-              aria-label={t("floorGoTo", { floor: f })}
-              aria-current={f === floor ? "true" : undefined}
+              onClick={() => goTo(i)}
+              aria-current={i === stop ? "true" : undefined}
               className="group flex w-full items-center gap-3 rounded-lg px-1.5 py-1 text-start transition-opacity hover:opacity-90"
             >
               <span
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border font-mono text-sm transition-transform group-hover:scale-105 group-active:scale-95"
                 style={{
-                  borderColor:
-                    f === floor ? "var(--bp-accent)" : "var(--card-border)",
-                  color: f === floor ? "var(--bp-accent)" : "inherit",
-                  boxShadow:
-                    f === floor ? "0 0 6px var(--bp-accent)" : undefined,
+                  borderColor: i === stop ? "var(--bp-accent)" : "var(--card-border)",
+                  color: i === stop ? "var(--bp-accent)" : "inherit",
+                  boxShadow: i === stop ? "0 0 6px var(--bp-accent)" : undefined,
                 }}
               >
-                {f}
+                {num(i)}
               </span>
               <span
                 className="whitespace-nowrap text-sm"
                 style={{
-                  color: f === floor ? "var(--bp-accent)" : "inherit",
-                  opacity: f === floor ? 1 : 0.75,
+                  color: i === stop ? "var(--bp-accent)" : "inherit",
+                  opacity: i === stop ? 1 : 0.75,
                 }}
               >
-                {panelLabels[f] ? t(panelLabels[f]) : ""}
+                {label(i)}
               </span>
             </button>
           ))}

@@ -78,10 +78,12 @@ export function rideTo(top: number) {
   frame = requestAnimationFrame(step);
 }
 
-/** ride to the top of the element with this id (used by the header nav) */
-export function rideToId(id: string) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const header = 60;
-  rideTo(Math.max(el.getBoundingClientRect().top + window.scrollY - header, 0));
+/**
+ * Ride to a scroll progress. Navigation aims at the camera's stops rather
+ * than at the top of a section: the tour parks on a plate at a precise
+ * progress, and landing anywhere else leaves the camera mid-flight.
+ */
+export function rideToProgress(p: number) {
+  const max = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+  rideTo(Math.min(Math.max(p, 0), 1) * max);
 }
