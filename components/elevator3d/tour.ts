@@ -58,9 +58,9 @@ export const STOPS: Stop[] = [
   // 2. the flank of the car as it runs down the shaft; the sign sits toward
   //    the front of the panel, clear of the sling stile, the guide rail and
   //    the governor rope, which all run down the middle of the car
-  { id: "about", group: "wallL", at: [-CAB_X - 0.09, 1.2, 0.51], face: "left", size: [0.46, 1.02], pad: 1.25, p: 0.36, context: 1.15 },
+  { id: "about", group: "wallL", at: [-CAB_X - 0.09, 1.2, 0.55], face: "left", size: [0.46, 1.02], pad: 1.25, p: 0.36, context: 1.15 },
   // 3. the counterweight, rising past it
-  { id: "careers", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.66, 1.02], pad: 1.2, p: 0.55, context: 1.9 },
+  { id: "careers", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.66, 1.02], pad: 1.2, p: 0.55, context: 1.35 },
   // 4. the closed landing doors one floor down
   { id: "founders", group: "world", at: [0, LEVELS[1] + 1.05, LDOOR_PANEL_Z + 0.03], face: "front", size: [0.84, 1.62], pad: 1.2, p: 0.78, context: 1.25 },
   // 5. the pit, straight on: the plate rides the car buffers
@@ -107,8 +107,8 @@ const NORMALS: Record<Face, V3> = {
   front: [0.22, 0.1, 0.97],
   // three-quarter, not flat side on: a flat one looks past the car through the
   // traveling cable, which then crosses the sign
-  left: [-0.78, 0.1, 0.62],
-  right: [0.78, 0.1, 0.62],
+  left: [-0.88, 0.09, 0.46],
+  right: [0.88, 0.09, 0.46],
   // dead square on: the closing frame sits level with the equipment
   square: [0, 0, 1],
 };

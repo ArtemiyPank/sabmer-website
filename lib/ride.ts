@@ -26,9 +26,9 @@ export const getRide = (): Ride => ride;
 
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
-/** ms for a trip of `distance` pixels: a long, unhurried ride, capped */
+/** ms for a trip of `distance` pixels: an unhurried ride, but not a slow one */
 function duration(distance: number) {
-  return Math.min(4200, 900 + distance * 0.95);
+  return Math.min(3000, 700 + distance * 0.62);
 }
 
 export function cancelRide() {
