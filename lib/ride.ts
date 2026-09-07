@@ -39,8 +39,13 @@ export function cancelRide() {
   stop = null;
 }
 
-/** animate the window scroll to `top` */
-export function rideTo(top: number) {
+/**
+ * Animate the window scroll to `top`.
+ *  - `ms` overrides the distance-based duration (snapping uses a short one)
+ *  - `ignoreWheel` keeps the ride alive through the tail of a trackpad fling,
+ *    which keeps firing wheel events after the fingers have left
+ */
+export function rideTo(top: number, opts?: { ms?: number; ignoreWheel?: boolean }) {
   cancelRide();
   const start = window.scrollY;
   const delta = Math.round(top) - start;
@@ -51,7 +56,7 @@ export function rideTo(top: number) {
     return;
   }
 
-  const ms = duration(Math.abs(delta));
+  const ms = opts?.ms ?? duration(Math.abs(delta));
   const t0 = performance.now();
   const max = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
   ride.to = Math.min(Math.max((start + delta) / max, 0), 1);
@@ -60,7 +65,7 @@ export function rideTo(top: number) {
   ride.active = true;
   const interrupt = () => cancelRide();
   // the visitor takes over the moment they touch the page themselves
-  addEventListener("wheel", interrupt, { passive: true });
+  if (!opts?.ignoreWheel) addEventListener("wheel", interrupt, { passive: true });
   addEventListener("touchstart", interrupt, { passive: true });
   addEventListener("keydown", interrupt);
   stop = () => {

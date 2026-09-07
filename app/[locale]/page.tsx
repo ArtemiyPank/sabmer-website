@@ -7,6 +7,8 @@ import Header from "@/components/site/Header";
 import LanguageSwitcher from "@/components/site/LanguageSwitcher";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import WhatsAppButton from "@/components/site/WhatsAppButton";
+import ScrollSnap from "@/components/site/ScrollSnap";
+import BackToTop from "@/components/site/BackToTop";
 import FadeCard from "@/components/site/FadeCard";
 import { SITE_URL } from "@/lib/site";
 import { getContent } from "@/lib/content";
@@ -70,7 +72,9 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <ElevatorBackdrop notes={notes} />
+      <ScrollSnap />
       <Header />
+      <BackToTop />
 
       <main className="mx-auto max-w-6xl px-4 md:px-6">
         {/* ---- Hero ---- */}

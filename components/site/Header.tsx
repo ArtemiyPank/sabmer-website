@@ -55,9 +55,10 @@ export default function Header() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <FloorIndicator />
           <LanguageSwitcher />
           <ThemeToggle />
+          {/* the nav above replaces it on wide screens */}
+          <FloorIndicator />
         </div>
       </div>
     </header>

@@ -12,6 +12,9 @@ import { STOP_SECTIONS, STOPS, currentStop } from "@/components/elevator3d/tour"
  * button per stop, in the order the tour visits them. Pressing one rides the
  * page to that stop's exact progress, so the camera always parks on the
  * matching plate rather than somewhere along the way.
+ *
+ * Phones only — on a wide screen the section links in the header do the same
+ * job, so the panel would be a second control for one thing.
  */
 export default function FloorIndicator() {
   const t = useTranslations("Header");
@@ -64,7 +67,7 @@ export default function FloorIndicator() {
   const num = (i: number) => String(i + 1).padStart(2, "0");
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative md:hidden">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
