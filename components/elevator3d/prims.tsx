@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import * as THREE from "three";
+import { createInstances } from "@react-three/drei";
 import { useMats, type Materials } from "./materials";
 import { useScene } from "./scene-context";
 import type { V3 } from "./dims";
@@ -38,6 +39,35 @@ type Common = {
 const UNIT_BOX = new THREE.BoxGeometry(1, 1, 1);
 const UNIT_BOX_EDGES = new THREE.EdgesGeometry(UNIT_BOX);
 
+/**
+ * Boxes are the bulk of the drawing and every one of them is the same unit
+ * geometry under a different scale, so each material draws all of its boxes in
+ * a single instanced call rather than one call apiece — the difference between
+ * a few hundred draw calls a frame and a handful.
+ *
+ * Translucent and emissive materials stay ordinary meshes: a single instanced
+ * draw cannot be depth-sorted box by box, which is exactly what glass needs.
+ */
+const BOXED = ["steel", "steelDark", "stainless", "cab", "concrete", "iron", "rubber"] as const;
+const boxed = new Map(BOXED.map((name) => [name as string, createInstances()]));
+/** per material; the drawing never comes close, and the buffer is uploaded whole */
+const BOX_LIMIT = 1200;
+
+/** provides the shared instanced box meshes — wrap the scene in it */
+export function InstancedBoxes({ children }: { children: ReactNode }) {
+  const m = useMats();
+  let tree = <>{children}</>;
+  for (const name of BOXED) {
+    const [Group] = boxed.get(name)!;
+    tree = (
+      <Group key={name} limit={BOX_LIMIT} geometry={UNIT_BOX} material={m[name]} frustumCulled={false}>
+        {tree}
+      </Group>
+    );
+  }
+  return tree;
+}
+
 const cylCache = new Map<string, { geom: THREE.CylinderGeometry; edges: THREE.EdgesGeometry }>();
 /** unit cylinder (r = 1, h = 1, axis = y) with `seg` radial segments */
 export function unitCyl(seg: number, open = false) {
@@ -64,6 +94,18 @@ export function Box({
 }: Common & { size: V3 }) {
   const m = useMats();
   const edgeMat = useEdgeMaterial(edges);
+  // the outline hangs off the instance proxy, which is a plain Group: it draws
+  // nothing itself and passes its scale down exactly as the mesh used to
+  const outline = edgeMat ? <lineSegments geometry={UNIT_BOX_EDGES} material={edgeMat} /> : null;
+  const pair = boxed.get(mat);
+  if (pair) {
+    const [, BoxInstance] = pair;
+    return (
+      <BoxInstance position={at} rotation={rot} scale={size}>
+        {outline}
+      </BoxInstance>
+    );
+  }
   return (
     <mesh
       geometry={UNIT_BOX}
@@ -74,7 +116,7 @@ export function Box({
       castShadow={castShadow}
       receiveShadow={receiveShadow}
     >
-      {edgeMat && <lineSegments geometry={UNIT_BOX_EDGES} material={edgeMat} />}
+      {outline}
     </mesh>
   );
 }

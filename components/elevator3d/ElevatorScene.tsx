@@ -7,6 +7,7 @@ import { useMotionValueEvent, type MotionValue } from "framer-motion";
 import { MaterialsProvider } from "./materials";
 import { SceneProvider, useProgressFrame, useScene } from "./scene-context";
 import { Fasteners } from "./Bolts";
+import { InstancedBoxes } from "./prims";
 import { cameraPose, PIT_FLOOR, SHAFT_TOP } from "./dims";
 import Hoistway from "./parts/Hoistway";
 import Rails from "./parts/Rails";
@@ -137,7 +138,6 @@ function CameraRig({ tour }: { tour: boolean }) {
 }
 
 function Lights() {
-  const { mobile } = useScene();
   const mid = (PIT_FLOOR + SHAFT_TOP) / 2;
   // the key light aims at the middle of the hoistway; its target object has
   // to live in the scene graph for three to pick up the position
@@ -151,16 +151,6 @@ function Lights() {
         position={[9, mid + 14, 12]}
         target={target}
         intensity={1.7}
-        castShadow={!mobile}
-        shadow-mapSize={[2048, 2048]}
-        shadow-bias={-0.0004}
-        shadow-normalBias={0.02}
-        shadow-camera-left={-4}
-        shadow-camera-right={4}
-        shadow-camera-top={11}
-        shadow-camera-bottom={-11}
-        shadow-camera-near={2}
-        shadow-camera-far={60}
       />
       {/* soft fill from the open front-left so shadowed faces keep their tint */}
       <directionalLight position={[-8, mid + 4, 10]} intensity={0.45} />
@@ -199,10 +189,15 @@ export default function ElevatorScene({
   return (
     <Canvas
       frameloop="demand"
-      // phones are 2-3x: rendering below their pixel ratio is what makes the
-      // drawing look soft, and the scene only draws while the page scrolls
-      dpr={mobile ? [1.5, 3] : [1, 2]}
-      shadows={!mobile}
+      // Phones are 2-3x and rendering below their pixel ratio is what makes
+      // the drawing look soft, but a third of a pixel of extra sharpness costs
+      // more than twice the fill: 2x with multisampling reads crisper than 3x
+      // without, and the outlines are what the look rests on.
+      dpr={mobile ? [1.5, 2] : [1, 2]}
+      // No shadow pass. It draws the whole scene a second time every frame —
+      // about half of the frame's draw calls — and a blueprint reads from its
+      // outlines and flat tints, not from cast shadows.
+      shadows={false}
       gl={{
         antialias: true,
         alpha: true,
@@ -220,6 +215,7 @@ export default function ElevatorScene({
           {!manualCamera && <CameraRig tour={!!notes} />}
           <Lights />
           <Suspense fallback={null}>
+            <InstancedBoxes>
             <Fasteners>
               {PARTS.filter(([name]) => !only || only.includes(name)).map(([name, Part]) => (
                 <Part key={name} />
@@ -228,6 +224,7 @@ export default function ElevatorScene({
               {notes && <Engraved notes={notes} />}
               {children}
             </Fasteners>
+            </InstancedBoxes>
           </Suspense>
         </MaterialsProvider>
       </SceneProvider>
