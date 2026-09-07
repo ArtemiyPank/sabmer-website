@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { STOPS } from "@/components/elevator3d/tour";
-import { getRide, rideTo } from "@/lib/ride";
+import { getRide, rideTo, setHold } from "@/lib/ride";
 
 /**
  * Stops a fling at the next plate. The page must never coast past it, so the
@@ -23,7 +23,8 @@ import { getRide, rideTo } from "@/lib/ride";
 const CATCH_MS = 520; // easing into the stop a fling was caught before
 const QUIET = 220; // ms without a scroll event: one gesture has ended
 const STILL = 220; // ms without the page being pushed off the stop: momentum spent
-const HOLD_MAX = 3500; // ms the page can be held before the visitor gets it back
+const HOLD_MAX = 1400; // ms the page can be held before the visitor gets it back
+const PUSHES = 4; // notches during a hold that mean a hand is back on the wheel
 const FAST = 1.1; // px/ms over the gesture that counts as a fling
 const MIN_TRAVEL = 380; // px it has to have covered before that means a fling
 const MIN_EVENTS = 2; // a single jump is not a fling: inertia arrives as a stream
@@ -42,6 +43,7 @@ export default function ScrollSnap() {
     let frame = 0;
     let lastWheel = 0;
     let growing = 0;
+    let notches = 0;
     const mounted = performance.now();
 
     const range = () => Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
@@ -59,6 +61,7 @@ export default function ScrollSnap() {
     const engraved = () => document.documentElement.dataset.ui === "engraved";
     const release = () => {
       held = null;
+      setHold(null);
       if (frame) cancelAnimationFrame(frame);
       frame = 0;
     };
@@ -83,8 +86,12 @@ export default function ScrollSnap() {
         // while the catching ride is still easing in it owns the position
         if (!getRide().active) window.scrollTo({ top: held, behavior: "instant" });
       }
+      // once the ride has landed, the drawing reads the stop rather than the
+      // scroll offset, so the tug-of-war with the inertia stays invisible
+      if (!getRide().active) setHold(held / range());
       if (now - heldAt > HOLD_MAX || now - pushedAt > STILL) {
         held = null;
+        setHold(null);
         return;
       }
       frame = requestAnimationFrame(hold);
@@ -99,6 +106,7 @@ export default function ScrollSnap() {
       events = 0;
       held = target;
       heldAt = now;
+      notches = 0;
       pushedAt = now;
       last = now;
       // the ride re-asserts the scroll position every frame, which is what
@@ -142,7 +150,9 @@ export default function ScrollSnap() {
       // up again — two in a row, so that a single noisy spike in the tail of a
       // fling does not hand the page back mid-catch.
       growing = d > lastWheel * 1.2 + 2 ? growing + 1 : 0;
-      if (held !== null && growing >= 2) release();
+      // A ramp means a hand is back on the wheel — but so does simply going on
+      // turning it, which inertia never does. Either way the page is theirs.
+      if (held !== null && (growing >= 2 || ++notches >= PUSHES)) release();
       lastWheel = d;
     };
 
@@ -151,6 +161,7 @@ export default function ScrollSnap() {
       release();
       events = 0;
       growing = 0;
+      notches = 0;
       startY = window.scrollY;
       startT = performance.now();
     };

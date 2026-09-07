@@ -24,6 +24,22 @@ export type Ride = { active: boolean; t: number; to: number; id: number };
 const ride: Ride = { active: false, t: 0, to: 0, id: 0 };
 export const getRide = (): Ride => ride;
 
+/**
+ * The progress the page is being held at while a caught fling's momentum dies
+ * away, or null when nothing is holding it.
+ *
+ * The page is pulled back onto the stop a frame after the momentum nudges it
+ * off, so the raw scroll position twitches by a few pixels for as long as the
+ * inertia lasts. Reading progress from here instead keeps that twitch out of
+ * the drawing: the camera sits still on the plate while the fight plays out
+ * in the scroll offset alone.
+ */
+const holdAt = { p: null as number | null };
+export const getHold = (): number | null => holdAt.p;
+export const setHold = (p: number | null) => {
+  holdAt.p = p;
+};
+
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 /** ms for a trip of `distance` pixels: an unhurried ride, but not a slow one */

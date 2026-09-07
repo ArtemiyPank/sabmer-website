@@ -9,6 +9,7 @@ import {
   useTransform,
 } from "framer-motion";
 import ElevatorSchematic from "./ElevatorSchematic";
+import { getHold } from "@/lib/ride";
 import type { SiteNotes } from "@/lib/site-notes";
 
 // three.js + the scene are loaded on the client only, after hydration
@@ -62,9 +63,12 @@ export default function ElevatorBackdrop({ notes }: { notes: SiteNotes }) {
 
   const layerRef = useRef<HTMLDivElement>(null);
   const rangeRef = useRef(1);
-  const progress = useTransform(scrollY, (v) =>
-    Math.min(Math.max(v / rangeRef.current, 0), 1)
-  );
+  const progress = useTransform(scrollY, (v) => {
+    // while a caught fling is being held on its plate the stop is the truth,
+    // not the scroll offset the momentum keeps nudging
+    const held = getHold();
+    return held ?? Math.min(Math.max(v / rangeRef.current, 0), 1);
+  });
 
   useEffect(() => {
     // keep in sync with .backdrop-viewport top offset in globals.css
