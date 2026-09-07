@@ -76,6 +76,7 @@ function InvalidateOnProgress({ progress }: { progress: MotionValue<number> }) {
 /** deterministic scroll-driven camera: follows the car, pulls back at the end */
 function CameraRig({ tour }: { tour: boolean }) {
   const { mobile } = useScene();
+  const invalidate = useThree((s) => s.invalidate);
   // pose the camera held when a ride began, and the one it holds now: a ride
   // flies straight from the first to the destination, and if the visitor
   // interrupts it the camera eases back onto the scroll pose instead of
@@ -124,6 +125,8 @@ function CameraRig({ tour }: { tour: boolean }) {
       const e = t * t * (3 - 2 * t);
       pose = blendLinear(settleFrom.pos, settleFrom.tgt, pose.position, pose.target, e, pose.fov);
     }
+
+    if (ride.active || nowMs < settleUntil.current) invalidate();
 
     copy3(held.current.pos, pose.position);
     copy3(held.current.tgt, pose.target);
