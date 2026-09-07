@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { STOPS } from "@/components/elevator3d/tour";
-import { getRide, rideTo, setHold } from "@/lib/ride";
+import { easeGentle, getRide, rideTo, setHold } from "@/lib/ride";
 
 /**
  * Stops a fling at the next plate. The page must never coast past it, so the
@@ -20,11 +20,11 @@ import { getRide, rideTo, setHold } from "@/lib/ride";
  * only while the camera tour is running.
  */
 
-const CATCH_MS = 520; // easing into the stop a fling was caught before
+const CATCH_MS = 800; // easing into the stop a fling was caught before
 const QUIET = 220; // ms without a scroll event: one gesture has ended
 const STILL = 220; // ms without the page being pushed off the stop: momentum spent
-const HOLD_MAX = 1400; // ms the page can be held before the visitor gets it back
-const PUSHES = 4; // notches during a hold that mean a hand is back on the wheel
+const HOLD_MAX = 2200; // ms from the catch before the visitor gets the page back
+const STEADY = 4; // notches in a row that do not fade: a hand, not inertia
 const FAST = 1.1; // px/ms over the gesture that counts as a fling
 const MIN_TRAVEL = 380; // px it has to have covered before that means a fling
 const MIN_EVENTS = 2; // a single jump is not a fling: inertia arrives as a stream
@@ -111,7 +111,7 @@ export default function ScrollSnap() {
       last = now;
       // the ride re-asserts the scroll position every frame, which is what
       // overrides the inertia the browser is still applying
-      rideTo(target, { ms: CATCH_MS, ignoreWheel: true });
+      rideTo(target, { ms: CATCH_MS, ignoreWheel: true, ease: easeGentle });
       if (!frame) frame = requestAnimationFrame(hold);
     };
 
@@ -146,13 +146,13 @@ export default function ScrollSnap() {
 
     const onWheel = (e: WheelEvent) => {
       const d = Math.abs(e.deltaY);
-      // inertia only ever decays. A hand back on the wheel pushes the notches
-      // up again — two in a row, so that a single noisy spike in the tail of a
-      // fling does not hand the page back mid-catch.
+      // Inertia always fades. Notches that hold their size — or grow — are a
+      // hand still turning the wheel, and then the page belongs to the
+      // visitor again. Counting them instead would end the hold during a
+      // genuine fling, which arrives as a long stream of events too.
       growing = d > lastWheel * 1.2 + 2 ? growing + 1 : 0;
-      // A ramp means a hand is back on the wheel — but so does simply going on
-      // turning it, which inertia never does. Either way the page is theirs.
-      if (held !== null && (growing >= 2 || ++notches >= PUSHES)) release();
+      notches = d > lastWheel * 0.98 ? notches + 1 : 0;
+      if (held !== null && (growing >= 2 || notches >= STEADY)) release();
       lastWheel = d;
     };
 

@@ -42,6 +42,13 @@ export const setHold = (p: number | null) => {
 
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
+/**
+ * A gentler in-out than the cubic: it runs at twice the average speed through
+ * the middle rather than three times, so a short trip reads as one even move
+ * instead of a slow lean followed by a dash. Catching a fling uses it.
+ */
+export const easeGentle = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+
 /** ms for a trip of `distance` pixels: an unhurried ride, but not a slow one */
 function duration(distance: number) {
   return Math.min(3000, 700 + distance * 0.62);
@@ -60,8 +67,12 @@ export function cancelRide() {
  *  - `ms` overrides the distance-based duration (snapping uses a short one)
  *  - `ignoreWheel` keeps the ride alive through the tail of a trackpad fling,
  *    which keeps firing wheel events after the fingers have left
+ *  - `ease` overrides the curve the trip is paced on
  */
-export function rideTo(top: number, opts?: { ms?: number; ignoreWheel?: boolean }) {
+export function rideTo(
+  top: number,
+  opts?: { ms?: number; ignoreWheel?: boolean; ease?: (t: number) => number }
+) {
   cancelRide();
   const start = window.scrollY;
   const delta = Math.round(top) - start;
@@ -92,7 +103,7 @@ export function rideTo(top: number, opts?: { ms?: number; ignoreWheel?: boolean 
 
   const step = (now: number) => {
     const t = Math.min((now - t0) / ms, 1);
-    ride.t = easeInOutCubic(t);
+    ride.t = (opts?.ease ?? easeInOutCubic)(t);
     // "instant" matters: the page sets scroll-behavior: smooth, which would
     // otherwise animate every step of this animation
     window.scrollTo({ top: start + delta * ride.t, behavior: "instant" });
