@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useMotionValueEvent, useScroll } from "framer-motion";
 import { useTranslations } from "next-intl";
+import { rideTo } from "@/lib/ride";
 
 const TOP_FLOOR = 4;
 const FLOORS = [4, 3, 2, 1] as const;
@@ -37,8 +38,8 @@ const floorTarget = (floor: number) => {
 /**
  * Elevator car position indicator in the header, driven by scroll progress
  * and matching the landing levels on the schematic. Clicking it opens a
- * COP-style floor panel; pressing a floor scrolls the page (and the cab)
- * to that landing.
+ * COP-style floor panel; pressing a floor rides the page (and the cab) to
+ * that landing, taking longer the further it has to go.
  */
 export default function FloorIndicator() {
   const t = useTranslations("Header");
@@ -96,10 +97,9 @@ export default function FloorIndicator() {
   }, [open]);
 
   const goTo = (target: number) => {
-    // same progress mapping as the readout above
-    const p = (TOP_FLOOR - target) / (TOP_FLOOR - 1);
-    const max = document.documentElement.scrollHeight - window.innerHeight;
-    window.scrollTo({ top: p * max, behavior: "smooth" });
+    // rideTo, not the browser's smooth scroll: a four-floor trip has to take
+    // longer than a one-floor one, or the camera races through the whole tour
+    rideTo(floorTarget(target));
     setOpen(false);
   };
 
