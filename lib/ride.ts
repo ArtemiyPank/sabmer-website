@@ -12,16 +12,27 @@
 let frame = 0;
 let stop: (() => void) | null = null;
 
+/**
+ * Published so the 3D camera can fly straight to the destination while a ride
+ * is running, instead of walking through every stop the page scrolls past.
+ * `to` is the destination as scroll progress, `t` the eased progress of the
+ * ride itself — the same curve the page is moving on.
+ */
+export type Ride = { active: boolean; t: number; to: number };
+const ride: Ride = { active: false, t: 0, to: 0 };
+export const getRide = (): Ride => ride;
+
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
-/** ms for a trip of `distance` pixels: about a second per screenful, capped */
+/** ms for a trip of `distance` pixels: a long, unhurried ride, capped */
 function duration(distance: number) {
-  return Math.min(2800, 620 + distance * 0.55);
+  return Math.min(4200, 900 + distance * 0.95);
 }
 
 export function cancelRide() {
   if (frame) cancelAnimationFrame(frame);
   frame = 0;
+  ride.active = false;
   stop?.();
   stop = null;
 }
@@ -40,6 +51,10 @@ export function rideTo(top: number) {
 
   const ms = duration(Math.abs(delta));
   const t0 = performance.now();
+  const max = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+  ride.to = Math.min(Math.max((start + delta) / max, 0), 1);
+  ride.t = 0;
+  ride.active = true;
   const interrupt = () => cancelRide();
   // the visitor takes over the moment they touch the page themselves
   addEventListener("wheel", interrupt, { passive: true });
@@ -53,9 +68,10 @@ export function rideTo(top: number) {
 
   const step = (now: number) => {
     const t = Math.min((now - t0) / ms, 1);
+    ride.t = easeInOutCubic(t);
     // "instant" matters: the page sets scroll-behavior: smooth, which would
     // otherwise animate every step of this animation
-    window.scrollTo({ top: start + delta * easeInOutCubic(t), behavior: "instant" });
+    window.scrollTo({ top: start + delta * ride.t, behavior: "instant" });
     if (t < 1) frame = requestAnimationFrame(step);
     else cancelRide();
   };

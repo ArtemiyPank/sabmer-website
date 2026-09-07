@@ -246,3 +246,50 @@ export function tourPose(p: number, explode: number, aspect: number, mobile: boo
   }
   return { position: camPos, target: camTgt, fov };
 }
+
+const blendPos: V3 = [0, 0, 0];
+const blendTgt: V3 = [0, 0, 0];
+
+/**
+ * Straight flight between two arbitrary poses, used while the page is riding
+ * to another floor: the camera leaves where it stands and arrives at the
+ * destination stop without walking through the ones in between. Same arc as
+ * an ordinary flight — direction and distance are blended separately and the
+ * path swings out to the front — so it never cuts through the machine.
+ */
+export function blendPoses(
+  fromPos: V3,
+  fromTgt: V3,
+  toPos: V3,
+  toTgt: V3,
+  t: number,
+  fov: number
+): CameraPose {
+  let da = 0;
+  let db = 0;
+  for (let k = 0; k < 3; k++) {
+    dirA[k] = fromPos[k] - fromTgt[k];
+    dirB[k] = toPos[k] - toTgt[k];
+    da += dirA[k] * dirA[k];
+    db += dirB[k] * dirB[k];
+  }
+  da = Math.sqrt(da) || 1;
+  db = Math.sqrt(db) || 1;
+
+  const arc = Math.sin(Math.PI * t);
+  const swing = SWING * arc;
+  let len = 0;
+  for (let k = 0; k < 3; k++) {
+    const d = dirA[k] / da + (dirB[k] / db - dirA[k] / da) * t;
+    blendPos[k] = d * (1 - swing) + FRONT[k] * swing;
+    len += blendPos[k] * blendPos[k];
+  }
+  len = Math.sqrt(len) || 1;
+
+  const dist = (da + (db - da) * t) * (1 + LIFTOFF * arc);
+  for (let k = 0; k < 3; k++) {
+    blendTgt[k] = fromTgt[k] + (toTgt[k] - fromTgt[k]) * t;
+    blendPos[k] = blendTgt[k] + (blendPos[k] / len) * dist;
+  }
+  return { position: blendPos, target: blendTgt, fov };
+}

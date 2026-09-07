@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo } from "react";
+import { Suspense, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { Canvas, useThree } from "@react-three/fiber";
 import { useMotionValueEvent, type MotionValue } from "framer-motion";
@@ -17,7 +17,9 @@ import Ropes from "./parts/Ropes";
 import Pit from "./parts/Pit";
 import Labels from "./parts/Labels";
 import Engraved from "./parts/Engraved";
-import { doorPhase, tourPose, travelAt } from "./tour";
+import { blendPoses, doorPhase, tourPose, travelAt } from "./tour";
+import { getRide } from "@/lib/ride";
+import type { V3 } from "./dims";
 import type { SiteNotes } from "@/lib/site-notes";
 
 export type ElevatorSceneProps = {
@@ -44,6 +46,25 @@ const PARTS: Array<[string, React.ComponentType]> = [
   ["pit", Pit],
 ];
 
+const rideFrom: { pos: V3; tgt: V3 } = { pos: [0, 0, 0], tgt: [0, 0, 0] };
+const settleFrom: { pos: V3; tgt: V3 } = { pos: [0, 0, 0], tgt: [0, 0, 0] };
+const copy3 = (to: V3, from: V3) => {
+  to[0] = from[0];
+  to[1] = from[1];
+  to[2] = from[2];
+};
+const linPos: V3 = [0, 0, 0];
+const linTgt: V3 = [0, 0, 0];
+
+/** plain interpolation between two poses, for easing back after a ride */
+function blendLinear(aPos: V3, aTgt: V3, bPos: V3, bTgt: V3, t: number, fov: number) {
+  for (let k = 0; k < 3; k++) {
+    linPos[k] = aPos[k] + (bPos[k] - aPos[k]) * t;
+    linTgt[k] = aTgt[k] + (bTgt[k] - aTgt[k]) * t;
+  }
+  return { position: linPos, target: linTgt, fov };
+}
+
 /** re-render the (on-demand) canvas whenever scroll progress changes */
 function InvalidateOnProgress({ progress }: { progress: MotionValue<number> }) {
   const invalidate = useThree((s) => s.invalidate);
@@ -54,12 +75,53 @@ function InvalidateOnProgress({ progress }: { progress: MotionValue<number> }) {
 /** deterministic scroll-driven camera: follows the car, pulls back at the end */
 function CameraRig({ tour }: { tour: boolean }) {
   const { mobile } = useScene();
+  // pose the camera held when a ride began, and the one it holds now: a ride
+  // flies straight from the first to the destination, and if the visitor
+  // interrupts it the camera eases back onto the scroll pose instead of
+  // snapping there
+  const riding = useRef(false);
+  const held = useRef<{ pos: V3; tgt: V3 }>({ pos: [0, 0, 0], tgt: [0, 0, 0] });
+  const settleUntil = useRef(0);
+  const SETTLE = 450;
+
   useProgressFrame((p, explode, state, scroll) => {
     const camera = state.camera as THREE.PerspectiveCamera;
     const { width, height } = state.size;
     const aspect = width / Math.max(height, 1);
-    // the tour is scheduled against the page, the scroll rig against travel
-    const pose = tour ? tourPose(scroll, explode, aspect, mobile) : cameraPose(p, aspect, mobile);
+    if (!tour) {
+      const pose = cameraPose(p, aspect, mobile);
+      camera.position.set(...pose.position);
+      camera.lookAt(pose.target[0], pose.target[1], pose.target[2]);
+      return;
+    }
+
+    const ride = getRide();
+    let pose = tourPose(ride.active ? ride.to : scroll, explode, aspect, mobile);
+
+    if (ride.active) {
+      if (!riding.current) {
+        copy3(rideFrom.pos, held.current.pos);
+        copy3(rideFrom.tgt, held.current.tgt);
+        riding.current = true;
+      }
+      pose = blendPoses(rideFrom.pos, rideFrom.tgt, pose.position, pose.target, ride.t, pose.fov);
+    } else if (riding.current) {
+      // the ride ended early: keep where the flight left off and ease back on
+      riding.current = false;
+      settleUntil.current = state.clock.elapsedTime * 1000 + SETTLE;
+      copy3(settleFrom.pos, held.current.pos);
+      copy3(settleFrom.tgt, held.current.tgt);
+    }
+
+    const nowMs = state.clock.elapsedTime * 1000;
+    if (!ride.active && nowMs < settleUntil.current) {
+      const t = 1 - (settleUntil.current - nowMs) / SETTLE;
+      const e = t * t * (3 - 2 * t);
+      pose = blendLinear(settleFrom.pos, settleFrom.tgt, pose.position, pose.target, e, pose.fov);
+    }
+
+    copy3(held.current.pos, pose.position);
+    copy3(held.current.tgt, pose.target);
     camera.position.set(...pose.position);
     camera.lookAt(pose.target[0], pose.target[1], pose.target[2]);
     if (camera.fov !== pose.fov) {
