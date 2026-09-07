@@ -22,9 +22,10 @@ import { easeGentle, getRide, rideTo, setHold } from "@/lib/ride";
 
 const CATCH_MS = 1050; // easing into the stop a fling was caught before
 const QUIET = 220; // ms without a scroll event: one gesture has ended
-const STILL = 220; // ms without the page being pushed off the stop: momentum spent
+const STILL = 340; // ms without the page being pushed off the stop: momentum spent
+const REARM = 260; // ms after a hold before a new gesture can be caught
 const HOLD_MAX = 2450; // ms from the catch before the visitor gets the page back
-const STEADY = 4; // notches in a row that do not fade: a hand, not inertia
+const STEADY = 5; // notches in a row that do not fade: a hand, not inertia
 const FAST = 1.1; // px/ms over the gesture that counts as a fling
 const MIN_TRAVEL = 380; // px it has to have covered before that means a fling
 const MIN_EVENTS = 2; // a single jump is not a fling: inertia arrives as a stream
@@ -44,6 +45,7 @@ export default function ScrollSnap() {
     let lastWheel = 0;
     let growing = 0;
     let notches = 0;
+    let armedAt = 0;
     const mounted = performance.now();
 
     const range = () => Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
@@ -60,6 +62,7 @@ export default function ScrollSnap() {
 
     const engraved = () => document.documentElement.dataset.ui === "engraved";
     const release = () => {
+      if (held !== null) armedAt = performance.now();
       held = null;
       setHold(null);
       if (frame) cancelAnimationFrame(frame);
@@ -92,6 +95,7 @@ export default function ScrollSnap() {
       if (now - heldAt > HOLD_MAX || now - pushedAt > STILL) {
         held = null;
         setHold(null);
+        armedAt = now;
         return;
       }
       frame = requestAnimationFrame(hold);
@@ -101,6 +105,9 @@ export default function ScrollSnap() {
     const catchFling = (dir: number) => {
       const now = performance.now();
       if (!engraved() || getRide().active || now - mounted < 600) return;
+      // a hold has just let go: the pixels still arriving are the tail of the
+      // gesture that was already caught, not a new one
+      if (now - armedAt < REARM) return;
       const target = beyond(window.scrollY, dir);
       if (target === null) return;
       events = 0;
@@ -118,13 +125,17 @@ export default function ScrollSnap() {
     const onScroll = () => {
       const y = window.scrollY;
       const now = performance.now();
-      // a new gesture starts whenever the stream of scroll events breaks; that
-      // break is also what tells us the momentum of the last one has died
+      // A new gesture starts whenever the stream of scroll events breaks. It
+      // does not end a hold, though: while the page is pinned the momentum
+      // moves it by nothing, so the browser stops raising scroll events and
+      // every lull would look like a break. How long a hold lasts is the
+      // rAF's business, which watches the page being pushed rather than the
+      // events being raised.
       if (now - last > QUIET) {
         events = 0;
         startY = prev;
         startT = now;
-        release();
+        if (held === null) release();
       }
       events++;
       last = now;
@@ -135,8 +146,17 @@ export default function ScrollSnap() {
         release();
         return;
       }
-      // being held on a stop, or riding to one: nothing to decide
-      if (held !== null || getRide().active) return;
+      // Being held on a stop, or riding to one. The gesture measurement has
+      // to restart from here: leaving it running would carry the whole flick
+      // and the ride into `travel`, and the pull-back onto the stop makes the
+      // last step point backwards — between them they fire a fresh catch at
+      // the plate the visitor set off from the moment the hold lets go.
+      if (held !== null || getRide().active) {
+        events = 0;
+        startY = y;
+        startT = now;
+        return;
+      }
       // while a finger is down the visitor is in charge; the fling is caught
       // when it lifts
       if (touching || dir === 0 || events < MIN_EVENTS) return;
@@ -151,7 +171,10 @@ export default function ScrollSnap() {
       // visitor again. Counting them instead would end the hold during a
       // genuine fling, which arrives as a long stream of events too.
       growing = d > lastWheel * 1.2 + 2 ? growing + 1 : 0;
-      notches = d > lastWheel * 0.98 ? notches + 1 : 0;
+      // strictly not smaller: a trackpad's momentum can fade by less than a
+      // percent per event, and any tolerance here reads that as a hand and
+      // drops the hold while the fling is still running
+      notches = d >= lastWheel ? notches + 1 : 0;
       if (held !== null && (growing >= 2 || notches >= STEADY)) release();
       lastWheel = d;
     };
