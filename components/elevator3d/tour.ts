@@ -36,7 +36,7 @@ export type Face = "front" | "left" | "right" | "square";
 
 export type Stop = {
   /** matches the key in SiteNotes */
-  id: "hero" | "about" | "founders" | "careers" | "contacts";
+  id: "about" | "jobs" | "reviews" | "founders" | "contacts";
   /** assembly that carries the face, or "world" for parts of the building */
   group: "world" | "cwt" | Exclude<keyof Explosion, "shoeOut" | "safetyOut">;
   /** centre of the lettering, car-local unless the group is "world" / "cwt" */
@@ -60,13 +60,13 @@ export type Stop = {
 
 export const STOPS: Stop[] = [
   // 1. the cab interior, read through the open doors before they shut
-  { id: "hero", group: "wallBack", at: [0, 1.56, CAB_BACK + 0.03], face: "square", size: [1, 1.12], pad: 1.2, p: 0.03, context: 2.1, liftoff: 4.7 },
+  { id: "about", group: "wallBack", at: [0, 1.56, CAB_BACK + 0.03], face: "square", size: [1, 1.12], pad: 1.2, p: 0.03, context: 2.1, liftoff: 4.7 },
   // 2. the flank of the car as it runs down the shaft; the sign sits toward
   //    the front of the panel, clear of the sling stile, the guide rail and
   //    the governor rope, which all run down the middle of the car
-  { id: "about", group: "wallL", at: [-CAB_X - 0.09, 1.2, 0.55], face: "left", size: [0.46, 1.02], pad: 1.25, p: 0.36, context: 1.15, liftoff: 5.1 },
+  { id: "jobs", group: "wallL", at: [-CAB_X - 0.09, 1.2, 0.55], face: "left", size: [0.46, 1.02], pad: 1.25, p: 0.36, context: 1.15, liftoff: 5.1 },
   // 3. the counterweight, rising past it
-  { id: "careers", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.66, 1.02], pad: 1.2, p: 0.55, context: 1.35 },
+  { id: "reviews", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.66, 1.02], pad: 1.2, p: 0.55, context: 1.35 },
   // 4. the closed landing doors one floor down
   { id: "founders", group: "world", at: [0, LEVELS[1] + 1.05, LDOOR_PANEL_Z + 0.03], face: "front", size: [0.84, 1.62], pad: 1.2, p: 0.78, context: 1.25 },
   // 5. the pit, straight on: the plate rides the car buffers
@@ -84,9 +84,9 @@ export function doorPhase(p: number) {
 
 /** the page anchor each stop belongs to, in the order the tour visits them */
 export const STOP_SECTIONS: { id: Stop["id"]; anchor: string; key: string }[] = [
-  { id: "hero", anchor: "top", key: "home" },
   { id: "about", anchor: "about", key: "about" },
-  { id: "careers", anchor: "careers", key: "careers" },
+  { id: "jobs", anchor: "jobs", key: "jobs" },
+  { id: "reviews", anchor: "reviews", key: "reviews" },
   { id: "founders", anchor: "founders", key: "founders" },
   { id: "contacts", anchor: "contacts", key: "contacts" },
 ];

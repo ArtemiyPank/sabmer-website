@@ -81,6 +81,13 @@ export default buildConfig({
               fields: [
                 { name: "aboutTitle", type: "text", localized: true },
                 { name: "aboutText", type: "textarea", localized: true },
+                {
+                  name: "aboutStages",
+                  type: "array",
+                  localized: true,
+                  labels: { singular: "Line", plural: "Lines" },
+                  fields: [{ name: "text", type: "text", required: true }],
+                },
               ],
             },
             {
@@ -102,26 +109,36 @@ export default buildConfig({
               ],
             },
             {
-              label: "Careers",
+              label: "Work",
               fields: [
-                { name: "careersTitle", type: "text", localized: true },
-                { name: "careersIntro", type: "textarea", localized: true },
+                { name: "jobsTitle", type: "text", localized: true },
+                { name: "jobsIntro", type: "textarea", localized: true },
                 {
-                  name: "careersOffers",
+                  name: "jobsTerms",
                   type: "array",
                   localized: true,
-                  labels: { singular: "Offer", plural: "Offers" },
+                  labels: { singular: "Term", plural: "Terms" },
                   fields: [{ name: "text", type: "text", required: true }],
                 },
-                { name: "careersRolesTitle", type: "text", localized: true },
+                { name: "jobsApply", type: "text", localized: true },
+              ],
+            },
+            {
+              label: "Reviews",
+              fields: [
+                { name: "reviewsTitle", type: "text", localized: true },
                 {
-                  name: "careersRoles",
+                  name: "reviews",
                   type: "array",
                   localized: true,
-                  labels: { singular: "Role", plural: "Roles" },
-                  fields: [{ name: "text", type: "text", required: true }],
+                  labels: { singular: "Review", plural: "Reviews" },
+                  fields: [
+                    { name: "name", type: "text", required: true },
+                    { name: "period", type: "text" },
+                    { name: "text", type: "textarea" },
+                    { name: "contact", type: "text" },
+                  ],
                 },
-                { name: "careersApply", type: "text", localized: true },
               ],
             },
             {
@@ -131,6 +148,7 @@ export default buildConfig({
                 { name: "phone", type: "text" },
                 { name: "email", type: "email" },
                 { name: "address", type: "text", localized: true },
+                { name: "registration", type: "text" },
               ],
             },
             {

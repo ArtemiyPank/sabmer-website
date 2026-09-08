@@ -1,12 +1,13 @@
 {
   "Meta": {
-    "title": "SABMER — Elevator Installation",
-    "description": "Professional elevator installation subcontracting: installation, modernization and handover support. Certified crews, experience with equipment from leading manufacturers."
+    "title": "SABMER — Mitsubishi lift installation",
+    "description": "Subcontractor installing Mitsubishi lifts: stage bet — fitting the equipment, stage gimel — commissioning and handover. Over five years in the trade. Hiring fitters."
   },
   "Header": {
     "about": "About",
+    "jobs": "Work",
+    "reviews": "Reviews",
     "founders": "Founders",
-    "careers": "Careers",
     "contacts": "Contacts",
     "themeToggle": "Toggle theme",
     "langSwitch": "Change language",
@@ -15,41 +16,28 @@
     "home": "Home"
   },
   "Hero": {
-    "tagline": "Professional elevator installation subcontracting",
-    "sub": "We install, modernize and hand over elevator equipment for general contractors and manufacturers. On time and up to standard.",
-    "ctaContact": "Contact us",
-    "ctaCareers": "Careers"
+    "tagline": "Mitsubishi lift installation",
+    "sub": "End-to-end subcontracting: from fitting the equipment to handing the lift over in service.",
+    "ctaContact": "Get in touch",
+    "ctaCareers": "Terms of work"
   },
   "About": {
-    "title": "About the company",
-    "text": "SABMER is an elevator installation subcontractor. We work alongside manufacturers and general contractors: providing certified crews, keeping schedules and taking responsibility for installation quality at every stage."
+    "title": "About",
+    "text": "SABMER is a subcontractor installing Mitsubishi lifts. Over five years in the trade. We carry a site through two stages:",
+    "stages": {
+      "s1": "Stage bet — fitting the equipment: cab, doors, machine, counterweight and guide rails",
+      "s2": "Stage gimel — after commissioning: preparing the shaft, running the cables, final adjustment and handover",
+      "s3": "We are hiring fitters — the terms are under “Work”"
+    }
   },
   "Founders": {
     "title": "Founders",
     "amirName": "Amir",
-    "amirRole": "Co-founder, Commercial Director",
-    "amirBio": "Over 15 years in the elevator industry. Responsible for client relations, contracts and company growth. Built partnerships with leading elevator equipment manufacturers.",
+    "amirRole": "Co-founder",
+    "amirBio": "Over seven years in the lift trade. Looks after clients, contracts and the growth of the company.",
     "vovaName": "Vova",
-    "vovaRole": "Co-founder, Technical Director",
-    "vovaBio": "Mechanical engineer who worked his way up from installer to project manager. Responsible for installation methods, crew training and on-site quality control."
-  },
-  "Careers": {
-    "title": "Careers",
-    "intro": "We are growing and looking for people who want to build elevators the right way. What we offer:",
-    "offers": {
-      "o1": "Official employment",
-      "o2": "Training and certification",
-      "o3": "Strict safety standards",
-      "o4": "Tools and workwear provided",
-      "o5": "Competitive pay"
-    },
-    "rolesTitle": "Open positions",
-    "roles": {
-      "r1": "Elevator installer",
-      "r2": "Installation crew leader",
-      "r3": "Elevator electromechanic"
-    },
-    "apply": "Apply"
+    "vovaRole": "Co-founder",
+    "vovaBio": "Over seven years in the lift trade. Trained as a site foreman at a university in Khabarovsk. Looks after installation method, crew training and quality on site."
   },
   "Contacts": {
     "title": "Contacts",
@@ -77,9 +65,50 @@
       "required": "Required field",
       "invalidEmail": "Invalid email"
     },
-    "whatsapp": "Chat on WhatsApp"
+    "whatsapp": "Chat on WhatsApp",
+    "registrationLabel": "Company registration",
+    "registration": "ח.פ. 000000000"
   },
   "Footer": {
     "rights": "All rights reserved."
+  },
+  "Jobs": {
+    "title": "Work",
+    "intro": "Employment on the books. The terms:",
+    "terms": {
+      "t1": "₪50 an hour, net",
+      "t2": "Weekdays 7:00 to 17:00",
+      "t3": "Saturdays optional, 7:00 to 12:00",
+      "t4": "Half an hour for coffee on arrival",
+      "t5": "Lunch 12:00 to 13:00",
+      "t6": "Work vehicle and workwear provided"
+    },
+    "apply": "About work, call:"
+  },
+  "Reviews": {
+    "title": "What the crew says",
+    "hint": "Use the arrows",
+    "prev": "Previous review",
+    "next": "Next review",
+    "items": [
+      {
+        "name": "Name Surname",
+        "period": "2023 — 2024",
+        "text": "Review text: what the work in the crew was like and what stood out.",
+        "contact": "+972 50-000-0000"
+      },
+      {
+        "name": "Name Surname",
+        "period": "2022 — 2025",
+        "text": "Review text: on the terms, the hours and how the site is run.",
+        "contact": "+972 50-000-0000"
+      },
+      {
+        "name": "Name Surname",
+        "period": "2024 — present",
+        "text": "Review text: what I learned and how a shift goes.",
+        "contact": "+972 50-000-0000"
+      }
+    ]
   }
 }

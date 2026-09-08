@@ -375,6 +375,12 @@ export interface SiteContent {
   heroCtaCareers?: string | null;
   aboutTitle?: string | null;
   aboutText?: string | null;
+  aboutStages?:
+    | {
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
   foundersTitle?: string | null;
   founders?:
     | {
@@ -385,26 +391,30 @@ export interface SiteContent {
         id?: string | null;
       }[]
     | null;
-  careersTitle?: string | null;
-  careersIntro?: string | null;
-  careersOffers?:
+  jobsTitle?: string | null;
+  jobsIntro?: string | null;
+  jobsTerms?:
     | {
         text: string;
         id?: string | null;
       }[]
     | null;
-  careersRolesTitle?: string | null;
-  careersRoles?:
+  jobsApply?: string | null;
+  reviewsTitle?: string | null;
+  reviews?:
     | {
-        text: string;
+        name: string;
+        period?: string | null;
+        text?: string | null;
+        contact?: string | null;
         id?: string | null;
       }[]
     | null;
-  careersApply?: string | null;
   contactsTitle?: string | null;
   phone?: string | null;
   email?: string | null;
   address?: string | null;
+  registration?: string | null;
   footerRights?: string | null;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -422,6 +432,12 @@ export interface SiteContentSelect<T extends boolean = true> {
   heroCtaCareers?: T;
   aboutTitle?: T;
   aboutText?: T;
+  aboutStages?:
+    | T
+    | {
+        text?: T;
+        id?: T;
+      };
   foundersTitle?: T;
   founders?:
     | T
@@ -432,26 +448,30 @@ export interface SiteContentSelect<T extends boolean = true> {
         photo?: T;
         id?: T;
       };
-  careersTitle?: T;
-  careersIntro?: T;
-  careersOffers?:
+  jobsTitle?: T;
+  jobsIntro?: T;
+  jobsTerms?:
     | T
     | {
         text?: T;
         id?: T;
       };
-  careersRolesTitle?: T;
-  careersRoles?:
+  jobsApply?: T;
+  reviewsTitle?: T;
+  reviews?:
     | T
     | {
+        name?: T;
+        period?: T;
         text?: T;
+        contact?: T;
         id?: T;
       };
-  careersApply?: T;
   contactsTitle?: T;
   phone?: T;
   email?: T;
   address?: T;
+  registration?: T;
   footerRights?: T;
   updatedAt?: T;
   createdAt?: T;

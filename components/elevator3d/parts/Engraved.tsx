@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import * as THREE from "three";
 import { useProgressFrame } from "../scene-context";
 import { explosion, type V3 } from "../dims";
 import { FACE_ROT, STOPS, stopAt, type Stop } from "../tour";
 import type { SiteNote, SiteNotes } from "@/lib/site-notes";
+import { getReview, subscribeReview } from "@/lib/reviews";
 
 /**
  * The page text lettered onto the machine: each section is drawn into a
@@ -196,7 +197,29 @@ function noteTexture(note: SiteNote, size: [number, number], c: Colors): THREE.C
   return tex;
 }
 
-const noteOf = (notes: SiteNotes, id: Stop["id"]): SiteNote => notes[id];
+/**
+ * The note a plate carries. A plate with `cards` shows one of them at a time —
+ * the arrows page through it — so the chosen card is folded into the ordinary
+ * note shape and lettered exactly like any other.
+ */
+function noteOf(notes: SiteNotes, id: Stop["id"], review: number): SiteNote {
+  const note = notes[id];
+  const cards = note.cards;
+  if (!cards || cards.length === 0) return note;
+  const i = ((review % cards.length) + cards.length) % cards.length;
+  const card = cards[i];
+  return {
+    n: note.n,
+    title: note.title,
+    caption: `${i + 1} / ${cards.length}`,
+    // the contact signs the review off, so it trails it: the plate letters
+    // body, then items, then blocks, and an item would sit above the name
+    blocks: [
+      { title: card.name, caption: card.period, body: card.text },
+      ...(card.contact ? [{ title: card.contact }] : []),
+    ],
+  };
+}
 
 export default function Engraved({ notes }: { notes: SiteNotes }) {
   // redraw the plates when the page theme changes, and once webfonts land
@@ -209,11 +232,13 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
     return () => mo.disconnect();
   }, []);
 
+  const review = useSyncExternalStore(subscribeReview, getReview, () => 0);
+
   const plates = useMemo(() => {
     void tick;
     const c = readColors();
-    return STOPS.map((s) => noteTexture(noteOf(notes, s.id), s.size, c));
-  }, [notes, tick]);
+    return STOPS.map((s) => noteTexture(noteOf(notes, s.id, review), s.size, c));
+  }, [notes, tick, review]);
 
   useEffect(() => () => plates.forEach((t) => t?.dispose()), [plates]);
 

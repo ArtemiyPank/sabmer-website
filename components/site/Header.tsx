@@ -9,7 +9,7 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import ThemeToggle from "./ThemeToggle";
 
 // the order the camera tour visits them, which is also the page order
-const SECTIONS = ["about", "careers", "founders", "contacts"] as const;
+const SECTIONS = ["about", "jobs", "reviews", "founders", "contacts"] as const;
 
 export default function Header() {
   const t = useTranslations("Header");
