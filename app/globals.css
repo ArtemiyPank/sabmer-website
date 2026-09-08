@@ -121,6 +121,11 @@ html[data-ui="engraved"] .sheet {
   pointer-events: none;
 }
 /* one screenful of scroll per section: that is the dwell on one camera stop */
+/* One screenful of scroll per section: that is the dwell on one camera stop.
+   Raising it slows the camera down for the same scrolling; see lib/tuning.ts. */
+html[data-ui="engraved"] {
+  --tour-section: 105svh;
+}
 html[data-ui="engraved"] main section {
-  min-height: 105svh;
+  min-height: var(--tour-section);
 }

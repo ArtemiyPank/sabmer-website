@@ -20,6 +20,7 @@ import Labels from "./parts/Labels";
 import Engraved from "./parts/Engraved";
 import { blendPoses, doorPhase, tourPose, travelAt } from "./tour";
 import { getRide } from "@/lib/ride";
+import { RIDE, SCENE } from "@/lib/tuning";
 import type { V3 } from "./dims";
 import type { SiteNotes } from "@/lib/site-notes";
 
@@ -88,7 +89,7 @@ function CameraRig({ tour }: { tour: boolean }) {
   const rideId = useRef(-1);
   const held = useRef<{ pos: V3; tgt: V3 }>({ pos: [0, 0, 0], tgt: [0, 0, 0] });
   const settleUntil = useRef(0);
-  const SETTLE = 450;
+
 
   useProgressFrame((p, explode, state, scroll) => {
     const camera = state.camera as THREE.PerspectiveCamera;
@@ -102,12 +103,9 @@ function CameraRig({ tour }: { tour: boolean }) {
     }
 
     const ride = getRide();
-    // A caught fling is not a flight: it goes to the neighbouring plate, so
-    // the camera takes the ordinary route round the hoistway. `scroll` already
-    // runs on the ride's eased clock while that happens (see getHold), so the
-    // whole drawing moves smoothly however the page and the browser's momentum
-    // are fighting underneath.
-    const flying = ride.active && ride.direct;
+    // while a trip is running the camera flies straight to its destination
+    // rather than walking through every stop the page scrolls past
+    const flying = ride.active;
     let pose = tourPose(flying ? ride.to : scroll, explode, aspect, mobile);
 
     if (flying) {
@@ -120,14 +118,14 @@ function CameraRig({ tour }: { tour: boolean }) {
     } else if (rideId.current !== -1) {
       // the ride ended: keep where the flight left off and ease back on
       rideId.current = -1;
-      settleUntil.current = state.clock.elapsedTime * 1000 + SETTLE;
+      settleUntil.current = state.clock.elapsedTime * 1000 + RIDE.settleMs;
       copy3(settleFrom.pos, held.current.pos);
       copy3(settleFrom.tgt, held.current.tgt);
     }
 
     const nowMs = state.clock.elapsedTime * 1000;
     if (!ride.active && nowMs < settleUntil.current) {
-      const t = 1 - (settleUntil.current - nowMs) / SETTLE;
+      const t = 1 - (settleUntil.current - nowMs) / RIDE.settleMs;
       const e = t * t * (3 - 2 * t);
       pose = blendLinear(settleFrom.pos, settleFrom.tgt, pose.position, pose.target, e, pose.fov);
     }
@@ -202,7 +200,7 @@ export default function ElevatorScene({
       // the drawing look soft, but a third of a pixel of extra sharpness costs
       // more than twice the fill: 2x with multisampling reads crisper than 3x
       // without, and the outlines are what the look rests on.
-      dpr={mobile ? [1.5, 2] : [1, 2]}
+      dpr={mobile ? SCENE.dprMobile : SCENE.dpr}
       // No shadow pass. It draws the whole scene a second time every frame —
       // about half of the frame's draw calls — and a blueprint reads from its
       // outlines and flat tints, not from cast shadows.
@@ -213,7 +211,7 @@ export default function ElevatorScene({
         powerPreference: "high-performance",
         toneMapping: THREE.NoToneMapping,
       }}
-      camera={{ fov: 32, near: 0.5, far: 120, position: [12, 10, 22] }}
+      camera={SCENE.camera}
       style={{ position: "absolute", inset: 0 }}
     >
       <SceneProvider value={settings}>

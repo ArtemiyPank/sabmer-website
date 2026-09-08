@@ -26,6 +26,7 @@ import {
   type Explosion,
   type V3,
 } from "./dims";
+import { TOUR } from "@/lib/tuning";
 
 /** smootherstep: eases in and out with no kick at either end */
 const smooth = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
@@ -52,7 +53,7 @@ export type Stop = {
   context?: number;
   /**
    * How far the camera swings out over the flight that *leaves* this stop,
-   * overriding LIFTOFF. The legs down the cab are close quarters, so they get
+   * overriding TOUR.liftoff. The legs down the cab are close quarters, so they get
    * a wider arc than the drop through the shaft further down.
    */
   liftoff?: number;
@@ -79,7 +80,7 @@ export const STOPS: Stop[] = [
  * before it sets off.
  */
 export function doorPhase(p: number) {
-  return 1 - smooth(clamp01(p / 0.16));
+  return 1 - smooth(clamp01(p / TOUR.doorsShutBy));
 }
 
 /** the page anchor each stop belongs to, in the order the tour visits them */
@@ -103,10 +104,8 @@ export function currentStop(p: number) {
   return t < 0.5 ? i : next;
 }
 
-/** the car only starts travelling once the doors have shut */
-const DEPART = 0.17;
 export function travelAt(p: number) {
-  return clamp01((clamp01(p) - DEPART) / (1 - DEPART));
+  return clamp01((clamp01(p) - TOUR.depart) / (1 - TOUR.depart));
 }
 /** unit normal of a lettered face, tilted toward the front so the shot reads */
 const NORMALS: Record<Face, V3> = {
@@ -165,8 +164,6 @@ export function stopAt(out: V3, s: Stop, p: number, e: Explosion): V3 {
  * next one, and how far the flight between them has got. The camera rests on
  * a stop for the first two thirds of its slice, then travels.
  */
-/** share of the gap between stops spent parked on the first one */
-const DWELL = 0.34;
 
 export function tourAt(p: number) {
   const last = STOPS.length - 1;
@@ -179,7 +176,7 @@ export function tourAt(p: number) {
   if (i === last || to <= from) return { i: last, next: last, t: 0 };
   // parked on the stop for the first part of the gap, then a long flight
   const local = (q - from) / (to - from);
-  const t = local <= DWELL ? 0 : smooth(Math.min((local - DWELL) / (1 - DWELL), 1));
+  const t = local <= TOUR.dwell ? 0 : smooth(Math.min((local - TOUR.dwell) / (1 - TOUR.dwell), 1));
   return { i, next: i + 1, t };
 }
 
@@ -188,7 +185,7 @@ export function tourAt(p: number) {
  * *part* of the elevator, so the lettering fills roughly half the frame and
  * the component carrying it stays in view.
  */
-const CONTEXT = 2.25;
+
 
 /** distance that frames a `size` face in a `fov` camera at this aspect */
 function frameDistance(size: [number, number], fov: number, aspect: number) {
@@ -206,12 +203,6 @@ const dirA: V3 = [0, 0, 0];
 const dirB: V3 = [0, 0, 0];
 /** the flight is routed out through the front of the hoistway */
 const FRONT: V3 = [0.06, 0.16, 0.99];
-/** how far out the camera swings over the middle of a flight */
-const LIFTOFF = 3.5;
-/** the same for a ride, as a multiple of the arrival distance (see blendPoses) */
-const RIDE_LIFT = 1.8;
-/** how strongly the middle of a flight is pulled to the front */
-const SWING = 0.85;
 
 /**
  * How far out the camera stands through a flight: 0 parked on a plate, 1 at
@@ -233,7 +224,7 @@ function poseOf(s: Stop, p: number, e: Explosion, aspect: number, fov: number, o
   stopAt(out.tgt, s, p, e);
   const portrait = aspect < 1;
   const n = portrait ? NORMALS_PORTRAIT[s.face] : NORMALS[s.face];
-  const context = s.context ?? CONTEXT;
+  const context = s.context ?? TOUR.context;
   // a portrait frame is already limited by its width: keep barely any margin
   const room = portrait ? 1 + (s.pad * context - 1) * 0.4 : s.pad * context;
   const d = frameDistance(s.size, fov, aspect) * room;
@@ -256,7 +247,7 @@ const poseB = { pos: b, tgt: [0, 0, 0] as V3 };
  * an arc around the hoistway with the whole of it in view at the halfway mark.
  */
 export function tourPose(p: number, explode: number, aspect: number, mobile: boolean): CameraPose {
-  const fov = mobile ? 42 : 34;
+  const fov = mobile ? TOUR.fovMobile : TOUR.fov;
   const e = explosion(p, explode);
   const { i, next, t } = tourAt(p);
   poseOf(STOPS[i], p, e, aspect, fov, poseA);
@@ -274,7 +265,7 @@ export function tourPose(p: number, explode: number, aspect: number, mobile: boo
   db = Math.sqrt(db) || 1;
 
   const arc = arcOf(t);
-  const swing = SWING * arc;
+  const swing = TOUR.swing * arc;
   let len = 0;
   for (let k = 0; k < 3; k++) {
     const d = dirA[k] / da + (dirB[k] / db - dirA[k] / da) * t;
@@ -283,7 +274,7 @@ export function tourPose(p: number, explode: number, aspect: number, mobile: boo
   }
   len = Math.sqrt(len) || 1;
 
-  const dist = (da + (db - da) * t) * (1 + (STOPS[i].liftoff ?? LIFTOFF) * arc);
+  const dist = (da + (db - da) * t) * (1 + (STOPS[i].liftoff ?? TOUR.liftoff) * arc);
   for (let k = 0; k < 3; k++) {
     camTgt[k] = poseA.tgt[k] + (poseB.tgt[k] - poseA.tgt[k]) * t;
     camPos[k] = camTgt[k] + (camPos[k] / len) * dist;
@@ -326,7 +317,7 @@ export function blendPoses(
   db = Math.sqrt(db) || 1;
 
   const arc = arcOf(t);
-  const swing = SWING * arc;
+  const swing = TOUR.swing * arc;
   let len = 0;
   for (let k = 0; k < 3; k++) {
     const d = dirA[k] / da + (dirB[k] / db - dirA[k] / da) * t;
@@ -335,7 +326,7 @@ export function blendPoses(
   }
   len = Math.sqrt(len) || 1;
 
-  const dist = da + (db - da) * t + RIDE_LIFT * arc * db;
+  const dist = da + (db - da) * t + TOUR.rideLift * arc * db;
   for (let k = 0; k < 3; k++) {
     blendTgt[k] = fromTgt[k] + (toTgt[k] - fromTgt[k]) * t;
     blendPos[k] = blendTgt[k] + (blendPos[k] / len) * dist;

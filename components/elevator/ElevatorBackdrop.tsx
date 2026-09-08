@@ -11,6 +11,7 @@ import {
 } from "framer-motion";
 import ElevatorSchematic from "./ElevatorSchematic";
 import { getHold } from "@/lib/ride";
+import { DRAWING } from "@/lib/tuning";
 import type { SiteNotes } from "@/lib/site-notes";
 
 // three.js + the scene are loaded on the client only, after hydration
@@ -32,7 +33,7 @@ function detectWebGL() {
 }
 const noopSubscribe = () => () => {};
 
-const MOBILE_QUERY = "(max-width: 767px)";
+const MOBILE_QUERY = DRAWING.mobileQuery;
 function subscribeMobile(onChange: () => void) {
   const mq = window.matchMedia(MOBILE_QUERY);
   mq.addEventListener("change", onChange);
@@ -83,7 +84,7 @@ export default function ElevatorBackdrop({ notes }: { notes: SiteNotes }) {
    * Overdamped on purpose (damping well past 2*sqrt(stiffness)), so it never
    * overshoots a plate and swings back.
    */
-  const smoothed = useSpring(target, { stiffness: 165, damping: 34, mass: 1, restDelta: 0.00008 });
+  const smoothed = useSpring(target, DRAWING.spring);
 
   useEffect(() => {
     // keep in sync with .backdrop-viewport top offset in globals.css

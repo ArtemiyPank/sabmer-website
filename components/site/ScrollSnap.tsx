@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { STOPS } from "@/components/elevator3d/tour";
 import { getRide, setHold } from "@/lib/ride";
+import { COAST } from "@/lib/tuning";
 
 /**
  * Runs the page's coast itself instead of arguing with the browser's.
@@ -19,25 +20,6 @@ import { getRide, setHold } from "@/lib/ride";
  * to rest between plates is a perfectly good place to be; the only thing
  * forbidden is crossing one under nobody's hand.
  */
-
-/** px/ms the coast may never exceed, however hard the page is thrown */
-const MAX_SPEED = 3.4;
-/** ms: the natural decay of a coast left to its own devices */
-const TAU = 430;
-/** ms: the quickest a coast may be made to fade when it is aimed at a plate */
-const TAU_MIN = 240;
-/** ms: and the slowest */
-const TAU_MAX = 900;
-/** px/ms at which the coast is over */
-const MIN_SPEED = 0.03;
-/** px/ms below which a release is not worth coasting at all */
-const THROW = 0.12;
-/** ms after a wheel notch that did not fade: a hand is still on it */
-const HAND = 140;
-/** ms without the page being pushed off a stop: the browser's fling is spent */
-const STILL = 320;
-/** ms a stop is held before the visitor gets the page back regardless */
-const HOLD_MAX = 2200;
 
 export default function ScrollSnap() {
   useEffect(() => {
@@ -56,7 +38,7 @@ export default function ScrollSnap() {
     let coastFrame = 0;
     let cv = 0; // px/ms, signed
     let cy = 0;
-    let ctau = TAU;
+    let ctau: number = COAST.tau;
     let ctarget: number | null = null;
     let lastStep = 0;
 
@@ -104,7 +86,7 @@ export default function ScrollSnap() {
         window.scrollTo({ top: held, behavior: "instant" });
       }
       setHold(held / range());
-      if (now - heldAt > HOLD_MAX || now - pushedAt > STILL) {
+      if (now - heldAt > COAST.holdMax || now - pushedAt > COAST.stillFor) {
         releaseHold();
         return;
       }
@@ -134,7 +116,7 @@ export default function ScrollSnap() {
       cv *= Math.exp(-dt / ctau);
       cy = clamp(cy + cv * dt, 0, maxY());
       const done =
-        Math.abs(cv) < MIN_SPEED ||
+        Math.abs(cv) < COAST.minSpeed ||
         cy <= 0 ||
         cy >= maxY() ||
         (ctarget !== null && Math.abs(cy - ctarget) < 1);
@@ -160,20 +142,20 @@ export default function ScrollSnap() {
      */
     const startCoast = (v0: number) => {
       if (!engraved() || getRide().active || performance.now() - mounted < 600) return;
-      const v = clamp(v0, -MAX_SPEED, MAX_SPEED);
-      if (Math.abs(v) < THROW) return;
+      const v = clamp(v0, -COAST.maxSpeed, COAST.maxSpeed);
+      if (Math.abs(v) < COAST.throwSpeed) return;
       releaseHold();
       cy = window.scrollY;
       const dir = Math.sign(v);
-      const natural = cy + v * TAU; // where it would come to rest, left alone
+      const natural = cy + v * COAST.tau; // where it would come to rest, left alone
       const plate = beyond(cy, dir);
       ctarget = null;
-      ctau = TAU;
+      ctau = COAST.tau;
       cv = v;
       if (plate !== null && (dir > 0 ? natural > plate : natural < plate)) {
         const d = Math.abs(plate - cy);
         // land exactly there: distance = speed × decay, so pick the decay
-        ctau = clamp(d / Math.abs(v), TAU_MIN, TAU_MAX);
+        ctau = clamp(d / Math.abs(v), COAST.tauMin, COAST.tauMax);
         cv = dir * (d / ctau);
         ctarget = plate;
       }
@@ -192,7 +174,7 @@ export default function ScrollSnap() {
       observed = observed * 0.5 + v * 0.5;
       sampleY = y;
       sampleT = now;
-      if (touching || now - handAt < HAND) sampler = requestAnimationFrame(sample);
+      if (touching || now - handAt < COAST.handFor) sampler = requestAnimationFrame(sample);
       else observed = observed * 0.5;
     };
     const startSampling = () => {
@@ -226,7 +208,7 @@ export default function ScrollSnap() {
       const now = performance.now();
       if (d >= lastWheel) {
         // a notch that holds its size or grows: a hand is still on the wheel
-        if (now - handAt > HAND) giveBack();
+        if (now - handAt > COAST.handFor) giveBack();
         handAt = now;
         startSampling();
       } else if (coastFrame === 0 && held === null) {

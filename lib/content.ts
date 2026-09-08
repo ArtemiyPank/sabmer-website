@@ -141,7 +141,15 @@ export async function getContent(locale: "ru" | "he" | "en"): Promise<Content> {
       footer: { rights: g.footerRights ?? fallback.footer.rights },
     };
   } catch (err) {
-    console.warn("CMS unavailable, rendering from messages fallback:", err);
+    // one line, not the whole failed query: this is an expected path whenever
+    // the database is empty, unreachable, or behind the current schema
+    // the cause says what actually went wrong ("relation … does not exist");
+    // the error itself is the whole failed query, which helps nobody in a log
+    const cause = err instanceof Error ? (err.cause as Error | undefined) : undefined;
+    const why = (cause?.message ?? (err instanceof Error ? err.message : String(err)))
+      .split("\n")[0]
+      .slice(0, 160);
+    console.warn(`CMS unavailable, rendering from messages: ${why}`);
     return fallback;
   }
 }
