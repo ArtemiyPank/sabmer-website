@@ -18,11 +18,16 @@ import { easeGentle, getRide, rideTo, setHold } from "@/lib/ride";
  */
 
 /**
- * How far ahead the current speed is projected, in ms. A browser's fling
- * decays roughly exponentially over about this long, so `speed × LOOKAHEAD` is
- * a fair estimate of the ground it still has left to cover.
+ * How long the coast is assumed to have left, in ms, before its own fade has
+ * been measured. A browser's fling decays exponentially with a time constant
+ * in this range; the real one is worked out from the page as it slows, and
+ * these only bound that estimate.
  */
-const LOOKAHEAD = 380;
+const FADE_MIN = 110;
+const FADE_MAX = 520;
+const FADE_START = 240;
+/** ms of coasting before the reading is worth acting on */
+const SETTLE = 70;
 /** px/ms below which the page is as good as stopped */
 const MIN_SPEED = 0.09;
 /** ms after a wheel notch that did not fade: a hand is still on it */
@@ -46,7 +51,10 @@ export default function ScrollSnap() {
     let seenY = window.scrollY;
     let seenT = 0;
     let movedAt = 0;
-    let speed = 0; // px/ms, smoothed, signed
+    let speed = 0; // px/ms, smoothed, signed — the coast only, never the drag
+    let fade = FADE_START; // ms: how long the coast still has, by observation
+    let coastFrom = 0;
+    let driving = true; // the visitor's own hand is on it
 
     let held: number | null = null;
     let heldAt = 0;
@@ -110,10 +118,34 @@ export default function ScrollSnap() {
       seenY = y;
       seenT = now;
       if (Math.abs(step) > 0.5) movedAt = now;
-      // a little smoothing: one jittery frame should not decide anything
-      speed = speed * 0.55 + (step / dt) * 0.45;
 
       const free = touching || now - handAt < HAND;
+      const was = Math.abs(speed);
+      if (free) {
+        // the visitor is driving: their speed says nothing about the coast
+        // that will follow, so nothing is carried across the hand-over
+        speed = 0;
+        fade = FADE_START;
+        driving = true;
+      } else {
+        if (driving) {
+          driving = false;
+          coastFrom = now;
+          speed = step / dt;
+        } else {
+          speed = speed * 0.55 + (step / dt) * 0.45;
+          // How fast is the coast fading? An exponential decay loses the same
+          // fraction every frame, and that fraction gives the time it has
+          // left. Measuring it beats assuming it: a lazy swipe fades in a
+          // moment, a hard fling runs on for the best part of a second.
+          const now2 = Math.abs(speed);
+          if (was > 0.02 && now2 > 0.005 && now2 < was) {
+            const seen = dt / -Math.log(now2 / was);
+            fade = fade * 0.7 + Math.min(Math.max(seen, FADE_MIN), FADE_MAX) * 0.3;
+          }
+        }
+      }
+
       const fast = Math.abs(speed);
       const dir = Math.sign(speed);
 
@@ -125,10 +157,12 @@ export default function ScrollSnap() {
         !getRide().active &&
         engraved() &&
         now - mounted > 600 &&
-        now - armedAt > REARM
+        now - armedAt > REARM &&
+        now - coastFrom > SETTLE
       ) {
         const target = beyond(y, dir);
-        if (target !== null && Math.abs(target - y) < fast * LOOKAHEAD) {
+        // the ground the coast still has in it, at the rate it is actually fading
+        if (target !== null && Math.abs(target - y) < fast * fade) {
           // left alone the coast would end past this plate: land it there,
           // over roughly the time it would have taken to get there anyway
           const ms = Math.min(Math.max((Math.abs(target - y) / fast) * 1.7, 260), 900);
@@ -174,6 +208,10 @@ export default function ScrollSnap() {
     const onTouchEnd = () => {
       touching = false;
       lastWheel = 0;
+      // whatever the finger was doing, the coast starts from nothing here
+      speed = 0;
+      fade = FADE_START;
+      driving = true;
       startWatch();
     };
     const onKeyDown = () => release();
