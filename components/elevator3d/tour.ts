@@ -213,6 +213,21 @@ const RIDE_LIFT = 1.8;
 /** how strongly the middle of a flight is pulled to the front */
 const SWING = 0.85;
 
+/**
+ * How far out the camera stands through a flight: 0 parked on a plate, 1 at
+ * the top of the arc. A plain sine changes fastest at its ends, which is the
+ * camera lurching away the instant it leaves a plate and rushing back in as
+ * it arrives. This eases out of the stop, holds the wide view across the
+ * middle, and eases back down onto the next one — the dolly is at its
+ * quickest halfway between the plates, where there is nothing to read.
+ */
+const RISE = 0.46;
+function arcOf(t: number) {
+  if (t < RISE) return smooth(t / RISE);
+  if (t > 1 - RISE) return smooth((1 - t) / RISE);
+  return 1;
+}
+
 /** camera pose of a single stop */
 function poseOf(s: Stop, p: number, e: Explosion, aspect: number, fov: number, out: { pos: V3; tgt: V3 }) {
   stopAt(out.tgt, s, p, e);
@@ -258,7 +273,7 @@ export function tourPose(p: number, explode: number, aspect: number, mobile: boo
   da = Math.sqrt(da) || 1;
   db = Math.sqrt(db) || 1;
 
-  const arc = Math.sin(Math.PI * t);
+  const arc = arcOf(t);
   const swing = SWING * arc;
   let len = 0;
   for (let k = 0; k < 3; k++) {
@@ -310,7 +325,7 @@ export function blendPoses(
   da = Math.sqrt(da) || 1;
   db = Math.sqrt(db) || 1;
 
-  const arc = Math.sin(Math.PI * t);
+  const arc = arcOf(t);
   const swing = SWING * arc;
   let len = 0;
   for (let k = 0; k < 3; k++) {
