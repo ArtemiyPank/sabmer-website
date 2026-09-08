@@ -15,13 +15,13 @@ let stop: (() => void) | null = null;
 /**
  * Published so the 3D camera can fly straight to the destination while a ride
  * is running, instead of walking through every stop the page scrolls past.
- * `to` is the destination as scroll progress, `t` the eased progress of the
- * ride itself — the same curve the page is moving on, and `id` counts the
+ * `from` and `to` are where the trip starts and ends as scroll progress, `t`
+ * the eased progress of the ride itself — the same curve the page is moving on, and `id` counts the
  * rides so the camera can tell a new one from the one it is already flying
  * (two presses in a row need not render a frame in between).
  */
-export type Ride = { active: boolean; t: number; to: number; id: number; direct: boolean };
-const ride: Ride = { active: false, t: 0, to: 0, id: 0, direct: true };
+export type Ride = { active: boolean; t: number; from: number; to: number; id: number; direct: boolean };
+const ride: Ride = { active: false, t: 0, from: 0, to: 0, id: 0, direct: true };
 export const getRide = (): Ride => ride;
 
 /**
@@ -35,7 +35,15 @@ export const getRide = (): Ride => ride;
  * in the scroll offset alone.
  */
 const holdAt = { p: null as number | null };
-export const getHold = (): number | null => holdAt.p;
+export const getHold = (): number | null => {
+  // A caught fling drives the drawing from the ride's own eased clock. The
+  // page is being pulled against the browser's momentum for as long as this
+  // runs, and reading that tug-of-war into the drawing is what makes a fast
+  // swipe look ragged. Button navigation is not included: it flies the camera
+  // straight to its destination and never walks this route.
+  if (ride.active && !ride.direct) return ride.from + (ride.to - ride.from) * ride.t;
+  return holdAt.p;
+};
 export const setHold = (p: number | null) => {
   holdAt.p = p;
 };
@@ -91,6 +99,7 @@ export function rideTo(
   const ms = opts?.ms ?? duration(Math.abs(delta));
   const t0 = performance.now();
   const max = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+  ride.from = Math.min(Math.max(start / max, 0), 1);
   ride.to = Math.min(Math.max((start + delta) / max, 0), 1);
   ride.t = 0;
   ride.id += 1;

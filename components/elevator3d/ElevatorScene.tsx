@@ -102,8 +102,11 @@ function CameraRig({ tour }: { tour: boolean }) {
     }
 
     const ride = getRide();
-    // a caught fling is not a flight: it goes to the neighbouring plate, so
-    // the camera takes the ordinary route round the hoistway
+    // A caught fling is not a flight: it goes to the neighbouring plate, so
+    // the camera takes the ordinary route round the hoistway. `scroll` already
+    // runs on the ride's eased clock while that happens (see getHold), so the
+    // whole drawing moves smoothly however the page and the browser's momentum
+    // are fighting underneath.
     const flying = ride.active && ride.direct;
     let pose = tourPose(flying ? ride.to : scroll, explode, aspect, mobile);
 
