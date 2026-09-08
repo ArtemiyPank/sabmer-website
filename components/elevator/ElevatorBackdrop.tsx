@@ -6,6 +6,7 @@ import {
   useMotionValue,
   useReducedMotion,
   useScroll,
+  useSpring,
   useTransform,
 } from "framer-motion";
 import ElevatorSchematic from "./ElevatorSchematic";
@@ -63,12 +64,26 @@ export default function ElevatorBackdrop({ notes }: { notes: SiteNotes }) {
 
   const layerRef = useRef<HTMLDivElement>(null);
   const rangeRef = useRef(1);
-  const progress = useTransform(scrollY, (v) => {
+  const target = useTransform(scrollY, (v) => {
     // while a caught fling is being held on its plate the stop is the truth,
     // not the scroll offset the momentum keeps nudging
     const held = getHold();
     return held ?? Math.min(Math.max(v / rangeRef.current, 0), 1);
   });
+
+  /**
+   * The drawing follows the scroll through a spring rather than being pinned
+   * to it. A scroll position is not a smooth thing: a fling arrives in big
+   * uneven steps, a jump arrives all at once, and while a caught fling is
+   * being eased onto its plate the page and the browser's momentum are
+   * pulling against each other. Read straight, every one of those shows up as
+   * a jolt in the machine. Read through a spring, they are all the same
+   * thing — a target that moved — and the drawing always glides to it.
+   *
+   * Overdamped on purpose (damping well past 2*sqrt(stiffness)), so it never
+   * overshoots a plate and swings back.
+   */
+  const smoothed = useSpring(target, { stiffness: 165, damping: 34, mass: 1, restDelta: 0.00008 });
 
   useEffect(() => {
     // keep in sync with .backdrop-viewport top offset in globals.css
@@ -102,7 +117,7 @@ export default function ElevatorBackdrop({ notes }: { notes: SiteNotes }) {
   // null during SSR / hydration; false -> 2D schematic fallback
   const webgl = useSyncExternalStore(noopSubscribe, detectWebGL, () => null);
 
-  const p = reducedMotion ? staticProgress : progress;
+  const p = reducedMotion ? staticProgress : smoothed;
 
   // The scene letters the page copy onto the parts and flies the camera from
   // one to the next, which replaces the flow sections. They are therefore only
