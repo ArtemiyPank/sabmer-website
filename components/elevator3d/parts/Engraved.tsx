@@ -4,10 +4,10 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import * as THREE from "three";
 import { useProgressFrame, useScene } from "../scene-context";
 import { explosion, type V3 } from "../dims";
-import { FACE_ROT, STOPS, stopAt, type Stop } from "../tour";
+import { FACE_ROT, STOPS, frameDistance, shotRoom, stopAt, type Stop } from "../tour";
 import type { SiteNote, SiteNotes } from "@/lib/site-notes";
 import { getReview, subscribeReview } from "@/lib/reviews";
-import { TOUR } from "@/lib/tuning";
+import { PLATE, TOUR } from "@/lib/tuning";
 
 /**
  * The page text lettered onto the machine: each section is drawn into a
@@ -23,44 +23,13 @@ import { TOUR } from "@/lib/tuning";
  * or reads backwards from behind.
  */
 
-/** ~1000 px per metre keeps the lettering crisp at the distances of the tour */
-const PX_PER_M = 1000;
-const MAX_PX = 2048;
-
-/**
- * The type scale, as a share of the distance the camera reads the plate from.
- *
- * A plate's own size says nothing about how large its lettering will look: the
- * camera frames each plate to fill the shot, so a bigger plate is simply read
- * from further away. Tie the type to that distance and the body copy comes out
- * the same size on screen on every plate, whatever the plate's size or shape.
- */
-const TYPE_SCALE = 0.00911;
-
-/**
- * The shot each plate is framed for. The real viewport aspect would mean
- * redrawing every plate on resize; one representative shape per device class
- * is enough, because it is the *class* that changes which side of the plate
- * the framing runs out of first — width in a portrait phone, height on a
- * landscape desktop.
- */
+/** the camera each plate is lettered for: the tour's own framing, per class */
 const SHOT = {
-  desktop: { fov: TOUR.fov, aspect: 1.6 },
-  mobile: { fov: TOUR.fovMobile, aspect: 0.46 },
+  desktop: { fov: TOUR.fov, aspect: PLATE.shot.desktop },
+  mobile: { fov: TOUR.fovMobile, aspect: PLATE.shot.mobile },
 } as const;
 
-/** distance that frames a `size` face — the same rule the tour flies to */
-function readingDistance(size: [number, number], fov: number, aspect: number) {
-  const halfV = Math.tan((fov / 2) * (Math.PI / 180));
-  return Math.max(size[1] / 2 / halfV, size[0] / 2 / (halfV * Math.max(aspect, 0.35)));
-}
-
-/**
- * The longest line of body copy, in units. Much past this and the eye loses
- * its place returning to the left edge; the column is centred on plates wide
- * enough that the cap bites.
- */
-const MEASURE = 24;
+const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
 
 type Colors = { paper: string; line: string; accent: string };
 
@@ -85,7 +54,7 @@ function fitPx(ctx: CanvasRenderingContext2D, text: string, maxW: number, px: nu
   return px;
 }
 
-/** greedy word wrap; returns the y the next block starts at */
+/** greedy word wrap; returns the baseline of the last line it drew */
 function wrap(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -96,10 +65,12 @@ function wrap(
   dry: boolean
 ) {
   let line = "";
+  let last = y;
   for (const word of text.split(/\s+/)) {
     const probe = line ? `${line} ${word}` : word;
     if (ctx.measureText(probe).width > maxW && line) {
       if (!dry) ctx.fillText(line, x, y);
+      last = y;
       y += lh;
       line = word;
     } else {
@@ -108,14 +79,40 @@ function wrap(
   }
   if (line) {
     if (!dry) ctx.fillText(line, x, y);
-    y += lh;
+    last = y;
   }
-  return y;
+  return last;
 }
 
 /**
- * Lays the note out at a given type size; returns the height it needs. With
- * `dry` it only measures, which is how the size is fitted to the plate.
+ * Air is measured from the ink, not from the baseline.
+ *
+ * A baseline says nothing about where a line of type actually ends: descenders
+ * hang below it and capitals rise well above it, both by amounts that change
+ * with the size of the type. Spacing off baselines therefore leaves a rule
+ * crowding one plate's title and floating away from another's. These read the
+ * real extent of the glyphs, so the same number of units means the same amount
+ * of visible space on every plate. A line of figures has no descenders at all,
+ * and gets no air below it beyond the gap itself.
+ *
+ * The size is handed in rather than read back from `ctx.font`, which returns
+ * the browser's normalised form of it — "bold 38px Rubik" — and is no more
+ * parseable as a number than the weight it starts with.
+ */
+const inkAbove = (ctx: CanvasRenderingContext2D, text: string, px: number) => {
+  const ink = ctx.measureText(text).actualBoundingBoxAscent;
+  return ink === undefined ? px * 0.72 : ink;
+};
+const inkBelow = (ctx: CanvasRenderingContext2D, text: string, px: number) => {
+  const ink = ctx.measureText(text).actualBoundingBoxDescent;
+  return ink === undefined ? px * 0.22 : ink;
+};
+
+/**
+ * Letters `note` down the plate and returns the height it took. With `dry` it
+ * measures without marking the canvas; `air` scales every gap, so the same
+ * copy can be fitted by tightening the spacing rather than by shrinking the
+ * type (see `noteTexture`).
  */
 function layout(
   ctx: CanvasRenderingContext2D,
@@ -124,82 +121,135 @@ function layout(
   y0: number,
   inner: number,
   unit: number,
+  air: number,
   c: Colors,
   dry: boolean
 ) {
+  /** clear space: every gap on the plate is squeezed by the same multiplier */
+  const space = (v: number) => v * air;
   const F = (px: number, weight = 400) => `${weight} ${Math.round(px)}px Rubik, ui-sans-serif, system-ui, sans-serif`;
-  let y = y0 + unit * 1.2;
+  const MONO = (px: number) => `600 ${Math.round(px)}px ui-monospace, SFMono-Regular, monospace`;
+  const ruleT = Math.max(1, unit * 0.06);
 
+  /** a rule, with `PLATE.air.rule` of clear space kept above it */
+  const drawRule = (y: number) => {
+    if (!dry) {
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = c.accent;
+      ctx.fillRect(x, y, inner, ruleT);
+    }
+    return y + ruleT;
+  };
+
+  // ---- sheet number and caption ----
   const label = `${note.n}  ·  ${(note.caption ?? "SABMER").toUpperCase()}`;
   let labelPx = unit * 1.05;
-  ctx.font = `600 ${Math.round(labelPx)}px ui-monospace, SFMono-Regular, monospace`;
+  ctx.font = MONO(labelPx);
   const labelW = ctx.measureText(label).width;
   if (labelW > inner) {
     labelPx *= inner / labelW;
-    ctx.font = `600 ${Math.round(labelPx)}px ui-monospace, SFMono-Regular, monospace`;
+    ctx.font = MONO(labelPx);
   }
+  let y = y0 + inkAbove(ctx, label, labelPx);
   if (!dry) {
     ctx.fillStyle = c.accent;
     ctx.fillText(label, x, y);
   }
-  y += unit * 0.9;
-  if (!dry) ctx.fillRect(x, y, inner, Math.max(1, unit * 0.07));
-  y += unit * 2.1;
 
+  // ---- the rule under it ----
+  y += inkBelow(ctx, label, labelPx) + space(PLATE.air.rule * unit);
+  y = drawRule(y);
+
+  // ---- title ----
   if (!dry) ctx.fillStyle = c.line;
   const titlePx = fitPx(ctx, note.title, inner, unit * 2.3, (px) => F(px, 700));
+  ctx.font = F(titlePx, 700);
+  y += space(PLATE.air.rule * unit) + inkAbove(ctx, note.title, titlePx);
   y = wrap(ctx, note.title, x, y, inner, titlePx * 1.18, dry);
-  y += unit * 0.8;
+  let below = inkBelow(ctx, note.title, titlePx);
 
+  // ---- body ----
   const bodyPx = note.body ? fitPx(ctx, note.body, inner, unit * 1.35, (px) => F(px)) : unit * 1.35;
-  ctx.font = F(bodyPx);
-  if (!dry) ctx.globalAlpha = 0.92;
-  if (note.body) y = wrap(ctx, note.body, x, y, inner, bodyPx * 1.45, dry);
-  if (note.items) {
-    y += unit * 0.5;
-    for (const it of note.items) {
-      if (!dry) {
-        ctx.fillStyle = c.accent;
-        ctx.fillText("·", x, y);
-        ctx.fillStyle = c.line;
-      }
-      y = wrap(ctx, it, x + unit * 1.1, y, inner - unit * 1.1, unit * 1.95, dry);
+  const bodyLh = bodyPx * 1.45;
+  if (note.body) {
+    ctx.font = F(bodyPx);
+    y += below + space(PLATE.air.heading * titlePx) + inkAbove(ctx, note.body, bodyPx);
+    if (!dry) {
+      ctx.fillStyle = c.line;
+      ctx.globalAlpha = 0.92;
     }
+    y = wrap(ctx, note.body, x, y, inner, bodyLh, dry);
+    below = inkBelow(ctx, note.body, bodyPx);
   }
-  if (note.blocks) {
-    for (const b of note.blocks) {
-      y += unit * 1.1;
+
+  // ---- list ----
+  if (note.items) {
+    ctx.font = F(bodyPx);
+    // the list opens under the body copy, or under the title if there is none
+    let opening = note.body ? PLATE.air.copy * unit : PLATE.air.heading * titlePx;
+    for (const it of note.items) {
+      y += below + space(opening) + inkAbove(ctx, it, bodyPx);
       if (!dry) {
         ctx.globalAlpha = 1;
         ctx.fillStyle = c.accent;
-        ctx.fillRect(x, y - unit * 0.75, inner, Math.max(1, unit * 0.05));
+        ctx.fillText("·", x, y);
+        ctx.fillStyle = c.line;
+        ctx.globalAlpha = 0.92;
       }
+      y = wrap(ctx, it, x + unit * 1.1, y, inner - unit * 1.1, bodyLh, dry);
+      below = inkBelow(ctx, it, bodyPx);
+      opening = PLATE.air.item * unit;
+    }
+  }
+
+  // ---- sub-entries, each opened by a rule ----
+  if (note.blocks) {
+    for (const b of note.blocks) {
+      y += below + space(PLATE.air.rule * unit);
+      y = drawRule(y);
+
       const bTitlePx = fitPx(ctx, b.title, inner, unit * 1.55, (px) => F(px, 700));
-      if (!dry) ctx.fillStyle = c.line;
-      y = wrap(ctx, b.title, x, y + unit * 0.5, inner, bTitlePx * 1.22, dry);
+      ctx.font = F(bTitlePx, 700);
+      y += space(PLATE.air.rule * unit) + inkAbove(ctx, b.title, bTitlePx);
+      if (!dry) {
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = c.line;
+      }
+      y = wrap(ctx, b.title, x, y, inner, bTitlePx * 1.22, dry);
+      below = inkBelow(ctx, b.title, bTitlePx);
+
       if (b.caption) {
-        ctx.font = `600 ${Math.round(unit * 0.95)}px ui-monospace, SFMono-Regular, monospace`;
+        const capText = b.caption.toUpperCase();
+        const capPx = unit * 0.95;
+        ctx.font = MONO(capPx);
+        y += below + space(PLATE.air.caption * bTitlePx) + inkAbove(ctx, capText, capPx);
         if (!dry) ctx.fillStyle = c.accent;
-        y = wrap(ctx, b.caption.toUpperCase(), x, y + unit * 0.1, inner, unit * 1.4, dry);
+        y = wrap(ctx, capText, x, y, inner, unit * 1.4, dry);
+        below = inkBelow(ctx, capText, capPx);
       }
       if (b.body) {
         const bBodyPx = fitPx(ctx, b.body, inner, unit * 1.3, (px) => F(px));
+        ctx.font = F(bBodyPx);
+        y += below + space(b.caption ? PLATE.air.copy * unit : PLATE.air.heading * bTitlePx) + inkAbove(ctx, b.body, bBodyPx);
         if (!dry) {
           ctx.fillStyle = c.line;
           ctx.globalAlpha = 0.92;
         }
-        y = wrap(ctx, b.body, x, y + unit * 0.5, inner, bBodyPx * 1.42, dry);
+        y = wrap(ctx, b.body, x, y, inner, bBodyPx * 1.42, dry);
+        below = inkBelow(ctx, b.body, bBodyPx);
       }
     }
   }
+
   if (!dry) ctx.globalAlpha = 1;
-  return y - y0;
+  // the block ends at the bottom of the last ink it drew
+  return y + below - y0;
 }
 
 /** draws one note as a stencilled plate and returns it as a texture */
 function noteTexture(note: SiteNote, stop: Stop, c: Colors, mobile: boolean): THREE.CanvasTexture {
   const size = stop.size;
-  const scale = Math.min(PX_PER_M, MAX_PX / Math.max(size[0], size[1]));
+  const scale = Math.min(PLATE.pxPerM, PLATE.maxPx / Math.max(size[0], size[1]));
   const w = Math.round(size[0] * scale);
   const h = Math.round(size[1] * scale);
   const cv = document.createElement("canvas");
@@ -220,18 +270,36 @@ function noteTexture(note: SiteNote, stop: Stop, c: Colors, mobile: boolean): TH
   ctx.textBaseline = "alphabetic";
 
   // The same size of lettering on every plate: tied to how far away the plate
-  // is read from, not to how big it is. It only ever shrinks from there, and
-  // only if a plate is given more copy than it can hold.
+  // is read from, not to how big it is.
   const shot = mobile ? SHOT.mobile : SHOT.desktop;
-  const room = stop.pad * (stop.context ?? TOUR.context);
-  const distance = readingDistance(size, shot.fov, shot.aspect) * room;
-  let unit = distance * TYPE_SCALE * scale;
-  const column = Math.min(w - margin * 2, unit * MEASURE);
+  const distance = frameDistance(size, shot.fov, shot.aspect) * shotRoom(stop, shot.aspect < 1);
+  let unit = distance * PLATE.typeScale * scale;
+  const column = Math.min(w - margin * 2, unit * PLATE.measure);
   const x = Math.round((w - column) / 2);
-  const needed = layout(ctx, note, x, margin, column, unit, c, true);
-  if (needed > avail) unit *= Math.max(avail / needed, 0.5);
-  const total = needed > avail ? layout(ctx, note, x, margin, column, unit, c, true) : needed;
-  layout(ctx, note, x, margin + Math.max((avail - total) / 2, 0), column, unit, c, false);
+
+  // A plate with more copy than room gives up its air before its type size:
+  // the copy must read at the same size on every plate, and a little less
+  // space between the parts is a far smaller loss than lettering that shrinks
+  // from one plate to the next. Only when the air is squeezed as far as it
+  // goes does the type start to give.
+  //
+  // The height is the fixed height of the lettering plus the air, and the air
+  // scales exactly, so measuring it with and without gives the multiplier that
+  // fits in one step rather than by trying sizes.
+  const loose = layout(ctx, note, x, margin, column, unit, 1, c, true);
+  const air =
+    loose <= avail
+      ? 1
+      : (() => {
+          const tight = layout(ctx, note, x, margin, column, unit, 0, c, true);
+          return clamp((avail - tight) / Math.max(loose - tight, 1), PLATE.airMin, 1);
+        })();
+  let needed = air === 1 ? loose : layout(ctx, note, x, margin, column, unit, air, c, true);
+  if (needed > avail) {
+    unit *= Math.max(avail / needed, 0.5);
+    needed = layout(ctx, note, x, margin, column, unit, air, c, true);
+  }
+  layout(ctx, note, x, margin + Math.max((avail - needed) / 2, 0), column, unit, air, c, false);
 
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;

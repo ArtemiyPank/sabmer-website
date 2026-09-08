@@ -37,6 +37,14 @@ export const COAST = {
   stillFor: 320,
   /** ms a landing is held before the visitor gets the page back regardless */
   holdMax: 2200,
+  /**
+   * ms of stillness after which the page counts as having come to rest.
+   *
+   * Long enough that the pause between two flicks of a wheel is not mistaken
+   * for a stop — being taken somewhere between notches would read as the page
+   * fighting the hand on it.
+   */
+  restMs: 900,
 } as const;
 
 /**
@@ -61,6 +69,75 @@ export const TOUR = {
   depart: 0.17,
   /** scroll progress over which the doors close */
   doorsShutBy: 0.16,
+  /**
+   * How much of the sign the closing doors must have covered before the spot
+   * in front of them counts as having nothing left to look at.
+   */
+  signLost: 0.5,
+} as const;
+
+/**
+ * The lettering on the plates: how big it reads, how wide it sets, and how the
+ * parts of a plate are spaced. `components/elevator3d/parts/Engraved.tsx`
+ * draws to these.
+ */
+export const PLATE = {
+  /**
+   * The type scale, as a share of the distance the camera reads the plate
+   * from. A plate's own size says nothing about how large its lettering will
+   * look: the camera frames each plate to fill the shot, so a bigger plate is
+   * simply read from further away. Tie the type to that distance and the body
+   * copy comes out the same size on screen on every plate.
+   */
+  typeScale: 0.00911,
+  /**
+   * The longest line of body copy, in units of the type size. Much past this
+   * and the eye loses its place returning to the left edge.
+   */
+  measure: 24,
+  /** px per metre of plate, and the largest canvas either side may take */
+  pxPerM: 1000,
+  maxPx: 2048,
+  /**
+   * The vertical rhythm. Every gap is clear space between the ink of what
+   * precedes it and the ink of what follows, so a gap of the same size means
+   * the same amount of visible air on every plate.
+   *
+   * The measure to judge these against is the body's own leading: two lines of
+   * copy leave about 0.7 units of clear space between them, so anything meant
+   * to read as a break has to be plainly wider than that.
+   */
+  air: {
+    /** units, on each side of a rule */
+    rule: 1,
+    /**
+     * Under a heading, as a share of the heading's own size — not of the
+     * body's. A title is more than twice the size of the copy under it, and a
+     * gap that would be generous under a bold sub-head reads as a collision
+     * under a title.
+     */
+    heading: 0.9,
+    /** units, between one run of copy and the next */
+    copy: 1.15,
+    /** units, between one list item and the next */
+    item: 0.85,
+    /** share of the name's size: a name and its dates belong together */
+    caption: 0.12,
+  },
+  /**
+   * How far the air may be squeezed on a plate with more copy than room. A
+   * crowded plate gives up its spacing before its type size, because the copy
+   * has to read at one size on every plate.
+   */
+  airMin: 0.5,
+  /**
+   * The shot each plate is framed for. The real viewport aspect would mean
+   * redrawing every plate on resize; one representative shape per device class
+   * is enough, because it is the *class* that changes which side of the plate
+   * the framing runs out of first — width in a portrait phone, height on a
+   * landscape desktop.
+   */
+  shot: { desktop: 1.6, mobile: 0.46 },
 } as const;
 
 /** Navigation: the trip the page takes when a floor button is pressed. */

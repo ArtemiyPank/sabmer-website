@@ -85,6 +85,47 @@ export function doorPhase(p: number) {
   return 1 - smooth(clamp01(p / TOUR.doorsShutBy));
 }
 
+/**
+ * Where the doors have covered `share` of the sign behind them. Read off the
+ * door curve itself rather than written down beside it, so it stays true if
+ * the doors are ever given a different one.
+ */
+function doorsCover(share: number) {
+  let lo = 0;
+  // annotated: the tuning table is `as const`, so this would narrow to a literal
+  let hi: number = TOUR.doorsShutBy;
+  for (let k = 0; k < 20; k++) {
+    const mid = (lo + hi) / 2;
+    if (1 - doorPhase(mid) >= share) hi = mid;
+    else lo = mid;
+  }
+  return hi;
+}
+
+/**
+ * The stretches of the tour with nothing in them to stop at, and the stop the
+ * page belongs on instead.
+ *
+ * The tour opens on a car standing at the top landing with its doors open and
+ * the sign on its back wall in the frame. The doors then slide across that
+ * sign, and only once they are shut does the car set off. Between the two lies
+ * a stretch that holds neither: what the visitor stopped to read is behind the
+ * doors and the journey has not begun. Passing through it is fine — it is only
+ * a bad place to *stay*.
+ */
+const BLIND: { from: number; to: number; refuge: number }[] = [
+  { from: doorsCover(TOUR.signLost), to: TOUR.depart, refuge: STOPS[0].p },
+];
+
+/**
+ * Where the page belongs, having come to rest at `p` — or null if that is a
+ * perfectly good place to be, which is nearly everywhere.
+ */
+export function refuge(p: number): number | null {
+  const blind = BLIND.find((b) => p >= b.from && p < b.to);
+  return blind ? blind.refuge : null;
+}
+
 /** the page anchor each stop belongs to, in the order the tour visits them */
 export const STOP_SECTIONS: { id: Stop["id"]; anchor: string; key: string }[] = [
   { id: "about", anchor: "about", key: "about" },
@@ -190,11 +231,25 @@ export function tourAt(p: number) {
 
 
 /** distance that frames a `size` face in a `fov` camera at this aspect */
-function frameDistance(size: [number, number], fov: number, aspect: number) {
+export function frameDistance(size: [number, number], fov: number, aspect: number) {
   const halfV = Math.tan((fov / 2) * (Math.PI / 180));
   const byHeight = size[1] / 2 / halfV;
   const byWidth = size[0] / 2 / (halfV * Math.max(aspect, 0.35));
   return Math.max(byHeight, byWidth);
+}
+
+/**
+ * How much room the shot leaves around a stop's plate: 1 fills the frame, more
+ * keeps the component carrying the lettering in view. A portrait frame is
+ * already limited by its width, so it keeps barely any margin beyond that.
+ *
+ * The lettering is drawn to this same rule (see parts/Engraved.tsx): the type
+ * is sized for the distance the camera reads the plate from, and only one of
+ * the two may decide what that distance is.
+ */
+export function shotRoom(s: Stop, portrait: boolean) {
+  const full = s.pad * (s.context ?? TOUR.context);
+  return portrait ? 1 + (full - 1) * 0.4 : full;
 }
 
 const camPos: V3 = [0, 0, 0];
@@ -226,10 +281,7 @@ function poseOf(s: Stop, p: number, e: Explosion, aspect: number, fov: number, o
   stopAt(out.tgt, s, p, e);
   const portrait = aspect < 1;
   const n = portrait ? NORMALS_PORTRAIT[s.face] : NORMALS[s.face];
-  const context = s.context ?? TOUR.context;
-  // a portrait frame is already limited by its width: keep barely any margin
-  const room = portrait ? 1 + (s.pad * context - 1) * 0.4 : s.pad * context;
-  const d = frameDistance(s.size, fov, aspect) * room;
+  const d = frameDistance(s.size, fov, aspect) * shotRoom(s, portrait);
   out.pos[0] = out.tgt[0] + n[0] * d;
   out.pos[1] = out.tgt[1] + n[1] * d;
   out.pos[2] = out.tgt[2] + n[2] * d;

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { STOPS } from "@/components/elevator3d/tour";
-import { getRide, setHold } from "@/lib/ride";
+import { STOPS, refuge } from "@/components/elevator3d/tour";
+import { getRide, rideToProgress, setHold } from "@/lib/ride";
 import { COAST } from "@/lib/tuning";
 
 /**
@@ -19,6 +19,11 @@ import { COAST } from "@/lib/tuning";
  * A coast too weak to reach the next plate is left exactly as it is. Coming
  * to rest between plates is a perfectly good place to be; the only thing
  * forbidden is crossing one under nobody's hand.
+ *
+ * The one exception is a stretch of the tour with nothing in it to look at.
+ * Wherever the page finally comes to rest — under a coast of ours or a hand
+ * of theirs — it asks the tour whether that is somewhere worth being, and
+ * rides on to the nearest plate if it is not.
  */
 
 export default function ScrollSnap() {
@@ -184,6 +189,35 @@ export default function ScrollSnap() {
       sampler = requestAnimationFrame(sample);
     };
 
+    // -------------------------------------------------- where the page settles
+    /** is anything still moving the page? */
+    const driving = () => touching || getRide().active || coastFrame !== 0 || held !== null;
+
+    /**
+     * Nearly all of the tour is worth stopping in, and a little of it is not —
+     * the tour itself says which, and where the page belongs instead (see
+     * `refuge` in ../elevator3d/tour.ts). The page counts as having come to
+     * rest once the scroll has been quiet for a moment and nothing is driving
+     * it any more; only then is it taken somewhere worth being, and it gets
+     * there on the same unhurried ride as a press of a floor button.
+     */
+    let restTimer: ReturnType<typeof setTimeout> | null = null;
+    const settle = () => {
+      restTimer = null;
+      // something is still moving it: this is not where it will come to rest
+      if (driving()) {
+        restTimer = setTimeout(settle, COAST.restMs);
+        return;
+      }
+      if (!engraved()) return;
+      const to = refuge(window.scrollY / range());
+      if (to !== null) rideToProgress(to);
+    };
+    const onScroll = () => {
+      if (restTimer) clearTimeout(restTimer);
+      restTimer = setTimeout(settle, COAST.restMs);
+    };
+
     const giveBack = () => {
       stopCoast();
       releaseHold();
@@ -221,6 +255,7 @@ export default function ScrollSnap() {
 
     const onKeyDown = () => giveBack();
 
+    addEventListener("scroll", onScroll, { passive: true });
     addEventListener("wheel", onWheel, { passive: true });
     addEventListener("touchstart", onTouchStart, { passive: true });
     addEventListener("touchend", onTouchEnd, { passive: true });
@@ -229,6 +264,8 @@ export default function ScrollSnap() {
     return () => {
       giveBack();
       if (sampler) cancelAnimationFrame(sampler);
+      if (restTimer) clearTimeout(restTimer);
+      removeEventListener("scroll", onScroll);
       removeEventListener("wheel", onWheel);
       removeEventListener("touchstart", onTouchStart);
       removeEventListener("touchend", onTouchEnd);
