@@ -14,6 +14,8 @@
 
 import {
   CAB_BACK,
+  CAB_H,
+  CAB_W,
   CAB_X,
   CWT_X,
   CWT_Z,
@@ -61,7 +63,7 @@ export type Stop = {
 
 export const STOPS: Stop[] = [
   // 1. the cab interior, read through the open doors before they shut
-  { id: "about", group: "wallBack", at: [0, 1.56, CAB_BACK + 0.03], face: "square", size: [1, 1.12], pad: 1.2, p: 0.03, context: 2.1, liftoff: 4.7 },
+  { id: "about", group: "wallBack", at: [0, CAB_H / 2, CAB_BACK + 0.03], face: "square", size: [CAB_W - 0.04, CAB_H - 0.12], pad: 1.15, p: 0.03, context: 1.1, liftoff: 4.7 },
   // 2. the flank of the car as it runs down the shaft; the sign sits toward
   //    the front of the panel, clear of the sling stile, the guide rail and
   //    the governor rope, which all run down the middle of the car

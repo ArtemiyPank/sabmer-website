@@ -50,8 +50,15 @@ const UNIT_BOX_EDGES = new THREE.EdgesGeometry(UNIT_BOX);
  */
 const BOXED = ["steel", "steelDark", "stainless", "cab", "concrete", "iron", "rubber"] as const;
 const boxed = new Map(BOXED.map((name) => [name as string, createInstances()]));
-/** per material; the drawing never comes close, and the buffer is uploaded whole */
-const BOX_LIMIT = 1200;
+/**
+ * Instances one material's buffer can hold. Set it too low and the drawing
+ * does not merely lose the boxes that do not fit — a stray one is left with an
+ * uninitialised transform and renders as a phantom bar stretched across the
+ * scene, which is a puzzling thing to meet in a screenshot. Only the instances
+ * actually in use are uploaded each frame (drei sets the buffer's update range
+ * from the live count), so the headroom costs a little memory and nothing else.
+ */
+const BOX_LIMIT = 4000;
 
 /** provides the shared instanced box meshes — wrap the scene in it */
 export function InstancedBoxes({ children }: { children: ReactNode }) {

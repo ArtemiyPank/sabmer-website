@@ -102,7 +102,7 @@ export function SideWall({ sx }: { sx: 1 | -1 }) {
   );
 }
 
-/** back wall: two panels, handrail, mirror and outside stiffeners */
+/** back wall: two panels carrying the printed panel, and outside stiffeners */
 export function BackWall() {
   const z = CAB_BACK - PANEL_T / 2;
   return (
@@ -110,20 +110,10 @@ export function BackWall() {
       {[-0.275, 0.275].map((x) => (
         <Box key={x} size={[0.545, CAB_H, PANEL_T]} at={[x, CAB_H / 2, z]} mat="stainless" edges />
       ))}
-      <Cyl r={0.02} h={0.9} seg={16} axis="x" at={[0, 0.9, CAB_BACK + 0.05]} mat="stainless" />
-      {[-0.35, 0, 0.35].map((x) => (
-        <Fragment key={x}>
-          <Box size={[0.02, 0.04, 0.06]} at={[x, 0.9, CAB_BACK + 0.02]} />
-          <Bolt at={[x, 0.9, CAB_BACK + 0.005]} dir="+z" s={0.5} />
-        </Fragment>
-      ))}
-      <Box size={[0.8, 0.9, 0.01]} at={[0, 1.6, CAB_BACK + 0.005]} mat="glass" castShadow={false} />
-      {[-1, 1].map((sx) => (
-        <Box key={sx} size={[0.02, 0.94, 0.014]} at={[sx * 0.41, 1.6, CAB_BACK + 0.006]} mat="stainless" />
-      ))}
-      {[-1, 1].map((sy) => (
-        <Box key={sy} size={[0.84, 0.02, 0.014]} at={[0, 1.6 + sy * 0.46, CAB_BACK + 0.006]} mat="stainless" />
-      ))}
+      {/* No handrail or mirror on this wall: it is a printed panel from floor
+          to ceiling. The cab keeps its handrails — they run along both side
+          walls (see SideWall), which is where a rail belongs anyway once the
+          back of the car is given over to a sign. */}
       {[-0.3, 0.3].map((x) => (
         <Box key={x} size={[0.05, 2.0, 0.03]} at={[x, 1.1, z - 0.03]} />
       ))}

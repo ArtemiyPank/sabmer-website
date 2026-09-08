@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import * as THREE from "three";
-import { useProgressFrame } from "../scene-context";
+import { useProgressFrame, useScene } from "../scene-context";
 import { explosion, type V3 } from "../dims";
 import { FACE_ROT, STOPS, stopAt, type Stop } from "../tour";
 import type { SiteNote, SiteNotes } from "@/lib/site-notes";
 import { getReview, subscribeReview } from "@/lib/reviews";
+import { TOUR } from "@/lib/tuning";
 
 /**
  * The page text lettered onto the machine: each section is drawn into a
@@ -24,7 +25,42 @@ import { getReview, subscribeReview } from "@/lib/reviews";
 
 /** ~1000 px per metre keeps the lettering crisp at the distances of the tour */
 const PX_PER_M = 1000;
-const MAX_PX = 1600;
+const MAX_PX = 2048;
+
+/**
+ * The type scale, as a share of the distance the camera reads the plate from.
+ *
+ * A plate's own size says nothing about how large its lettering will look: the
+ * camera frames each plate to fill the shot, so a bigger plate is simply read
+ * from further away. Tie the type to that distance and the body copy comes out
+ * the same size on screen on every plate, whatever the plate's size or shape.
+ */
+const TYPE_SCALE = 0.00911;
+
+/**
+ * The shot each plate is framed for. The real viewport aspect would mean
+ * redrawing every plate on resize; one representative shape per device class
+ * is enough, because it is the *class* that changes which side of the plate
+ * the framing runs out of first — width in a portrait phone, height on a
+ * landscape desktop.
+ */
+const SHOT = {
+  desktop: { fov: TOUR.fov, aspect: 1.6 },
+  mobile: { fov: TOUR.fovMobile, aspect: 0.46 },
+} as const;
+
+/** distance that frames a `size` face — the same rule the tour flies to */
+function readingDistance(size: [number, number], fov: number, aspect: number) {
+  const halfV = Math.tan((fov / 2) * (Math.PI / 180));
+  return Math.max(size[1] / 2 / halfV, size[0] / 2 / (halfV * Math.max(aspect, 0.35)));
+}
+
+/**
+ * The longest line of body copy, in units. Much past this and the eye loses
+ * its place returning to the left edge; the column is centred on plates wide
+ * enough that the cap bites.
+ */
+const MEASURE = 24;
 
 type Colors = { paper: string; line: string; accent: string };
 
@@ -161,7 +197,8 @@ function layout(
 }
 
 /** draws one note as a stencilled plate and returns it as a texture */
-function noteTexture(note: SiteNote, size: [number, number], c: Colors): THREE.CanvasTexture {
+function noteTexture(note: SiteNote, stop: Stop, c: Colors, mobile: boolean): THREE.CanvasTexture {
+  const size = stop.size;
   const scale = Math.min(PX_PER_M, MAX_PX / Math.max(size[0], size[1]));
   const w = Math.round(size[0] * scale);
   const h = Math.round(size[1] * scale);
@@ -169,9 +206,8 @@ function noteTexture(note: SiteNote, size: [number, number], c: Colors): THREE.C
   cv.width = w;
   cv.height = h;
   const ctx = cv.getContext("2d")!;
-  const pad = Math.round(Math.min(w, h) * 0.07);
-  const inner = w - pad * 2;
-  const avail = h - pad * 2;
+  const margin = Math.round(Math.min(w, h * 0.5) * 0.08);
+  const avail = h - margin * 2;
 
   // an opaque plate so the lettering does not fight the panel seams behind it
   ctx.fillStyle = c.paper;
@@ -183,13 +219,19 @@ function noteTexture(note: SiteNote, size: [number, number], c: Colors): THREE.C
   ctx.strokeRect(ctx.lineWidth, ctx.lineWidth, w - ctx.lineWidth * 2, h - ctx.lineWidth * 2);
   ctx.textBaseline = "alphabetic";
 
-  // fit the type to the plate: start large, shrink only as far as needed
-  // larger lettering, so the plate still reads now that the shot is wider
-  let unit = w / 21;
-  const needed = layout(ctx, note, pad, pad, inner, unit, c, true);
+  // The same size of lettering on every plate: tied to how far away the plate
+  // is read from, not to how big it is. It only ever shrinks from there, and
+  // only if a plate is given more copy than it can hold.
+  const shot = mobile ? SHOT.mobile : SHOT.desktop;
+  const room = stop.pad * (stop.context ?? TOUR.context);
+  const distance = readingDistance(size, shot.fov, shot.aspect) * room;
+  let unit = distance * TYPE_SCALE * scale;
+  const column = Math.min(w - margin * 2, unit * MEASURE);
+  const x = Math.round((w - column) / 2);
+  const needed = layout(ctx, note, x, margin, column, unit, c, true);
   if (needed > avail) unit *= Math.max(avail / needed, 0.5);
-  const total = needed > avail ? layout(ctx, note, pad, pad, inner, unit, c, true) : needed;
-  layout(ctx, note, pad, pad + Math.max((avail - total) / 2, 0), inner, unit, c, false);
+  const total = needed > avail ? layout(ctx, note, x, margin, column, unit, c, true) : needed;
+  layout(ctx, note, x, margin + Math.max((avail - total) / 2, 0), column, unit, c, false);
 
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -222,6 +264,7 @@ function noteOf(notes: SiteNotes, id: Stop["id"], review: number): SiteNote {
 }
 
 export default function Engraved({ notes }: { notes: SiteNotes }) {
+  const { mobile } = useScene();
   // redraw the plates when the page theme changes, and once webfonts land
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -237,8 +280,8 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
   const plates = useMemo(() => {
     void tick;
     const c = readColors();
-    return STOPS.map((s) => noteTexture(noteOf(notes, s.id, review), s.size, c));
-  }, [notes, tick, review]);
+    return STOPS.map((s) => noteTexture(noteOf(notes, s.id, review), s, c, mobile));
+  }, [notes, tick, review, mobile]);
 
   useEffect(() => () => plates.forEach((t) => t?.dispose()), [plates]);
 
