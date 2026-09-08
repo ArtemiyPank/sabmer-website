@@ -215,17 +215,17 @@ const SWING = 0.85;
 
 /**
  * How far out the camera stands through a flight: 0 parked on a plate, 1 at
- * the top of the arc. A plain sine changes fastest at its ends, which is the
- * camera lurching away the instant it leaves a plate and rushing back in as
- * it arrives. This eases out of the stop, holds the wide view across the
- * middle, and eases back down onto the next one — the dolly is at its
- * quickest halfway between the plates, where there is nothing to read.
+ * the top of the arc.
+ *
+ * A raised cosine. It leaves a plate and settles onto the next one at no rate
+ * at all, so neither end jerks, and its steepest point is no steeper than a
+ * plain sine's — easing the ends by squaring off the middle instead would buy
+ * the calm arrival by making the crossing itself faster, which is the part
+ * that reads as the camera darting about.
  */
-const RISE = 0.46;
 function arcOf(t: number) {
-  if (t < RISE) return smooth(t / RISE);
-  if (t > 1 - RISE) return smooth((1 - t) / RISE);
-  return 1;
+  const s = Math.sin(Math.PI * t);
+  return s * s;
 }
 
 /** camera pose of a single stop */
