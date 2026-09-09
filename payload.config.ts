@@ -94,6 +94,7 @@ export default buildConfig({
               label: "Founders",
               fields: [
                 { name: "foundersTitle", type: "text", localized: true },
+                { name: "foundersText", type: "textarea", localized: true },
                 {
                   name: "founders",
                   type: "array",

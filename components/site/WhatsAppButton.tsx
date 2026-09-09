@@ -11,17 +11,25 @@ function WaIcon({ className }: { className: string }) {
 }
 
 /**
- * WhatsApp link embedded in the page (not floating): a full button for the
- * Contacts card or a compact icon for the footer. Number comes from
- * Contacts.phone.
+ * A WhatsApp link on the company's number: a full button for the Contacts
+ * card, a compact icon for the footer, or a raised one to sit over the
+ * drawing. `message` fills the chat in advance, so an applicant writing from
+ * the Work section does not have to open with "hello, about the job".
  */
 export default function WhatsAppButton({
   variant = "button",
+  label,
+  message,
 }: {
-  variant?: "button" | "icon";
+  variant?: "button" | "icon" | "raised";
+  label?: string;
+  message?: string;
 }) {
   const t = useTranslations("Contacts");
-  const href = `https://wa.me/${t("phone").replace(/\D/g, "")}`;
+  const number = t("phone").replace(/\D/g, "");
+  const href = message
+    ? `https://wa.me/${number}?text=${encodeURIComponent(message)}`
+    : `https://wa.me/${number}`;
 
   if (variant === "icon") {
     return (
@@ -38,19 +46,25 @@ export default function WhatsAppButton({
     );
   }
 
+  // raised: the plates cannot carry a link, so this one stands over the
+  // drawing and needs a ground of its own to stay legible against it
+  const raised = variant === "raised";
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-80"
+      className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-80${
+        raised ? " shadow-sm" : ""
+      }`}
       style={{
-        borderColor: "var(--card-border)",
+        borderColor: raised ? "var(--bp-line-soft)" : "var(--card-border)",
+        backgroundColor: raised ? "var(--bp-paper)" : undefined,
         color: "var(--bp-accent)",
       }}
     >
       <WaIcon className="h-5 w-5" />
-      {t("whatsapp")}
+      {label ?? t("whatsapp")}
     </a>
   );
 }

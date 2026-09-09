@@ -32,12 +32,13 @@
   },
   "Founders": {
     "title": "Founders",
+    "text": "Both founders came up on site and run the work themselves: contracts, installation method and quality on the job are theirs.",
     "amirName": "Amir",
     "amirRole": "Co-founder",
-    "amirBio": "Over seven years in the lift trade. Handles clients and contracts — dates, scope and money go through him.",
+    "amirBio": "Seven years in the lift trade.",
     "vovaName": "Vova",
     "vovaRole": "Co-founder",
-    "vovaBio": "Over seven years in the trade, trained as a site foreman at a university in Khabarovsk. Looks after installation method, crew training and quality on site."
+    "vovaBio": "Trained as a site foreman at a university in Khabarovsk. Over fifteen years in construction — first in Khabarovsk, now here in Israel."
   },
   "Contacts": {
     "title": "Contacts",
@@ -65,7 +66,9 @@
       "t5": "Lunch — 12:00 to 13:00",
       "t6": "Work vehicle and workwear — on the company"
     },
-    "apply": "About work, call:"
+    "apply": "About work, call:",
+    "whatsapp": "Ask about a job",
+    "whatsappText": "Hello! I would like to apply as a fitter."
   },
   "Reviews": {
     "title": "What the crew says",

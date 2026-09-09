@@ -13,6 +13,8 @@ export type Content = {
   about: { title: string; text: string; stages: string[] };
   founders: {
     title: string;
+    /** what holds for both of them; each entry adds only what is its own */
+    text: string;
     people: { name: string; role: string; bio: string; photoUrl: string | null }[];
   };
   jobs: { title: string; intro: string; terms: string[]; apply: string };
@@ -47,6 +49,7 @@ const fromMessages = async (locale: string): Promise<Content> => {
     },
     founders: {
       title: m.Founders.title,
+      text: m.Founders.text,
       people: [
         { name: m.Founders.amirName, role: m.Founders.amirRole, bio: m.Founders.amirBio, photoUrl: null },
         { name: m.Founders.vovaName, role: m.Founders.vovaRole, bio: m.Founders.vovaBio, photoUrl: null },
@@ -97,6 +100,7 @@ export async function getContent(locale: "ru" | "he" | "en"): Promise<Content> {
       },
       founders: {
         title: g.foundersTitle ?? fallback.founders.title,
+        text: g.foundersText ?? fallback.founders.text,
         people:
           g.founders && g.founders.length > 0
             ? g.founders.map((f) => ({

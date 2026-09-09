@@ -121,8 +121,12 @@ export const PLATE = {
     copy: 1.15,
     /** units, between one list item and the next */
     item: 0.85,
-    /** share of the name's size: a name and its dates belong together */
-    caption: 0.12,
+    /**
+     * Share of the name's size, between a name and the line under it — its
+     * role, or the years worked. They belong together, so this is the one gap
+     * narrower than the body's leading; narrower still and they stick.
+     */
+    caption: 0.35,
   },
   /**
    * How far the air may be squeezed on a plate with more copy than room. A

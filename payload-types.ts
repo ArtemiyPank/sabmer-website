@@ -382,6 +382,7 @@ export interface SiteContent {
       }[]
     | null;
   foundersTitle?: string | null;
+  foundersText?: string | null;
   founders?:
     | {
         name: string;
@@ -439,6 +440,7 @@ export interface SiteContentSelect<T extends boolean = true> {
         id?: T;
       };
   foundersTitle?: T;
+  foundersText?: T;
   founders?:
     | T
     | {

@@ -10,6 +10,7 @@ import WhatsAppButton from "@/components/site/WhatsAppButton";
 import ScrollSnap from "@/components/site/ScrollSnap";
 import BackToTop from "@/components/site/BackToTop";
 import ReviewArrows from "@/components/site/ReviewArrows";
+import JobsApply from "@/components/site/JobsApply";
 import FadeCard from "@/components/site/FadeCard";
 import { SITE_URL } from "@/lib/site";
 import { getContent } from "@/lib/content";
@@ -38,6 +39,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
     founders: {
       n: "04",
       title: c.founders.title,
+      body: c.founders.text,
       blocks: c.founders.people.map((f) => ({ title: f.name, caption: f.role, body: f.bio })),
     },
     contacts: {
@@ -77,6 +79,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
       <Header />
       <BackToTop />
       <ReviewArrows />
+      <JobsApply />
 
       <main className="mx-auto max-w-6xl px-4 md:px-6">
         {/* ---- About: who we are and what we take on ---- */}
@@ -150,6 +153,9 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
                 {c.contacts.phone}
               </a>
             </p>
+            <div className="mt-4">
+              <WhatsAppButton label={t("Jobs.whatsapp")} message={t("Jobs.whatsappText")} />
+            </div>
           </FadeCard>
         </section>
 
@@ -180,8 +186,9 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
 
         {/* ---- Founders ---- */}
         <section id="founders" className="scroll-mt-24 py-16 md:py-24">
-          <FadeCard className={`${card} inline-block`}>
+          <FadeCard className={`${card} max-w-2xl`}>
             <h2 className="sheet-title">{c.founders.title}</h2>
+            <p className="mt-4 leading-relaxed opacity-85">{c.founders.text}</p>
           </FadeCard>
           <div className="mt-6 grid max-w-4xl gap-4 md:grid-cols-2">
             {c.founders.people.map((f) => (
