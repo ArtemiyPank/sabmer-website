@@ -189,10 +189,11 @@ export function Plank() {
           <Box size={[0.02, 0.2, 0.57]} at={[sx * 0.6, -0.4, -0.42]} />
           <BoltGrid at={[sx * 0.61, -0.4, ROPE_Z]} dir={sx > 0 ? "+x" : "-x"} w={0.22} h={0.12} s={0.8} />
           <BoltGrid at={[sx * 0.61, PLANK_Y, -0.16]} dir={sx > 0 ? "+x" : "-x"} w={0.1} h={0.1} s={0.8} />
-          <Box size={[0.2, 0.02, 0.2]} at={[sx * CAR_BUFFER_X, PLANK_Y - PLANK_H / 2 - 0.01, 0]} edges />
-          <BoltGrid at={[sx * CAR_BUFFER_X, PLANK_Y - PLANK_H / 2 - 0.02, 0]} dir="-y" w={0.12} h={0.12} s={0.7} />
         </Fragment>
       ))}
+      {/* strike plate over the one oil buffer */}
+      <Box size={[0.2, 0.02, 0.2]} at={[CAR_BUFFER_X, PLANK_Y - PLANK_H / 2 - 0.01, 0]} edges />
+      <BoltGrid at={[CAR_BUFFER_X, PLANK_Y - PLANK_H / 2 - 0.02, 0]} dir="-y" w={0.12} h={0.12} s={0.7} />
       {/* linkage rod tying both safety gears together */}
       <Cyl r={0.008} h={1.2} seg={8} axis="x" at={[0, SAFETY_LEVER_Y, 0.12]} mat="stainless" />
     </>

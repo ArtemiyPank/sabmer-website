@@ -265,11 +265,11 @@ function metrics(stop: Stop, mobile: boolean) {
   const scale = Math.min(PLATE.pxPerM, PLATE.maxPx / Math.max(size[0], size[1]));
   const w = Math.round(size[0] * scale);
   const hMax = Math.round(size[1] * scale);
-  const margin = Math.round(Math.min(w, hMax * 0.5) * 0.08);
   const shot = mobile ? SHOT.mobile : SHOT.desktop;
   const distance = frameDistance(size, shot.fov, shot.aspect) * shotRoom(stop, shot.aspect < 1);
   const unit = distance * PLATE.typeScale * scale;
-  const column = Math.min(w - margin * 2, unit * PLATE.measure);
+  const margin = Math.round(PLATE.pad * unit);
+  const column = Math.min(w - margin * 2, unit * (stop.measure ?? PLATE.measure));
   return { scale, w, hMax, margin, avail: hMax - margin * 2, unit, column, x: Math.round((w - column) / 2) };
 }
 

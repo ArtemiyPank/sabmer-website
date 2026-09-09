@@ -45,6 +45,8 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
     contacts: {
       n: "05",
       title: c.contacts.title,
+      // bare values: the plate stands in the bay beside the buffer, and labels
+      // in front of them would not fit a line there on a phone
       items: [c.contacts.phone, c.contacts.email, c.contacts.address, c.contacts.registration],
     },
   };

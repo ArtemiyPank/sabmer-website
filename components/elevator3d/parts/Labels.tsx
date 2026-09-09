@@ -150,7 +150,7 @@ const STATIC: Array<{ n: number; text: string; at: V3; side: Side; dy?: number }
   { n: 4, text: "OVERSPEED GOVERNOR", at: [GOV_X, GOV_Y + 0.2, GOV_Z], side: "left" },
   { n: 5, text: "CAR GUIDE RAIL T89", at: [-RAIL_X - 0.05, 7.0, 0], side: "left" },
   { n: 6, text: "CWT GUIDE RAIL T50", at: [CWT_RAIL_X, 5.5, CWT_RAIL_Z[0]], side: "right", dy: -60 },
-  { n: 16, text: "OIL BUFFER", at: [CAR_BUFFER_X, BUFFER_TOP, 0], side: "right" },
+  { n: 16, text: "OIL BUFFER", at: [CAR_BUFFER_X, BUFFER_TOP, 0], side: "left" },
   { n: 17, text: "GOV. TENSION SHEAVE", at: [GOV_X, GOV_TENSION_Y, GOV_Z], side: "left", dy: -44 },
   { n: 18, text: "CONTROL CABINET", at: [CABINET[0], CABINET[1] + 1.0, CABINET[2]], side: "left" },
   { n: 19, text: "LANDING DOOR", at: [0, LEVELS[1] + 1.0, LDOOR_PANEL_Z], side: "right", dy: 40 },

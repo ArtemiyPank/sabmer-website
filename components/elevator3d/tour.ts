@@ -54,6 +54,13 @@ export type Stop = {
   /** how much room around the plate the shot leaves (1 = plate fills the frame) */
   context?: number;
   /**
+   * The longest line of copy this plate sets, in units of the type size,
+   * overriding `PLATE.measure`. A plate wide enough to want longer lines says
+   * so here: without it the column stops at the standard measure and the rest
+   * of the plate is left empty.
+   */
+  measure?: number;
+  /**
    * How far the camera swings out over the flight that *leaves* this stop,
    * overriding TOUR.liftoff. The legs down the cab are close quarters, so they get
    * a wider arc than the drop through the shaft further down.
@@ -72,8 +79,9 @@ export const STOPS: Stop[] = [
   { id: "reviews", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.66, 1.02], pad: 1.2, p: 0.55, context: 1.35 },
   // 4. the closed landing doors one floor down
   { id: "founders", group: "world", at: [0, LEVELS[1] + 1.05, LDOOR_PANEL_Z + 0.03], face: "front", size: [0.84, 1.62], pad: 1.2, p: 0.78, context: 1.25 },
-  // 5. the pit, straight on: the plate rides the car buffers
-  { id: "contacts", group: "world", at: [0, -1.24, 0.2], face: "square", size: [0.8, 0.66], pad: 1.3, p: 1, context: 2.6 },
+  // 5. the pit, straight on: the plate takes the bay between the car's oil
+  //    buffer on the centreline and the counterweight's spring buffer
+  { id: "contacts", group: "world", at: [0.555, -1.24, 0.2], face: "square", size: [0.86, 0.66], pad: 1.3, p: 1, context: 2 },
 ];
 
 /**

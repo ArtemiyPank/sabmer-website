@@ -99,6 +99,13 @@ export const PLATE = {
   pxPerM: 1000,
   maxPx: 2048,
   /**
+   * The clear border of paper around the lettering, in units of the type size
+   * — the same measure the rhythm below is written in. Reading it off the type
+   * rather than off the plate keeps the border even on a plate of any shape,
+   * and the plate is cut to the copy plus this on every side.
+   */
+  pad: 2,
+  /**
    * The vertical rhythm. Every gap is clear space between the ink of what
    * precedes it and the ink of what follows, so a gap of the same size means
    * the same amount of visible air on every plate.

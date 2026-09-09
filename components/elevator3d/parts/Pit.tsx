@@ -21,8 +21,8 @@ import {
 } from "../dims";
 
 /**
- * Pit equipment: the two oil buffers under the car, the spring buffer under
- * the counterweight, the governor tension sheave with its weight and slack
+ * Pit equipment: the oil buffer under the car, the spring buffer under the
+ * counterweight, the governor tension sheave with its weight and slack
  * rope switch, the pit ladder and the counterweight guard screen. Only the
  * tension sheave moves (it turns with the governor rope).
  */
@@ -31,11 +31,11 @@ const OIL_TOP = -1.18; // top of the buffer cylinder, where the plunger comes ou
 const PIVOT: [number, number, number] = [-0.8, -0.85, 0.2]; // tension arm pivot on the rail bracket
 const ARM_LEN = Math.hypot(GOV_X - PIVOT[0], GOV_TENSION_Y - PIVOT[1], GOV_Z - PIVOT[2]);
 
-/** oil buffer under the car sling; `sx` picks the left / right unit */
-function OilBuffer({ sx }: { sx: 1 | -1 }) {
-  const x = sx * CAR_BUFFER_X;
+/** the oil buffer under the car sling; the switch bracket faces the shaft centre */
+function OilBuffer() {
+  const sx = Math.sign(CAR_BUFFER_X) || 1;
   return (
-    <group position={[x, 0, 0]}>
+    <group position={[CAR_BUFFER_X, 0, 0]}>
       <Box size={[0.3, 0.02, 0.3]} at={[0, PIT_FLOOR + 0.01, 0]} edges />
       {[-0.11, 0.11].map((dx) =>
         [-0.11, 0.11].map((dz) => <Bolt key={`${dx}${dz}`} at={[dx, PIT_FLOOR + 0.02, dz]} s={1.2} />)
@@ -66,8 +66,7 @@ export default function Pit() {
 
   return (
     <group>
-      <OilBuffer sx={1} />
-      <OilBuffer sx={-1} />
+      <OilBuffer />
 
       {/* ---- counterweight spring buffer ---- */}
       <group position={[CWT_X, 0, CWT_Z]}>

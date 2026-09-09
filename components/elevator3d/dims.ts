@@ -150,10 +150,13 @@ export const HITCH_CWT_X = CWT_X + CWT_PULLEY_R; // 1.2
 export const HOOK_BEAM_Y = SHAFT_TOP - 0.15; // lifting beam under the overhead slab
 
 // ---- pit ----------------------------------------------------------------------------
-export const CAR_BUFFER_X = 0.45; // ± (under the plank, z = 0)
+export const CAR_BUFFER_X = 0; // the car's single oil buffer, on the centreline under the plank
 export const BUFFER_TOP = -0.93; // top of the car buffers (oil, 0.77 tall)
 export const CWT_BUFFER_TOP = -0.95; // spring buffer under the counterweight
-export const LADDER: V3 = [-1.15, PIT_FLOOR, 0.7]; // pit ladder foot
+// Pit ladder foot. It stands well forward, under the lowest landing door where
+// you climb out — and clear of the traveling cable, whose loop swings through
+// z = 0.62 across the whole width of the pit as the car comes down.
+export const LADDER: V3 = [-1.15, PIT_FLOOR, 0.9];
 
 // ---- controller (top landing, beside the door, outside the shaft) -----------------
 export const CABINET: V3 = [-1.0, LEVELS[3], 1.45]; // cabinet base centre (x, floor y, z)
