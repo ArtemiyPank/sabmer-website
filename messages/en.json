@@ -1,7 +1,7 @@
 {
   "Meta": {
     "title": "SABMER — Mitsubishi lift installation",
-    "description": "Subcontractor installing Mitsubishi lifts: stage bet — fitting the equipment, stage gimel — commissioning and handover. Over five years in the trade. Hiring fitters."
+    "description": "Subcontractor installing Mitsubishi lifts in Israel: stage bet — fitting the equipment, stage gimel — commissioning and handover. Over five years on site. Hiring fitters for our crews."
   },
   "Header": {
     "about": "About",
@@ -17,27 +17,27 @@
   },
   "Hero": {
     "tagline": "Mitsubishi lift installation",
-    "sub": "End-to-end subcontracting: from fitting the equipment to handing the lift over in service.",
+    "sub": "End-to-end subcontracting: we fit the equipment, commission it and hand the lift over in service.",
     "ctaContact": "Get in touch",
     "ctaCareers": "Terms of work"
   },
   "About": {
     "title": "About",
-    "text": "SABMER is a subcontractor installing Mitsubishi lifts. Over five years in the trade. We carry a site through two stages:",
+    "text": "SABMER installs Mitsubishi lifts as a subcontractor — over five years on site. We carry a job through two stages:",
     "stages": {
-      "s1": "Stage bet — fitting the equipment: cab, doors, machine, counterweight and guide rails",
-      "s2": "Stage gimel — after commissioning: preparing the shaft, running the cables, final adjustment and handover",
-      "s3": "We are hiring fitters — the terms are under “Work”"
+      "s1": "Stage bet — the mechanics: guide rails, machine, counterweight, cab and doors",
+      "s2": "Stage gimel — through to start-up: the shaft, the cabling, adjustment and handover",
+      "s3": "We are hiring fitters for our crews — the terms are under “Work”"
     }
   },
   "Founders": {
     "title": "Founders",
     "amirName": "Amir",
     "amirRole": "Co-founder",
-    "amirBio": "Over seven years in the lift trade. Looks after clients, contracts and the growth of the company.",
+    "amirBio": "Over seven years in the lift trade. Handles clients and contracts — dates, scope and money go through him.",
     "vovaName": "Vova",
     "vovaRole": "Co-founder",
-    "vovaBio": "Over seven years in the lift trade. Trained as a site foreman at a university in Khabarovsk. Looks after installation method, crew training and quality on site."
+    "vovaBio": "Over seven years in the trade, trained as a site foreman at a university in Khabarovsk. Looks after installation method, crew training and quality on site."
   },
   "Contacts": {
     "title": "Contacts",
@@ -56,39 +56,38 @@
   },
   "Jobs": {
     "title": "Work",
-    "intro": "Employment on the books. The terms:",
+    "intro": "Employment on the books, paid on time. The terms:",
     "terms": {
       "t1": "₪50 an hour, net",
-      "t2": "Weekdays 7:00 to 17:00",
-      "t3": "Saturdays optional, 7:00 to 12:00",
-      "t4": "Half an hour for coffee on arrival",
-      "t5": "Lunch 12:00 to 13:00",
-      "t6": "Work vehicle and workwear provided"
+      "t2": "Weekdays — 7:00 to 17:00",
+      "t3": "Saturdays — optional, 7:00 to 12:00",
+      "t4": "Coffee on arrival — half an hour",
+      "t5": "Lunch — 12:00 to 13:00",
+      "t6": "Work vehicle and workwear — on the company"
     },
     "apply": "About work, call:"
   },
   "Reviews": {
     "title": "What the crew says",
-    "hint": "Use the arrows",
     "prev": "Previous review",
     "next": "Next review",
     "items": [
       {
         "name": "Name Surname",
         "period": "2023 — 2024",
-        "text": "Review text: what the work in the crew was like and what stood out.",
+        "text": "Came in with no lift experience — a couple of months later I was on doors and cab with a crew. They explain things calmly; nobody shouts at you over a mistake. Wages to the day, never once late.",
         "contact": "+972 50-000-0000"
       },
       {
         "name": "Name Surname",
         "period": "2022 — 2025",
-        "text": "Review text: on the terms, the hours and how the site is run.",
+        "text": "The terms are exactly what they said at the interview: the hours, the rate, Saturdays if you want them. Van and workwear from the company — you don’t pay your own way to site. You can talk to the bosses like people.",
         "contact": "+972 50-000-0000"
       },
       {
         "name": "Name Surname",
         "period": "2024 — present",
-        "text": "Review text: what I learned and how a shift goes.",
+        "text": "The work is hard, but it is straight: they said until 17:00, so it is 17:00. Nobody eats into your lunch or your coffee. If an assembly makes no sense, someone comes and shows you on the shaft.",
         "contact": "+972 50-000-0000"
       }
     ]

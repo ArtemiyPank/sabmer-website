@@ -123,10 +123,17 @@ function layout(
   unit: number,
   air: number,
   c: Colors,
+  rtl: boolean,
   dry: boolean
 ) {
   /** clear space: every gap on the plate is squeezed by the same multiplier */
   const space = (v: number) => v * air;
+  // Hebrew is set from the other edge of the column: every run of type hangs
+  // off `edge`, and a list's marker sits outside the copy on that same side
+  const edge = rtl ? x + inner : x;
+  const bullet = unit * 1.1;
+  const indent = rtl ? edge - bullet : edge + bullet;
+  ctx.textAlign = rtl ? "right" : "left";
   const F = (px: number, weight = 400) => `${weight} ${Math.round(px)}px Rubik, ui-sans-serif, system-ui, sans-serif`;
   const MONO = (px: number) => `600 ${Math.round(px)}px ui-monospace, SFMono-Regular, monospace`;
   const ruleT = Math.max(1, unit * 0.06);
@@ -153,7 +160,7 @@ function layout(
   let y = y0 + inkAbove(ctx, label, labelPx);
   if (!dry) {
     ctx.fillStyle = c.accent;
-    ctx.fillText(label, x, y);
+    ctx.fillText(label, edge, y);
   }
 
   // ---- the rule under it ----
@@ -165,7 +172,7 @@ function layout(
   const titlePx = fitPx(ctx, note.title, inner, unit * 2.3, (px) => F(px, 700));
   ctx.font = F(titlePx, 700);
   y += space(PLATE.air.rule * unit) + inkAbove(ctx, note.title, titlePx);
-  y = wrap(ctx, note.title, x, y, inner, titlePx * 1.18, dry);
+  y = wrap(ctx, note.title, edge, y, inner, titlePx * 1.18, dry);
   let below = inkBelow(ctx, note.title, titlePx);
 
   // ---- body ----
@@ -178,7 +185,7 @@ function layout(
       ctx.fillStyle = c.line;
       ctx.globalAlpha = 0.92;
     }
-    y = wrap(ctx, note.body, x, y, inner, bodyLh, dry);
+    y = wrap(ctx, note.body, edge, y, inner, bodyLh, dry);
     below = inkBelow(ctx, note.body, bodyPx);
   }
 
@@ -192,11 +199,11 @@ function layout(
       if (!dry) {
         ctx.globalAlpha = 1;
         ctx.fillStyle = c.accent;
-        ctx.fillText("·", x, y);
+        ctx.fillText("·", edge, y);
         ctx.fillStyle = c.line;
         ctx.globalAlpha = 0.92;
       }
-      y = wrap(ctx, it, x + unit * 1.1, y, inner - unit * 1.1, bodyLh, dry);
+      y = wrap(ctx, it, indent, y, inner - bullet, bodyLh, dry);
       below = inkBelow(ctx, it, bodyPx);
       opening = PLATE.air.item * unit;
     }
@@ -215,7 +222,7 @@ function layout(
         ctx.globalAlpha = 1;
         ctx.fillStyle = c.line;
       }
-      y = wrap(ctx, b.title, x, y, inner, bTitlePx * 1.22, dry);
+      y = wrap(ctx, b.title, edge, y, inner, bTitlePx * 1.22, dry);
       below = inkBelow(ctx, b.title, bTitlePx);
 
       if (b.caption) {
@@ -224,7 +231,7 @@ function layout(
         ctx.font = MONO(capPx);
         y += below + space(PLATE.air.caption * bTitlePx) + inkAbove(ctx, capText, capPx);
         if (!dry) ctx.fillStyle = c.accent;
-        y = wrap(ctx, capText, x, y, inner, unit * 1.4, dry);
+        y = wrap(ctx, capText, edge, y, inner, unit * 1.4, dry);
         below = inkBelow(ctx, capText, capPx);
       }
       if (b.body) {
@@ -235,7 +242,7 @@ function layout(
           ctx.fillStyle = c.line;
           ctx.globalAlpha = 0.92;
         }
-        y = wrap(ctx, b.body, x, y, inner, bBodyPx * 1.42, dry);
+        y = wrap(ctx, b.body, edge, y, inner, bBodyPx * 1.42, dry);
         below = inkBelow(ctx, b.body, bBodyPx);
       }
     }
@@ -247,7 +254,7 @@ function layout(
 }
 
 /** draws one note as a stencilled plate and returns it as a texture */
-function noteTexture(note: SiteNote, stop: Stop, c: Colors, mobile: boolean): THREE.CanvasTexture {
+function noteTexture(note: SiteNote, stop: Stop, c: Colors, mobile: boolean, rtl: boolean): THREE.CanvasTexture {
   const size = stop.size;
   const scale = Math.min(PLATE.pxPerM, PLATE.maxPx / Math.max(size[0], size[1]));
   const w = Math.round(size[0] * scale);
@@ -286,20 +293,20 @@ function noteTexture(note: SiteNote, stop: Stop, c: Colors, mobile: boolean): TH
   // The height is the fixed height of the lettering plus the air, and the air
   // scales exactly, so measuring it with and without gives the multiplier that
   // fits in one step rather than by trying sizes.
-  const loose = layout(ctx, note, x, margin, column, unit, 1, c, true);
+  const loose = layout(ctx, note, x, margin, column, unit, 1, c, rtl, true);
   const air =
     loose <= avail
       ? 1
       : (() => {
-          const tight = layout(ctx, note, x, margin, column, unit, 0, c, true);
+          const tight = layout(ctx, note, x, margin, column, unit, 0, c, rtl, true);
           return clamp((avail - tight) / Math.max(loose - tight, 1), PLATE.airMin, 1);
         })();
-  let needed = air === 1 ? loose : layout(ctx, note, x, margin, column, unit, air, c, true);
+  let needed = air === 1 ? loose : layout(ctx, note, x, margin, column, unit, air, c, rtl, true);
   if (needed > avail) {
     unit *= Math.max(avail / needed, 0.5);
-    needed = layout(ctx, note, x, margin, column, unit, air, c, true);
+    needed = layout(ctx, note, x, margin, column, unit, air, c, rtl, true);
   }
-  layout(ctx, note, x, margin + Math.max((avail - needed) / 2, 0), column, unit, air, c, false);
+  layout(ctx, note, x, margin + Math.max((avail - needed) / 2, 0), column, unit, air, c, rtl, false);
 
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -348,7 +355,9 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
   const plates = useMemo(() => {
     void tick;
     const c = readColors();
-    return STOPS.map((s) => noteTexture(noteOf(notes, s.id, review), s, c, mobile));
+    // Hebrew sets from the right; the page tells the plates which way it reads
+    const rtl = document.documentElement.dir === "rtl";
+    return STOPS.map((s) => noteTexture(noteOf(notes, s.id, review), s, c, mobile, rtl));
   }, [notes, tick, review, mobile]);
 
   useEffect(() => () => plates.forEach((t) => t?.dispose()), [plates]);
