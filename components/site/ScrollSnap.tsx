@@ -146,7 +146,7 @@ export default function ScrollSnap() {
      * time constant differs, so nothing about it reads as a snap.
      */
     const startCoast = (v0: number) => {
-      if (!engraved() || getRide().active || performance.now() - mounted < 600) return;
+      if (!engraved() || getRide().running || performance.now() - mounted < 600) return;
       const v = clamp(v0, -COAST.maxSpeed, COAST.maxSpeed);
       if (Math.abs(v) < COAST.throwSpeed) return;
       releaseHold();
@@ -191,7 +191,7 @@ export default function ScrollSnap() {
 
     // -------------------------------------------------- where the page settles
     /** is anything still moving the page? */
-    const driving = () => touching || getRide().active || coastFrame !== 0 || held !== null;
+    const driving = () => touching || getRide().running || coastFrame !== 0 || held !== null;
 
     /**
      * Nearly all of the tour is worth stopping in, and a little of it is not —

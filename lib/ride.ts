@@ -1,5 +1,6 @@
 "use client";
 
+import { STOPS } from "@/components/elevator3d/tour";
 import { RIDE } from "@/lib/tuning";
 
 /**
@@ -17,15 +18,20 @@ let frame = 0;
 let unbind: (() => void) | null = null;
 
 /**
- * Published so the 3D camera can fly straight to the destination while a trip
- * is running, instead of walking through every stop the page scrolls past.
- * `to` is the destination as scroll progress and `t` the eased progress of the
- * trip itself — the same curve the page is moving on. `id` counts the trips so
- * the camera can tell a new one from the one it is already flying: two presses
- * in a row need not render a frame in between.
+ * The trip in progress, published for the two parts that need to know.
+ *
+ * `running` is any trip at all: the page is being moved by something other
+ * than the visitor, and nothing else should take the wheel. `flying` is the
+ * narrower case where the camera leaves the tour and goes straight to the
+ * destination, which is only worth doing when the trip would otherwise race
+ * through a stop on the way (see `flies`). `to` is the destination as scroll
+ * progress and `t` the eased progress of the trip — the same curve the page is
+ * moving on. `id` counts the flights so the camera can tell a new one from the
+ * one it is already flying: two presses in a row need not render a frame in
+ * between.
  */
-export type Ride = { active: boolean; t: number; to: number; id: number };
-const ride: Ride = { active: false, t: 0, to: 0, id: 0 };
+export type Ride = { running: boolean; flying: boolean; t: number; to: number; id: number };
+const ride: Ride = { running: false, flying: false, t: 0, to: 0, id: 0 };
 export const getRide = (): Ride => ride;
 
 /**
@@ -45,6 +51,24 @@ export const setHold = (p: number | null) => {
 
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
+/**
+ * Whether the camera should fly the trip instead of simply following the page.
+ *
+ * The flight exists for one reason: a trip of several floors would otherwise
+ * race the camera through every stop between here and there. A trip that
+ * passes none — the next floor along, or a nudge back onto the plate the page
+ * is already on — has nothing to skip, so the camera keeps to the tour and the
+ * scene simply plays backwards or forwards. Flying such a short trip swings
+ * the camera out and back for no reason: it reads as the machine backing away
+ * from the visitor before answering them.
+ */
+function flies(from: number, to: number) {
+  const lo = Math.min(from, to);
+  const hi = Math.max(from, to);
+  const clear = 0.002; // a stop at either end is not one passed on the way
+  return STOPS.some((s) => s.p > lo + clear && s.p < hi - clear);
+}
+
 /** ms for a trip of `distance` pixels: unhurried, but not slow */
 const duration = (distance: number) =>
   Math.min(RIDE.maxMs, RIDE.baseMs + distance * RIDE.msPerPx);
@@ -52,7 +76,8 @@ const duration = (distance: number) =>
 function cancel() {
   if (frame) cancelAnimationFrame(frame);
   frame = 0;
-  ride.active = false;
+  ride.running = false;
+  ride.flying = false;
   unbind?.();
   unbind = null;
 }
@@ -78,10 +103,15 @@ export function rideToProgress(p: number) {
 
   const ms = duration(Math.abs(delta));
   const t0 = performance.now();
-  ride.to = Math.min(Math.max((start + delta) / max, 0), 1);
-  ride.t = 0;
-  ride.id += 1;
-  ride.active = true;
+  const to = Math.min(Math.max((start + delta) / max, 0), 1);
+  const flying = flies(start / max, to);
+  ride.running = true;
+  if (flying) {
+    ride.to = to;
+    ride.t = 0;
+    ride.id += 1;
+    ride.flying = true;
+  }
 
   // the visitor takes over the moment they touch the page themselves
   const interrupt = () => cancel();
@@ -96,10 +126,11 @@ export function rideToProgress(p: number) {
 
   const step = (now: number) => {
     const t = Math.min((now - t0) / ms, 1);
-    ride.t = easeInOutCubic(t);
+    const eased = easeInOutCubic(t);
+    if (flying) ride.t = eased;
     // "instant" matters: the page sets scroll-behavior: smooth, which would
     // otherwise animate every step of this animation
-    window.scrollTo({ top: start + delta * ride.t, behavior: "instant" });
+    window.scrollTo({ top: start + delta * eased, behavior: "instant" });
     if (t < 1) frame = requestAnimationFrame(step);
     else cancel();
   };

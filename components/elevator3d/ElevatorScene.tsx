@@ -105,7 +105,7 @@ function CameraRig({ tour }: { tour: boolean }) {
     const ride = getRide();
     // while a trip is running the camera flies straight to its destination
     // rather than walking through every stop the page scrolls past
-    const flying = ride.active;
+    const flying = ride.flying;
     let pose = tourPose(flying ? ride.to : scroll, explode, aspect, mobile);
 
     if (flying) {
@@ -124,13 +124,13 @@ function CameraRig({ tour }: { tour: boolean }) {
     }
 
     const nowMs = state.clock.elapsedTime * 1000;
-    if (!ride.active && nowMs < settleUntil.current) {
+    if (!ride.flying && nowMs < settleUntil.current) {
       const t = 1 - (settleUntil.current - nowMs) / RIDE.settleMs;
       const e = t * t * (3 - 2 * t);
       pose = blendLinear(settleFrom.pos, settleFrom.tgt, pose.position, pose.target, e, pose.fov);
     }
 
-    if (ride.active || nowMs < settleUntil.current) invalidate();
+    if (ride.flying || nowMs < settleUntil.current) invalidate();
 
     copy3(held.current.pos, pose.position);
     copy3(held.current.tgt, pose.target);
