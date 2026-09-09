@@ -253,60 +253,90 @@ function layout(
   return y + below - y0;
 }
 
-/** draws one note as a stencilled plate and returns it as a texture */
-function noteTexture(note: SiteNote, stop: Stop, c: Colors, mobile: boolean, rtl: boolean): THREE.CanvasTexture {
+/**
+ * Everything about a plate that the copy cannot change: the canvas it is given,
+ * the margin, the size of the type and the width of the column. All of it
+ * follows from the surface the plate is printed on and the shot the camera
+ * takes of it — never from how much copy the plate carries, which is what
+ * keeps the lettering one size from one end of the tour to the other.
+ */
+function metrics(stop: Stop, mobile: boolean) {
   const size = stop.size;
   const scale = Math.min(PLATE.pxPerM, PLATE.maxPx / Math.max(size[0], size[1]));
   const w = Math.round(size[0] * scale);
-  const h = Math.round(size[1] * scale);
+  const hMax = Math.round(size[1] * scale);
+  const margin = Math.round(Math.min(w, hMax * 0.5) * 0.08);
+  const shot = mobile ? SHOT.mobile : SHOT.desktop;
+  const distance = frameDistance(size, shot.fov, shot.aspect) * shotRoom(stop, shot.aspect < 1);
+  const unit = distance * PLATE.typeScale * scale;
+  const column = Math.min(w - margin * 2, unit * PLATE.measure);
+  return { scale, w, hMax, margin, avail: hMax - margin * 2, unit, column, x: Math.round((w - column) / 2) };
+}
+
+type Metrics = ReturnType<typeof metrics>;
+
+/**
+ * How this note has to be set to fit the surface, and the height it comes to.
+ *
+ * A plate with more copy than room gives up its air before its type size: the
+ * copy must read at the same size on every plate, and a little less space
+ * between the parts is a far smaller loss than lettering that shrinks from one
+ * plate to the next. Only when the air is squeezed as far as it goes does the
+ * type start to give.
+ *
+ * The height is the fixed height of the lettering plus the air, and the air
+ * scales exactly, so measuring it with and without gives the multiplier that
+ * fits in one step rather than by trying sizes.
+ */
+function fitNote(ctx: CanvasRenderingContext2D, note: SiteNote, m: Metrics, c: Colors, rtl: boolean) {
+  const set = (unit: number, air: number) =>
+    layout(ctx, note, m.x, m.margin, m.column, unit, air, c, rtl, true);
+  let unit = m.unit;
+  const loose = set(unit, 1);
+  const air =
+    loose <= m.avail
+      ? 1
+      : (() => {
+          const tight = set(unit, 0);
+          return clamp((m.avail - tight) / Math.max(loose - tight, 1), PLATE.airMin, 1);
+        })();
+  let needed = air === 1 ? loose : set(unit, air);
+  if (needed > m.avail) {
+    unit *= Math.max(m.avail / needed, 0.5);
+    needed = set(unit, air);
+  }
+  return { unit, air, needed };
+}
+
+type Fit = ReturnType<typeof fitNote>;
+
+/** draws one note as a stencilled plate `h` pixels tall and returns it */
+function noteTexture(
+  note: SiteNote,
+  m: Metrics,
+  fit: Fit,
+  h: number,
+  c: Colors,
+  rtl: boolean
+): THREE.CanvasTexture {
   const cv = document.createElement("canvas");
-  cv.width = w;
+  cv.width = m.w;
   cv.height = h;
   const ctx = cv.getContext("2d")!;
-  const margin = Math.round(Math.min(w, h * 0.5) * 0.08);
-  const avail = h - margin * 2;
 
   // an opaque plate so the lettering does not fight the panel seams behind it
   ctx.fillStyle = c.paper;
   ctx.globalAlpha = 0.94;
-  ctx.fillRect(0, 0, w, h);
+  ctx.fillRect(0, 0, m.w, h);
   ctx.globalAlpha = 1;
   ctx.strokeStyle = c.accent;
-  ctx.lineWidth = Math.max(2, Math.min(w, h) * 0.006);
-  ctx.strokeRect(ctx.lineWidth, ctx.lineWidth, w - ctx.lineWidth * 2, h - ctx.lineWidth * 2);
+  ctx.lineWidth = Math.max(2, Math.min(m.w, h) * 0.006);
+  ctx.strokeRect(ctx.lineWidth, ctx.lineWidth, m.w - ctx.lineWidth * 2, h - ctx.lineWidth * 2);
   ctx.textBaseline = "alphabetic";
 
-  // The same size of lettering on every plate: tied to how far away the plate
-  // is read from, not to how big it is.
-  const shot = mobile ? SHOT.mobile : SHOT.desktop;
-  const distance = frameDistance(size, shot.fov, shot.aspect) * shotRoom(stop, shot.aspect < 1);
-  let unit = distance * PLATE.typeScale * scale;
-  const column = Math.min(w - margin * 2, unit * PLATE.measure);
-  const x = Math.round((w - column) / 2);
-
-  // A plate with more copy than room gives up its air before its type size:
-  // the copy must read at the same size on every plate, and a little less
-  // space between the parts is a far smaller loss than lettering that shrinks
-  // from one plate to the next. Only when the air is squeezed as far as it
-  // goes does the type start to give.
-  //
-  // The height is the fixed height of the lettering plus the air, and the air
-  // scales exactly, so measuring it with and without gives the multiplier that
-  // fits in one step rather than by trying sizes.
-  const loose = layout(ctx, note, x, margin, column, unit, 1, c, rtl, true);
-  const air =
-    loose <= avail
-      ? 1
-      : (() => {
-          const tight = layout(ctx, note, x, margin, column, unit, 0, c, rtl, true);
-          return clamp((avail - tight) / Math.max(loose - tight, 1), PLATE.airMin, 1);
-        })();
-  let needed = air === 1 ? loose : layout(ctx, note, x, margin, column, unit, air, c, rtl, true);
-  if (needed > avail) {
-    unit *= Math.max(avail / needed, 0.5);
-    needed = layout(ctx, note, x, margin, column, unit, air, c, rtl, true);
-  }
-  layout(ctx, note, x, margin + Math.max((avail - needed) / 2, 0), column, unit, air, c, rtl, false);
+  const room = h - m.margin * 2;
+  const y0 = m.margin + Math.max((room - fit.needed) / 2, 0);
+  layout(ctx, note, m.x, y0, m.column, fit.unit, fit.air, c, rtl, false);
 
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -357,10 +387,33 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
     const c = readColors();
     // Hebrew sets from the right; the page tells the plates which way it reads
     const rtl = document.documentElement.dir === "rtl";
-    return STOPS.map((s) => noteTexture(noteOf(notes, s.id, review), s, c, mobile, rtl));
+    // measuring needs a context, not a canvas anyone will look at
+    const probe = document.createElement("canvas").getContext("2d")!;
+    probe.textBaseline = "alphabetic";
+
+    return STOPS.map((s) => {
+      const m = metrics(s, mobile);
+      /**
+       * The paper is cut to the copy, not to the surface it hangs on: a sign
+       * with four lines on it should not be a board with four lines adrift in
+       * the middle. A plate that pages through cards is cut to its longest
+       * one, so the sign does not resize under the visitor as they page.
+       */
+      const cards = notes[s.id].cards;
+      const count = cards?.length ?? 0;
+      const shown = count ? ((review % count) + count) % count : 0;
+      const fits = (count ? cards! : [null]).map((_, i) => {
+        const note = noteOf(notes, s.id, i);
+        return { note, fit: fitNote(probe, note, m, c, rtl) };
+      });
+      const tallest = Math.max(...fits.map((f) => f.fit.needed));
+      const h = Math.min(m.hMax, Math.round(tallest) + m.margin * 2);
+      const { note, fit } = fits[shown];
+      return { tex: noteTexture(note, m, fit, h, c, rtl), height: h / m.scale };
+    });
   }, [notes, tick, review, mobile]);
 
-  useEffect(() => () => plates.forEach((t) => t?.dispose()), [plates]);
+  useEffect(() => () => plates.forEach((p) => p.tex.dispose()), [plates]);
 
   const groups = useRef<Array<THREE.Group | null>>([]);
   const pos = useRef<V3>([0, 0, 0]).current;
@@ -379,8 +432,8 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
   return (
     <group>
       {STOPS.map((s, i) => {
-        const tex = plates[i];
-        if (!tex) return null;
+        const plate = plates[i];
+        if (!plate) return null;
         return (
           <group
             key={s.id}
@@ -390,9 +443,9 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
             }}
           >
             <mesh renderOrder={2}>
-              <planeGeometry args={[s.size[0], s.size[1]]} />
+              <planeGeometry args={[s.size[0], plate.height]} />
               <meshBasicMaterial
-                map={tex}
+                map={plate.tex}
                 transparent
                 depthWrite={false}
                 toneMapped={false}
