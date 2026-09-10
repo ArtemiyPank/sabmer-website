@@ -18,6 +18,12 @@ export type SiteNote = {
    * when the tour parks on it. Only the reviews plate uses this.
    */
   cards?: ReviewCard[];
+  /**
+   * A button printed at the foot of the plate. The plate is a texture and
+   * cannot carry a link, so the page lays a transparent anchor over it — see
+   * `lib/plate-action.ts`.
+   */
+  action?: { label: string; href: string };
 };
 
 export type ReviewCard = {

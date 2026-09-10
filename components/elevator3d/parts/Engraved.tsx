@@ -8,6 +8,8 @@ import { FACE_ROT, STOPS, frameDistance, shotRoom, stopAt, type Stop } from "../
 import type { SiteNote, SiteNotes } from "@/lib/site-notes";
 import { getReview, subscribeReview } from "@/lib/reviews";
 import { PLATE, TOUR } from "@/lib/tuning";
+import { WA_GLYPH } from "@/lib/whatsapp";
+import { getPlateAction } from "@/lib/plate-action";
 
 /**
  * The page text lettered onto the machine: each section is drawn into a
@@ -114,6 +116,26 @@ const inkBelow = (ctx: CanvasRenderingContext2D, text: string, px: number) => {
  * copy can be fitted by tightening the spacing rather than by shrinking the
  * type (see `noteTexture`).
  */
+/** how close to a stop the tour has to be for its button to be offered */
+const PARKED = 0.045;
+/** the smallest the anchor over the button may be, in CSS pixels */
+const TOUCH = 44;
+
+/** where the button printed on a plate sits, in canvas pixels */
+type Hit = { x: number; y: number; w: number; h: number } | null;
+
+/** a rounded rectangle path, ready to fill or stroke */
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  const k = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + k, y);
+  ctx.arcTo(x + w, y, x + w, y + h, k);
+  ctx.arcTo(x + w, y + h, x, y + h, k);
+  ctx.arcTo(x, y + h, x, y, k);
+  ctx.arcTo(x, y, x + w, y, k);
+  ctx.closePath();
+}
+
 function layout(
   ctx: CanvasRenderingContext2D,
   note: SiteNote,
@@ -248,9 +270,50 @@ function layout(
     }
   }
 
+  // ---- the button, printed like everything else on the plate ----
+  let hit: Hit = null;
+  if (note.action) {
+    const px = unit * 1.15;
+    ctx.font = F(px, 600);
+    const mark = unit * 1.5; // the WhatsApp mark, square
+    const gap = unit * 0.5;
+    const padX = unit * 1.05;
+    const bw = Math.min(inner, ctx.measureText(note.action.label).width + mark + gap + padX * 2);
+    const bh = unit * 2.7;
+    const bx = rtl ? edge - bw : edge;
+    y += below + space(PLATE.air.copy * unit);
+    if (!dry) {
+      ctx.globalAlpha = 1;
+      roundRect(ctx, bx, y, bw, bh, unit * 0.5);
+      ctx.fillStyle = c.accent;
+      ctx.globalAlpha = 0.12;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.lineWidth = Math.max(1, unit * 0.07);
+      ctx.strokeStyle = c.accent;
+      ctx.stroke();
+      // the mark, then the label, as a row centred in the button
+      const inkW = ctx.measureText(note.action.label).width + mark + gap;
+      const left = bx + (bw - inkW) / 2;
+      ctx.save();
+      ctx.translate(left, y + (bh - mark) / 2);
+      ctx.scale(mark / 32, mark / 32);
+      ctx.fillStyle = c.accent;
+      ctx.fill(new Path2D(WA_GLYPH));
+      ctx.restore();
+      ctx.fillStyle = c.accent;
+      ctx.textAlign = "left";
+      ctx.fillText(note.action.label, left + mark + gap, y + bh / 2 + px * 0.36);
+      ctx.textAlign = rtl ? "right" : "left";
+    }
+    hit = { x: bx, y, w: bw, h: bh };
+    y += bh;
+    below = 0;
+  }
+
   if (!dry) ctx.globalAlpha = 1;
   // the block ends at the bottom of the last ink it drew
-  return y + below - y0;
+  return { height: y + below - y0, hit };
 }
 
 /**
@@ -268,44 +331,49 @@ function metrics(stop: Stop, mobile: boolean) {
   const shot = mobile ? SHOT.mobile : SHOT.desktop;
   const distance = frameDistance(size, shot.fov, shot.aspect) * shotRoom(stop, shot.aspect < 1);
   const unit = distance * PLATE.typeScale * scale;
-  const margin = Math.round(PLATE.pad * unit);
-  const column = Math.min(w - margin * 2, unit * (stop.measure ?? PLATE.measure));
-  return { scale, w, hMax, margin, avail: hMax - margin * 2, unit, column, x: Math.round((w - column) / 2) };
+  const side = Math.round(PLATE.pad.side * unit);
+  const column = Math.min(w - side * 2, unit * (stop.measure ?? PLATE.measure));
+  // the border the plate would like at each end; how much of it survives is
+  // decided with the rest of the air, in `fitNote`
+  const ends0 = PLATE.pad.ends * unit;
+  return { scale, w, hMax, ends0, unit, column, x: Math.round((w - column) / 2) };
 }
 
 type Metrics = ReturnType<typeof metrics>;
 
 /**
- * How this note has to be set to fit the surface, and the height it comes to.
+ * How this note has to be set to fit the surface: the air it can keep, the
+ * border it can keep, the type size it can hold and the height it comes to.
  *
  * A plate with more copy than room gives up its air before its type size: the
  * copy must read at the same size on every plate, and a little less space
- * between the parts is a far smaller loss than lettering that shrinks from one
- * plate to the next. Only when the air is squeezed as far as it goes does the
- * type start to give.
+ * between the parts — and a narrower border — is a far smaller loss than
+ * lettering that shrinks from one plate to the next. Only when the air is
+ * squeezed as far as it goes does the type start to give.
  *
- * The height is the fixed height of the lettering plus the air, and the air
- * scales exactly, so measuring it with and without gives the multiplier that
- * fits in one step rather than by trying sizes.
+ * The height is the fixed height of the lettering plus everything that scales
+ * with the air, the border included, so measuring it with the air full and
+ * with none of it gives the multiplier that fits in one step rather than by
+ * trying sizes.
  */
 function fitNote(ctx: CanvasRenderingContext2D, note: SiteNote, m: Metrics, c: Colors, rtl: boolean) {
   const set = (unit: number, air: number) =>
-    layout(ctx, note, m.x, m.margin, m.column, unit, air, c, rtl, true);
+    layout(ctx, note, m.x, 0, m.column, unit, air, c, rtl, true).height;
   let unit = m.unit;
   const loose = set(unit, 1);
-  const air =
-    loose <= m.avail
-      ? 1
-      : (() => {
-          const tight = set(unit, 0);
-          return clamp((m.avail - tight) / Math.max(loose - tight, 1), PLATE.airMin, 1);
-        })();
+  const border = 2 * m.ends0;
+  let air = 1;
+  if (loose + border > m.hMax) {
+    const tight = set(unit, 0);
+    air = clamp((m.hMax - tight) / Math.max(loose - tight + border, 1), PLATE.airMin, 1);
+  }
   let needed = air === 1 ? loose : set(unit, air);
-  if (needed > m.avail) {
-    unit *= Math.max(m.avail / needed, 0.5);
+  const ends = Math.round(m.ends0 * air);
+  if (needed + 2 * ends > m.hMax) {
+    unit *= Math.max((m.hMax - 2 * ends) / needed, 0.5);
     needed = set(unit, air);
   }
-  return { unit, air, needed };
+  return { unit, air, needed, ends };
 }
 
 type Fit = ReturnType<typeof fitNote>;
@@ -318,7 +386,7 @@ function noteTexture(
   h: number,
   c: Colors,
   rtl: boolean
-): THREE.CanvasTexture {
+) {
   const cv = document.createElement("canvas");
   cv.width = m.w;
   cv.height = h;
@@ -334,14 +402,14 @@ function noteTexture(
   ctx.strokeRect(ctx.lineWidth, ctx.lineWidth, m.w - ctx.lineWidth * 2, h - ctx.lineWidth * 2);
   ctx.textBaseline = "alphabetic";
 
-  const room = h - m.margin * 2;
-  const y0 = m.margin + Math.max((room - fit.needed) / 2, 0);
-  layout(ctx, note, m.x, y0, m.column, fit.unit, fit.air, c, rtl, false);
+  const room = h - fit.ends * 2;
+  const y0 = fit.ends + Math.max((room - fit.needed) / 2, 0);
+  const { hit } = layout(ctx, note, m.x, y0, m.column, fit.unit, fit.air, c, rtl, false);
 
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
-  return tex;
+  return { tex, hit };
 }
 
 /**
@@ -406,10 +474,23 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
         const note = noteOf(notes, s.id, i);
         return { note, fit: fitNote(probe, note, m, c, rtl) };
       });
-      const tallest = Math.max(...fits.map((f) => f.fit.needed));
-      const h = Math.min(m.hMax, Math.round(tallest) + m.margin * 2);
+      const tallest = Math.max(...fits.map((f) => f.fit.needed + f.fit.ends * 2));
+      const h = Math.min(m.hMax, Math.round(tallest));
       const { note, fit } = fits[shown];
-      return { tex: noteTexture(note, m, fit, h, c, rtl), height: h / m.scale };
+      const { tex, hit } = noteTexture(note, m, fit, h, c, rtl);
+      const height = h / m.scale;
+      return {
+        tex,
+        height,
+        // the printed button, in metres from the middle of the plate, which is
+        // what the anchor over it has to be projected from
+        button: hit && {
+          cx: (hit.x + hit.w / 2) / m.scale - s.size[0] / 2,
+          cy: height / 2 - (hit.y + hit.h / 2) / m.scale,
+          hw: hit.w / 2 / m.scale,
+          hh: hit.h / 2 / m.scale,
+        },
+      };
     });
   }, [notes, tick, review, mobile]);
 
@@ -417,8 +498,9 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
 
   const groups = useRef<Array<THREE.Group | null>>([]);
   const pos = useRef<V3>([0, 0, 0]).current;
+  const corner = useRef(new THREE.Vector3()).current;
 
-  useProgressFrame((_p, ex, _state, scroll) => {
+  useProgressFrame((_p, ex, state, scroll) => {
     // the tour is scheduled against the page; stopAt maps it to travel itself
     const e = explosion(scroll, ex);
     for (let i = 0; i < STOPS.length; i++) {
@@ -427,6 +509,55 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
       stopAt(pos, STOPS[i], scroll, e);
       g.position.set(pos[0], pos[1], pos[2]);
     }
+
+    /**
+     * Lay the page's anchor over the button printed on the plate.
+     *
+     * The button is part of the lettering, so where it lands on screen is
+     * whatever the camera says: its four corners are carried into the world by
+     * the plate's own transform and projected. The anchor is only offered
+     * while the tour is parked on that plate — anywhere else the button is
+     * away at an angle, or off the screen entirely.
+     */
+    const el = getPlateAction();
+    if (!el) return;
+    const i = plates.findIndex((pl) => pl.button);
+    const b = i < 0 ? null : plates[i].button;
+    const g = i < 0 ? null : groups.current[i];
+    const parked = i >= 0 && Math.abs(scroll - STOPS[i].p) < PARKED;
+    if (!b || !g || !parked) {
+      el.style.visibility = "hidden";
+      return;
+    }
+    let x0 = Infinity;
+    let y0 = Infinity;
+    let x1 = -Infinity;
+    let y1 = -Infinity;
+    const rect = state.gl.domElement.getBoundingClientRect();
+    for (const sx of [-1, 1]) {
+      for (const sy of [-1, 1]) {
+        corner.set(b.cx + sx * b.hw, b.cy + sy * b.hh, 0);
+        g.localToWorld(corner).project(state.camera);
+        if (corner.z > 1) {
+          el.style.visibility = "hidden";
+          return;
+        }
+        const px = rect.left + ((corner.x + 1) / 2) * rect.width;
+        const py = rect.top + ((1 - corner.y) / 2) * rect.height;
+        x0 = Math.min(x0, px);
+        y0 = Math.min(y0, py);
+        x1 = Math.max(x1, px);
+        y1 = Math.max(y1, py);
+      }
+    }
+    // never smaller than a finger
+    const w = Math.max(x1 - x0, TOUCH);
+    const h = Math.max(y1 - y0, TOUCH);
+    el.style.visibility = "visible";
+    el.style.left = `${(x0 + x1) / 2 - w / 2}px`;
+    el.style.top = `${(y0 + y1) / 2 - h / 2}px`;
+    el.style.width = `${w}px`;
+    el.style.height = `${h}px`;
   });
 
   return (

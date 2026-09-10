@@ -81,7 +81,7 @@ export const STOPS: Stop[] = [
   { id: "founders", group: "world", at: [0, LEVELS[1] + 1.05, LDOOR_PANEL_Z + 0.03], face: "front", size: [0.84, 1.62], pad: 1.2, p: 0.78, context: 1.25 },
   // 5. the pit, straight on: the plate takes the bay between the car's oil
   //    buffer on the centreline and the counterweight's spring buffer
-  { id: "contacts", group: "world", at: [0.555, -1.24, 0.2], face: "square", size: [0.86, 0.66], pad: 1.3, p: 1, context: 2 },
+  { id: "contacts", group: "world", at: [0.555, -1.24, 0.2], face: "square", size: [0.86, 0.74], pad: 1.3, p: 1, context: 2 },
 ];
 
 /**

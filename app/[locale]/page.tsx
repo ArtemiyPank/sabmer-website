@@ -10,10 +10,11 @@ import WhatsAppButton from "@/components/site/WhatsAppButton";
 import ScrollSnap from "@/components/site/ScrollSnap";
 import BackToTop from "@/components/site/BackToTop";
 import ReviewArrows from "@/components/site/ReviewArrows";
-import JobsApply from "@/components/site/JobsApply";
+import PlateAction from "@/components/site/PlateAction";
 import FadeCard from "@/components/site/FadeCard";
 import { SITE_URL } from "@/lib/site";
 import { getContent } from "@/lib/content";
+import { whatsappLink } from "@/lib/whatsapp";
 import type { SiteNotes } from "@/lib/site-notes";
 
 export const revalidate = 300;
@@ -30,11 +31,16 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
   const t = await getTranslations();
   const c = await getContent(locale as "ru" | "he" | "en");
   const year = new Date().getFullYear();
+  // the one thing a plate can be pressed for: applying, from the Work plate
+  const apply = {
+    label: t("Jobs.whatsapp"),
+    href: whatsappLink(c.contacts.phone, t("Jobs.whatsappText")),
+  };
 
   // the same copy the sections render, for the layout that letters it onto the parts
   const notes: SiteNotes = {
     about: { n: "01", title: c.about.title, body: c.about.text, items: c.about.stages },
-    jobs: { n: "02", title: c.jobs.title, body: c.jobs.intro, items: c.jobs.terms },
+    jobs: { n: "02", title: c.jobs.title, body: c.jobs.intro, items: c.jobs.terms, action: apply },
     reviews: { n: "03", title: c.reviews.title, cards: c.reviews.items },
     founders: {
       n: "04",
@@ -81,7 +87,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
       <Header />
       <BackToTop />
       <ReviewArrows />
-      <JobsApply />
+      <PlateAction href={apply.href} label={apply.label} />
 
       <main className="mx-auto max-w-6xl px-4 md:px-6">
         {/* ---- About: who we are and what we take on ---- */}

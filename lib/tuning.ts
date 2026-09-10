@@ -103,8 +103,16 @@ export const PLATE = {
    * — the same measure the rhythm below is written in. Reading it off the type
    * rather than off the plate keeps the border even on a plate of any shape,
    * and the plate is cut to the copy plus this on every side.
+   *
+   * The ends are given far more than the sides: copy sets ragged on the right,
+   * so a side margin looks wider than it measures, while the top and bottom
+   * sit flush against the ink and look tighter than they are.
+   *
+   * The ends are a wish rather than a rule. A plate with more copy than room
+   * gives up its border along with the rest of its air, before it gives up any
+   * type size — see `fitNote` in parts/Engraved.tsx.
    */
-  pad: 2,
+  pad: { side: 2, ends: 6 },
   /**
    * The vertical rhythm. Every gap is clear space between the ink of what
    * precedes it and the ink of what follows, so a gap of the same size means
