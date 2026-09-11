@@ -59,7 +59,7 @@ export const TOUR = {
   /** how far the camera swings out over the middle of a flight */
   liftoff: 3.5,
   /** the same for a ride, as a multiple of the arrival distance */
-  rideLift: 1.8,
+  rideLift: 3.2,
   /** how strongly the middle of a flight is pulled to the front */
   swing: 0.85,
   /** field of view the framing is computed for */

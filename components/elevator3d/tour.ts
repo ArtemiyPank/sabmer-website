@@ -82,7 +82,7 @@ export const STOPS: Stop[] = [
   // 5. the pit, straight on: a wide plaque hung across the middle of it. It
   //    stands forward of the traveling cable, whose loop swings through
   //    z = 0.62 right where the plate is wide enough to reach
-  { id: "contacts", group: "world", at: [0, -1.3, 0.7], face: "square", size: [1, 0.8], pad: 1.3, p: 1, context: 2, measure: 30 },
+  { id: "contacts", group: "world", at: [0, -1.3, 0.7], face: "square", size: [0.8, 0.6], pad: 1.3, p: 1, context: 2, measure: 30 },
 ];
 
 /**
