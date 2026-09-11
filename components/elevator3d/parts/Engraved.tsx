@@ -44,11 +44,17 @@ function readColors(): Colors {
   };
 }
 
+/**
+ * Where a line may be broken: any run of white space except a non-breaking
+ * one, which is how a separator is kept with the part it belongs to.
+ */
+const BREAK = /[^\S\u00A0]+/;
+
 /** largest type size at which the longest word of `text` still fits `maxW` */
 function fitPx(ctx: CanvasRenderingContext2D, text: string, maxW: number, px: number, font: (p: number) => string) {
   ctx.font = font(px);
   let longest = 0;
-  for (const w of text.split(/\s+/)) longest = Math.max(longest, ctx.measureText(w).width);
+  for (const w of text.split(BREAK)) longest = Math.max(longest, ctx.measureText(w).width);
   if (longest > maxW) {
     px *= maxW / longest;
     ctx.font = font(px);
@@ -68,7 +74,7 @@ function wrap(
 ) {
   let line = "";
   let last = y;
-  for (const word of text.split(/\s+/)) {
+  for (const word of text.split(BREAK)) {
     const probe = line ? `${line} ${word}` : word;
     if (ctx.measureText(probe).width > maxW && line) {
       if (!dry) ctx.fillText(line, x, y);
@@ -336,7 +342,9 @@ function metrics(stop: Stop, mobile: boolean) {
   // the border the plate would like at each end; how much of it survives is
   // decided with the rest of the air, in `fitNote`
   const ends0 = PLATE.pad.ends * unit;
-  return { scale, w, hMax, ends0, unit, column, x: Math.round((w - column) / 2) };
+  // the paper is cut to the column as well as to the copy: a plate no wider
+  // than its longest line has no empty band down the side of it
+  return { scale, w: column + side * 2, hMax, ends0, unit, column, x: side };
 }
 
 type Metrics = ReturnType<typeof metrics>;
@@ -479,13 +487,15 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
       const { note, fit } = fits[shown];
       const { tex, hit } = noteTexture(note, m, fit, h, c, rtl);
       const height = h / m.scale;
+      const width = m.w / m.scale;
       return {
         tex,
         height,
         // the printed button, in metres from the middle of the plate, which is
         // what the anchor over it has to be projected from
+        width,
         button: hit && {
-          cx: (hit.x + hit.w / 2) / m.scale - s.size[0] / 2,
+          cx: (hit.x + hit.w / 2) / m.scale - width / 2,
           cy: height / 2 - (hit.y + hit.h / 2) / m.scale,
           hw: hit.w / 2 / m.scale,
           hh: hit.h / 2 / m.scale,
@@ -574,7 +584,7 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
             }}
           >
             <mesh renderOrder={2}>
-              <planeGeometry args={[s.size[0], plate.height]} />
+              <planeGeometry args={[plate.width, plate.height]} />
               <meshBasicMaterial
                 map={plate.tex}
                 transparent

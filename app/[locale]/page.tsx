@@ -42,18 +42,17 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
     about: { n: "01", title: c.about.title, body: c.about.text, items: c.about.stages },
     jobs: { n: "02", title: c.jobs.title, body: c.jobs.intro, items: c.jobs.terms, action: apply },
     reviews: { n: "03", title: c.reviews.title, cards: c.reviews.items },
-    founders: {
-      n: "04",
-      title: c.founders.title,
-      body: c.founders.text,
-      blocks: c.founders.people.map((f) => ({ title: f.name, caption: f.role, body: f.bio })),
-    },
+    founders: { n: "04", title: c.founders.title, body: c.founders.text },
     contacts: {
       n: "05",
       title: c.contacts.title,
-      // bare values: the plate stands in the bay beside the buffer, and labels
-      // in front of them would not fit a line there on a phone
-      items: [c.contacts.phone, c.contacts.email, c.contacts.address, c.contacts.registration],
+      // the registration number rides in the title block, where a drawing
+      // keeps that sort of thing; the address is left to the Contacts section,
+      // which can hold it properly
+      caption: c.contacts.registration,
+      // the separator is tied to the address after it, so that a narrow plate
+      // breaks the line before the mark instead of leaving it hanging
+      body: `${c.contacts.phone}  ·\u00A0${c.contacts.email}`,
     },
   };
 
@@ -225,7 +224,6 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
                 <p className="text-sm" style={{ color: "var(--bp-accent)" }}>
                   {f.role}
                 </p>
-                <p className="mt-3 text-sm leading-relaxed opacity-80">{f.bio}</p>
               </FadeCard>
             ))}
           </div>

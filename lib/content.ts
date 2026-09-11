@@ -13,9 +13,9 @@ export type Content = {
   about: { title: string; text: string; stages: string[] };
   founders: {
     title: string;
-    /** what holds for both of them; each entry adds only what is its own */
+    /** one text for the two of them */
     text: string;
-    people: { name: string; role: string; bio: string; photoUrl: string | null }[];
+    people: { name: string; role: string; photoUrl: string | null }[];
   };
   jobs: { title: string; intro: string; terms: string[]; apply: string };
   reviews: {
@@ -51,8 +51,8 @@ const fromMessages = async (locale: string): Promise<Content> => {
       title: m.Founders.title,
       text: m.Founders.text,
       people: [
-        { name: m.Founders.amirName, role: m.Founders.amirRole, bio: m.Founders.amirBio, photoUrl: null },
-        { name: m.Founders.vovaName, role: m.Founders.vovaRole, bio: m.Founders.vovaBio, photoUrl: null },
+        { name: m.Founders.amirName, role: m.Founders.amirRole, photoUrl: null },
+        { name: m.Founders.vovaName, role: m.Founders.vovaRole, photoUrl: null },
       ],
     },
     jobs: {
@@ -106,7 +106,6 @@ export async function getContent(locale: "ru" | "he" | "en"): Promise<Content> {
             ? g.founders.map((f) => ({
                 name: f.name,
                 role: f.role ?? "",
-                bio: f.bio ?? "",
                 photoUrl:
                   f.photo && typeof f.photo === "object" && f.photo.url
                     ? f.photo.url

@@ -32,13 +32,11 @@
   },
   "Founders": {
     "title": "Founders",
-    "text": "Both founders came up on site and run the work themselves: contracts, installation method and quality on the job are theirs.",
+    "text": "Two people run the company, and both came up on site: contracts, installation method and quality on the job are theirs. Amir has seven years in the lift trade. Vova trained as a site foreman at a university in Khabarovsk and has over fifteen years in construction — first there, now here in Israel.",
     "amirName": "Amir",
     "amirRole": "Co-founder",
-    "amirBio": "Seven years in the lift trade.",
     "vovaName": "Vova",
-    "vovaRole": "Co-founder",
-    "vovaBio": "Trained as a site foreman at a university in Khabarovsk. Over fifteen years in construction — first in Khabarovsk, now here in Israel."
+    "vovaRole": "Co-founder"
   },
   "Contacts": {
     "title": "Contacts",

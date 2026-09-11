@@ -44,9 +44,10 @@ for (const locale of locales) {
       aboutText: m.About.text,
       aboutStages: Object.values(m.About.stages).map((text) => ({ text: text as string })),
       foundersTitle: m.Founders.title,
+      foundersText: m.Founders.text,
       founders: [
-        { name: m.Founders.amirName, role: m.Founders.amirRole, bio: m.Founders.amirBio },
-        { name: m.Founders.vovaName, role: m.Founders.vovaRole, bio: m.Founders.vovaBio },
+        { name: m.Founders.amirName, role: m.Founders.amirRole },
+        { name: m.Founders.vovaName, role: m.Founders.vovaRole },
       ],
       jobsTitle: m.Jobs.title,
       jobsIntro: m.Jobs.intro,

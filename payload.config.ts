@@ -103,7 +103,6 @@ export default buildConfig({
                   fields: [
                     { name: "name", type: "text", required: true },
                     { name: "role", type: "text" },
-                    { name: "bio", type: "textarea" },
                     { name: "photo", type: "upload", relationTo: "media" },
                   ],
                 },

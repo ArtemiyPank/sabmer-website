@@ -79,9 +79,10 @@ export const STOPS: Stop[] = [
   { id: "reviews", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.66, 1.02], pad: 1.2, p: 0.55, context: 1.35 },
   // 4. the closed landing doors one floor down
   { id: "founders", group: "world", at: [0, LEVELS[1] + 1.05, LDOOR_PANEL_Z + 0.03], face: "front", size: [0.84, 1.62], pad: 1.2, p: 0.78, context: 1.25 },
-  // 5. the pit, straight on: the plate takes the bay between the car's oil
-  //    buffer on the centreline and the counterweight's spring buffer
-  { id: "contacts", group: "world", at: [0.555, -1.24, 0.2], face: "square", size: [0.86, 0.74], pad: 1.3, p: 1, context: 2 },
+  // 5. the pit, straight on: a wide plaque hung across the middle of it. It
+  //    stands forward of the traveling cable, whose loop swings through
+  //    z = 0.62 right where the plate is wide enough to reach
+  { id: "contacts", group: "world", at: [0, -1.3, 0.7], face: "square", size: [1, 0.8], pad: 1.3, p: 1, context: 2, measure: 30 },
 ];
 
 /**

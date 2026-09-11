@@ -387,7 +387,6 @@ export interface SiteContent {
     | {
         name: string;
         role?: string | null;
-        bio?: string | null;
         photo?: (number | null) | Media;
         id?: string | null;
       }[]
@@ -446,7 +445,6 @@ export interface SiteContentSelect<T extends boolean = true> {
     | {
         name?: T;
         role?: T;
-        bio?: T;
         photo?: T;
         id?: T;
       };
