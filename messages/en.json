@@ -23,19 +23,18 @@
   },
   "About": {
     "title": "About",
-    "text": "SABMER installs Mitsubishi lifts as a subcontractor — over five years on site. We carry a job through two stages:",
+    "text": "SABMER has been installing Mitsubishi lifts as a subcontractor for over four years. We carry a job through two stages:",
     "stages": {
-      "s1": "Stage bet — the mechanics: guide rails, machine, counterweight, cab and doors",
-      "s2": "Stage gimel — through to start-up: the shaft, the cabling, adjustment and handover",
-      "s3": "We are hiring fitters for our crews — the terms are under “Work”"
+      "s1": "Stage bet — the mechanics: machines, ropes, counterweight, cab and doors",
+      "s2": "Stage gimel — we start the lift in maintenance mode and bring the shaft and the cab through to full service"
     }
   },
   "Founders": {
     "title": "Founders",
-    "text": "Two people run the company, and both came up on site: contracts, installation method and quality on the job are theirs. Amir has seven years in the lift trade. Vova trained as a site foreman at a university in Khabarovsk and has over fifteen years in construction — first there, now here in Israel.",
+    "text": "Two people run the company, and both came up on site: contracts, installation method and quality on the job are theirs. Amir has seven years in the lift trade. Vladimir trained as a site foreman at a university in Khabarovsk and has over fifteen years in construction — first there, now here in Israel.",
     "amirName": "Amir",
     "amirRole": "Co-founder",
-    "vovaName": "Vova",
+    "vovaName": "Vladimir Markov",
     "vovaRole": "Co-founder"
   },
   "Contacts": {
@@ -54,8 +53,8 @@
     "rights": "All rights reserved."
   },
   "Jobs": {
-    "title": "Work",
-    "intro": "Employment on the books, paid on time. The terms:",
+    "title": "Terms of work",
+    "intro": "Employment on the books, wages on the 10th of every month. The terms:",
     "terms": {
       "t1": "We train from scratch — no lift experience needed",
       "t2": "₪50 an hour, net",
