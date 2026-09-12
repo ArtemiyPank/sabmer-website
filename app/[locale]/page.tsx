@@ -60,13 +60,16 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: "SABMER",
+    legalName: "סאמבר בע\"מ",
     description: c.meta.description,
     url: `${SITE_URL}/${locale}`,
     telephone: c.contacts.phone,
     email: c.contacts.email,
     address: {
       "@type": "PostalAddress",
-      addressLocality: "Rishon LeZion",
+      streetAddress: "HaRav Nissenbaum 37",
+      addressLocality: "Bat Yam",
+      postalCode: "5962030",
       addressCountry: "IL",
     },
     founder: c.founders.people.map((f) => ({
