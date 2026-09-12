@@ -341,7 +341,7 @@ function metrics(stop: Stop, mobile: boolean) {
   const column = Math.min(w - side * 2, unit * (stop.measure ?? PLATE.measure));
   // the border the plate would like at each end; how much of it survives is
   // decided with the rest of the air, in `fitNote`
-  const ends0 = PLATE.pad.ends * unit;
+  const ends0 = (stop.ends ?? PLATE.pad.ends) * unit;
   // the paper is cut to the column as well as to the copy: a plate no wider
   // than its longest line has no empty band down the side of it
   return { scale, w: column + side * 2, hMax, ends0, unit, column, x: side };
