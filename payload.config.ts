@@ -7,8 +7,22 @@ import sharp from "sharp";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
+/**
+ * Sessions are signed with this. An empty one signs them with nothing, so a
+ * missing variable has to stop the build rather than quietly ship an admin
+ * anyone can forge a cookie for.
+ */
+const secret = process.env.PAYLOAD_SECRET;
+if (!secret) {
+  throw new Error("PAYLOAD_SECRET is not set — see .env.example");
+}
+
+/** the site's own origin, when it is known: requests are held to it */
+const site = process.env.NEXT_PUBLIC_SITE_URL;
+
 export default buildConfig({
-  secret: process.env.PAYLOAD_SECRET || "",
+  secret,
+  ...(site ? { serverURL: site, cors: [site], csrf: [site] } : {}),
   db: postgresAdapter({
     // DATABASE_URI (local dev) or DATABASE_URL (injected by Vercel/Neon)
     pool: {

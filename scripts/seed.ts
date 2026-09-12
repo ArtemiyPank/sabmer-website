@@ -15,14 +15,21 @@ const read = (locale: string) =>
 
 const payload = await getPayload({ config });
 
-// --- first admin user (dev credentials; change in production) ---
+// --- the first admin user ---
+// Credentials come from the environment and are never written down here: a
+// password in the repository is a password everyone has, and this script is
+// the one thing that could put it on a live site.
 const existing = await payload.find({ collection: "users", limit: 1 });
 if (existing.totalDocs === 0) {
-  await payload.create({
-    collection: "users",
-    data: { email: "admin@sabmer.example", password: "sabmer-admin" },
-  });
-  console.log("Created admin user: admin@sabmer.example / sabmer-admin");
+  const email = process.env.ADMIN_EMAIL;
+  const password = process.env.ADMIN_PASSWORD;
+  if (!email || !password) {
+    throw new Error(
+      "No admin user yet. Set ADMIN_EMAIL and ADMIN_PASSWORD to create one — see .env.example"
+    );
+  }
+  await payload.create({ collection: "users", data: { email, password } });
+  console.log(`Created admin user: ${email}`);
 } else {
   console.log("Admin user already exists, skipping");
 }
