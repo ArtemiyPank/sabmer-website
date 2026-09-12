@@ -65,11 +65,10 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
     url: `${SITE_URL}/${locale}`,
     telephone: c.contacts.phone,
     email: c.contacts.email,
+    // the town only: the registered address is a private one
     address: {
       "@type": "PostalAddress",
-      streetAddress: "HaRav Nissenbaum 37",
       addressLocality: "Bat Yam",
-      postalCode: "5962030",
       addressCountry: "IL",
     },
     founder: c.founders.people.map((f) => ({
