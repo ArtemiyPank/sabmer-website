@@ -60,7 +60,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: "SABMER",
-    legalName: "סאמבר בע\"מ",
+    legalName: "סאבמר בע\"מ",
     description: c.meta.description,
     url: `${SITE_URL}/${locale}`,
     telephone: c.contacts.phone,
