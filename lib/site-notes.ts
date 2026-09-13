@@ -23,7 +23,7 @@ export type SiteNote = {
    * cannot carry a link, so the page lays a transparent anchor over it — see
    * `lib/plate-action.ts`.
    */
-  action?: { label: string; href: string };
+  action?: { label: string; href: string; mark?: "whatsapp" };
 };
 
 export type ReviewCard = {

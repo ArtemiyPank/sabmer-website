@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import * as THREE from "three";
+import type { RootState } from "@react-three/fiber";
 import { useProgressFrame, useScene } from "../scene-context";
 import { explosion, type V3 } from "../dims";
 import { FACE_ROT, STOPS, frameDistance, shotRoom, stopAt, type Stop } from "../tour";
@@ -9,7 +10,7 @@ import type { SiteNote, SiteNotes } from "@/lib/site-notes";
 import { getReview, subscribeReview } from "@/lib/reviews";
 import { PLATE, TOUR } from "@/lib/tuning";
 import { WA_GLYPH } from "@/lib/whatsapp";
-import { getPlateAction } from "@/lib/plate-action";
+import { eachPlateAction } from "@/lib/plate-action";
 
 /**
  * The page text lettered onto the machine: each section is drawn into a
@@ -122,6 +123,46 @@ const inkBelow = (ctx: CanvasRenderingContext2D, text: string, px: number) => {
  * copy can be fitted by tightening the spacing rather than by shrinking the
  * type (see `noteTexture`).
  */
+const scratch = new THREE.Vector3();
+
+/** lay `el` over the button at `b` on the plate `g`, or hide it */
+function place(
+  el: HTMLElement,
+  b: { cx: number; cy: number; hw: number; hh: number },
+  g: THREE.Group,
+  state: RootState
+) {
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  const rect = state.gl.domElement.getBoundingClientRect();
+  for (const sx of [-1, 1]) {
+    for (const sy of [-1, 1]) {
+      scratch.set(b.cx + sx * b.hw, b.cy + sy * b.hh, 0);
+      g.localToWorld(scratch).project(state.camera);
+      if (scratch.z > 1) {
+        el.style.visibility = "hidden";
+        return;
+      }
+      const px = rect.left + ((scratch.x + 1) / 2) * rect.width;
+      const py = rect.top + ((1 - scratch.y) / 2) * rect.height;
+      x0 = Math.min(x0, px);
+      y0 = Math.min(y0, py);
+      x1 = Math.max(x1, px);
+      y1 = Math.max(y1, py);
+    }
+  }
+  // never smaller than a finger
+  const w = Math.max(x1 - x0, TOUCH);
+  const h = Math.max(y1 - y0, TOUCH);
+  el.style.visibility = "visible";
+  el.style.left = `${(x0 + x1) / 2 - w / 2}px`;
+  el.style.top = `${(y0 + y1) / 2 - h / 2}px`;
+  el.style.width = `${w}px`;
+  el.style.height = `${h}px`;
+}
+
 /** how close to a stop the tour has to be for its button to be offered */
 const PARKED = 0.045;
 /** the smallest the anchor over the button may be, in CSS pixels */
@@ -281,8 +322,9 @@ function layout(
   if (note.action) {
     const px = unit * 1.15;
     ctx.font = F(px, 600);
-    const mark = unit * 1.5; // the WhatsApp mark, square
-    const gap = unit * 0.5;
+    // a mark only when the button is for something that has one
+    const mark = note.action.mark ? unit * 1.5 : 0;
+    const gap = mark ? unit * 0.5 : 0;
     const padX = unit * 1.05;
     const bw = Math.min(inner, ctx.measureText(note.action.label).width + mark + gap + padX * 2);
     const bh = unit * 2.7;
@@ -301,12 +343,14 @@ function layout(
       // the mark, then the label, as a row centred in the button
       const inkW = ctx.measureText(note.action.label).width + mark + gap;
       const left = bx + (bw - inkW) / 2;
-      ctx.save();
-      ctx.translate(left, y + (bh - mark) / 2);
-      ctx.scale(mark / 32, mark / 32);
-      ctx.fillStyle = c.accent;
-      ctx.fill(new Path2D(WA_GLYPH));
-      ctx.restore();
+      if (mark) {
+        ctx.save();
+        ctx.translate(left, y + (bh - mark) / 2);
+        ctx.scale(mark / 32, mark / 32);
+        ctx.fillStyle = c.accent;
+        ctx.fill(new Path2D(WA_GLYPH));
+        ctx.restore();
+      }
       ctx.fillStyle = c.accent;
       ctx.textAlign = "left";
       ctx.fillText(note.action.label, left + mark + gap, y + bh / 2 + px * 0.36);
@@ -435,12 +479,12 @@ function noteOf(notes: SiteNotes, id: Stop["id"], review: number): SiteNote {
     n: note.n,
     title: note.title,
     caption: `${i + 1} / ${cards.length}`,
-    // the contact signs the review off, so it trails it: the plate letters
-    // body, then items, then blocks, and an item would sit above the name
-    blocks: [
-      { title: card.name, caption: card.period, body: card.text },
-      ...(card.contact ? [{ title: card.contact }] : []),
-    ],
+    blocks: [{ title: card.name, caption: card.period, body: card.text }],
+    // the number the review is signed with: printed at the foot of the plate
+    // as a button, so it can be dialled rather than copied off the wall
+    action: card.contact
+      ? { label: card.contact, href: `tel:${card.contact.replace(/[^+\d]/g, "")}` }
+      : undefined,
   };
 }
 
@@ -508,7 +552,6 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
 
   const groups = useRef<Array<THREE.Group | null>>([]);
   const pos = useRef<V3>([0, 0, 0]).current;
-  const corner = useRef(new THREE.Vector3()).current;
 
   useProgressFrame((_p, ex, state, scroll) => {
     // the tour is scheduled against the page; stopAt maps it to travel itself
@@ -529,46 +572,19 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
      * while the tour is parked on that plate — anywhere else the button is
      * away at an angle, or off the screen entirely.
      */
-    const el = getPlateAction();
-    if (!el) return;
-    const i = plates.findIndex((pl) => pl.button);
-    const b = i < 0 ? null : plates[i].button;
-    const g = i < 0 ? null : groups.current[i];
-    const parked = i >= 0 && Math.abs(scroll - STOPS[i].p) < PARKED;
-    if (!b || !g || !parked) {
-      el.style.visibility = "hidden";
-      return;
-    }
-    let x0 = Infinity;
-    let y0 = Infinity;
-    let x1 = -Infinity;
-    let y1 = -Infinity;
-    const rect = state.gl.domElement.getBoundingClientRect();
-    for (const sx of [-1, 1]) {
-      for (const sy of [-1, 1]) {
-        corner.set(b.cx + sx * b.hw, b.cy + sy * b.hh, 0);
-        g.localToWorld(corner).project(state.camera);
-        if (corner.z > 1) {
-          el.style.visibility = "hidden";
-          return;
-        }
-        const px = rect.left + ((corner.x + 1) / 2) * rect.width;
-        const py = rect.top + ((1 - corner.y) / 2) * rect.height;
-        x0 = Math.min(x0, px);
-        y0 = Math.min(y0, py);
-        x1 = Math.max(x1, px);
-        y1 = Math.max(y1, py);
+    eachPlateAction((id, el) => {
+      const i = STOPS.findIndex((st) => st.id === id);
+      const b = i < 0 ? null : plates[i]?.button;
+      const g = i < 0 ? null : groups.current[i];
+      if (!b || !g || Math.abs(scroll - STOPS[i].p) >= PARKED) {
+        el.style.visibility = "hidden";
+        return;
       }
-    }
-    // never smaller than a finger
-    const w = Math.max(x1 - x0, TOUCH);
-    const h = Math.max(y1 - y0, TOUCH);
-    el.style.visibility = "visible";
-    el.style.left = `${(x0 + x1) / 2 - w / 2}px`;
-    el.style.top = `${(y0 + y1) / 2 - h / 2}px`;
-    el.style.width = `${w}px`;
-    el.style.height = `${h}px`;
+      place(el, b, g, state);
+    });
   });
+
+
 
   return (
     <group>

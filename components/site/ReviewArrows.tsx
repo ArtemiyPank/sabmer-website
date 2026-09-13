@@ -15,7 +15,7 @@ const REVIEWS = STOPS.findIndex((s) => s.id === "reviews");
 /** how close to the stop counts as parked on it */
 const NEAR = 0.045;
 
-export default function ReviewArrows() {
+export default function ReviewArrows({ count }: { count: number }) {
   const t = useTranslations("Reviews");
   const { scrollYProgress } = useScroll();
   const [shown, setShown] = useState(false);
@@ -23,7 +23,8 @@ export default function ReviewArrows() {
     setShown(REVIEWS >= 0 && Math.abs(v - STOPS[REVIEWS].p) < NEAR);
   });
 
-  if (REVIEWS < 0) return null;
+  // nothing to page through with a single review
+  if (REVIEWS < 0 || count < 2) return null;
   const arrow = (dir: -1 | 1) => (
     <button
       type="button"

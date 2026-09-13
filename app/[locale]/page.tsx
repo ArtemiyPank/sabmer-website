@@ -11,6 +11,7 @@ import ScrollSnap from "@/components/site/ScrollSnap";
 import BackToTop from "@/components/site/BackToTop";
 import ReviewArrows from "@/components/site/ReviewArrows";
 import PlateAction from "@/components/site/PlateAction";
+import ReviewCall from "@/components/site/ReviewCall";
 import FadeCard from "@/components/site/FadeCard";
 import { SITE_URL } from "@/lib/site";
 import { getContent } from "@/lib/content";
@@ -35,6 +36,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
   const apply = {
     label: t("Jobs.whatsapp"),
     href: whatsappLink(c.contacts.phone, t("Jobs.whatsappText")),
+    mark: "whatsapp" as const,
   };
 
   // the same copy the sections render, for the layout that letters it onto the parts
@@ -87,8 +89,9 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
       <ScrollSnap />
       <Header />
       <BackToTop />
-      <ReviewArrows />
-      <PlateAction href={apply.href} label={apply.label} />
+      <ReviewArrows count={c.reviews.items.length} />
+      <PlateAction stop="jobs" href={apply.href} label={apply.label} />
+      <ReviewCall contacts={c.reviews.items.map((r) => r.contact)} />
 
       <main className="mx-auto max-w-6xl px-4 md:px-6">
         {/* ---- About: who we are and what we take on ---- */}
@@ -184,7 +187,14 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
                 </p>
                 <p className="mt-3 text-sm leading-relaxed opacity-80">{r.text}</p>
                 {r.contact ? (
-                  <p className="mt-3 text-sm opacity-70">{r.contact}</p>
+                  <p className="mt-3 text-sm">
+                    <a
+                      className="opacity-70 hover:opacity-100"
+                      href={`tel:${r.contact.replace(/[^+\d]/g, "")}`}
+                    >
+                      {r.contact}
+                    </a>
+                  </p>
                 ) : null}
               </FadeCard>
             ))}
