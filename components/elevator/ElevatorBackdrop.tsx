@@ -24,7 +24,12 @@ function detectWebGL() {
   if (webglSupport === null) {
     try {
       const c = document.createElement("canvas");
-      webglSupport = !!(c.getContext("webgl2") || c.getContext("webgl"));
+      const gl = c.getContext("webgl2") || c.getContext("webgl");
+      webglSupport = !!gl;
+      // a browser keeps only a handful of contexts alive at once, and this one
+      // has done its job the moment it exists: hand it straight back, or the
+      // scene below is drawing with one fewer than it could have had
+      gl?.getExtension("WEBGL_lose_context")?.loseContext();
     } catch {
       webglSupport = false;
     }

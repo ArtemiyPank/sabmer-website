@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import * as THREE from "three";
 import { createInstances } from "@react-three/drei";
 import { useMats, type Materials } from "./materials";
@@ -189,7 +189,10 @@ export function Ring({
   receiveShadow = true,
 }: Common & { R: number; r: number; arc?: number; seg?: number; tube?: number; axis?: "x" | "y" | "z" }) {
   const m = useMats();
+  // the only primitive that builds a buffer of its own rather than scaling a
+  // shared one, so it is also the only one with something to give back
   const geom = useMemo(() => new THREE.TorusGeometry(R, r, tube, seg, arc), [R, r, tube, seg, arc]);
+  useEffect(() => () => geom.dispose(), [geom]);
   const axisRot: V3 = axis === "x" ? [0, Math.PI / 2, 0] : axis === "y" ? [Math.PI / 2, 0, 0] : [0, 0, 0];
   return (
     <group position={at} rotation={rot}>
