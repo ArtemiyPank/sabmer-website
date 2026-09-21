@@ -82,7 +82,7 @@ export const STOPS: Stop[] = [
   //    governor rope passes within a hand's breadth of the panel, so the sign
   //    starts ahead of where that rope crosses the shot, and the traveling
   //    cable further out decides how far round the camera has to lean.
-  { id: "jobs", group: "wallL", at: [-CAB_X - 0.09, 1.2, 0.6], face: "left", size: [0.6, 1.02], pad: 1.25, p: 0.36, context: 1.15, liftoff: 5.1 },
+  { id: "jobs", group: "wallL", at: [-CAB_X - 0.09, 1.2, 0.66], face: "left", size: [0.6, 1.02], pad: 1.25, p: 0.36, context: 1.15, liftoff: 5.1 },
   // 3. the counterweight, rising past it. The frame is only so wide, so the
   //    shot comes in close rather than the plate growing: a taller plate on a
   //    narrow face only buys shorter lines, since the camera steps back with it
@@ -190,12 +190,12 @@ export function travelAt(p: number) {
 /** unit normal of a lettered face, tilted toward the front so the shot reads */
 const NORMALS: Record<Face, V3> = {
   front: [0.22, 0.1, 0.97],
-  // Three-quarter on the left, nearly square on the right. The left of the
-  // shaft carries the traveling cable, which hangs in front of that flank: the
-  // sight line onto the sign has to pass behind the cable's run, and the wider
-  // the sign the further back its edge reaches, so the shot leans further
-  // round than it otherwise would. Nothing hangs on the right above the pit.
-  left: [-0.8, 0.09, 0.6],
+  // Nearly square on to both flanks. The left of the shaft carries the
+  // traveling cable and the governor rope, which hang in front of that panel:
+  // the sign is set forward of where both of them cross the shot (see STOPS),
+  // which is what buys the camera the right to come round this far. Read
+  // square on, the type foreshortens least and the sign reads as a sign.
+  left: [-0.93, 0.09, 0.36],
   right: [0.96, 0.08, 0.27],
   // dead square on: the closing frame sits level with the equipment
   square: [0, 0, 1],
@@ -208,7 +208,7 @@ const NORMALS: Record<Face, V3> = {
  */
 const NORMALS_PORTRAIT: Record<Face, V3> = {
   front: [0.12, 0.06, 0.99],
-  left: [-0.78, 0.07, 0.63],
+  left: [-0.92, 0.07, 0.39],
   right: [0.95, 0.06, 0.3],
   square: [0, 0, 1],
 };
