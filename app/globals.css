@@ -125,6 +125,11 @@ html[data-ui="engraved"] .sheet {
    Raising it slows the camera down for the same scrolling; see lib/tuning.ts. */
 html[data-ui="engraved"] {
   --tour-section: 105svh;
+  /* The tour runs the page's own coast and animates every jump itself (see
+     components/site/ScrollSnap.tsx and lib/ride.ts). Leaving the browser's
+     smooth scrolling on top of that means two animations on one scroll
+     position, which reads as lag and carries the page past its plate. */
+  scroll-behavior: auto;
 }
 html[data-ui="engraved"] main section {
   min-height: var(--tour-section);

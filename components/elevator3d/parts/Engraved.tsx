@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import * as THREE from "three";
-import type { RootState } from "@react-three/fiber";
 import { useProgressFrame, useScene } from "../scene-context";
 import { explosion, type V3 } from "../dims";
 import { FACE_ROT, STOPS, frameDistance, shotRoom, stopAt, type Stop } from "../tour";
@@ -125,24 +124,37 @@ const inkBelow = (ctx: CanvasRenderingContext2D, text: string, px: number) => {
  */
 const scratch = new THREE.Vector3();
 
-/** lay `el` over the button at `b` on the plate `g`, or hide it */
+/** writes a style only when it would change it: a no-op write still costs */
+function set(el: HTMLElement, prop: "visibility" | "left" | "top" | "width" | "height", value: string) {
+  if (el.style[prop] !== value) el.style[prop] = value;
+}
+
+const hide = (el: HTMLElement) => set(el, "visibility", "hidden");
+
+/**
+ * Lay `el` over the button at `b` on the plate `g`, or hide it.
+ *
+ * `rect` is where the canvas sits on the page, passed in rather than measured
+ * here: reading it back after the styles above have been written forces the
+ * browser to lay the page out again, every frame, for every anchor.
+ */
 function place(
   el: HTMLElement,
   b: { cx: number; cy: number; hw: number; hh: number },
   g: THREE.Group,
-  state: RootState
+  camera: THREE.Camera,
+  rect: { left: number; top: number; width: number; height: number }
 ) {
   let x0 = Infinity;
   let y0 = Infinity;
   let x1 = -Infinity;
   let y1 = -Infinity;
-  const rect = state.gl.domElement.getBoundingClientRect();
   for (const sx of [-1, 1]) {
     for (const sy of [-1, 1]) {
       scratch.set(b.cx + sx * b.hw, b.cy + sy * b.hh, 0);
-      g.localToWorld(scratch).project(state.camera);
+      g.localToWorld(scratch).project(camera);
       if (scratch.z > 1) {
-        el.style.visibility = "hidden";
+        hide(el);
         return;
       }
       const px = rect.left + ((scratch.x + 1) / 2) * rect.width;
@@ -156,11 +168,11 @@ function place(
   // never smaller than a finger
   const w = Math.max(x1 - x0, TOUCH);
   const h = Math.max(y1 - y0, TOUCH);
-  el.style.visibility = "visible";
-  el.style.left = `${(x0 + x1) / 2 - w / 2}px`;
-  el.style.top = `${(y0 + y1) / 2 - h / 2}px`;
-  el.style.width = `${w}px`;
-  el.style.height = `${h}px`;
+  set(el, "left", `${Math.round((x0 + x1) / 2 - w / 2)}px`);
+  set(el, "top", `${Math.round((y0 + y1) / 2 - h / 2)}px`);
+  set(el, "width", `${Math.round(w)}px`);
+  set(el, "height", `${Math.round(h)}px`);
+  set(el, "visibility", "visible");
 }
 
 /** how close to a stop the tour has to be for its button to be offered */
@@ -551,6 +563,7 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
   useEffect(() => () => plates.forEach((p) => p.tex.dispose()), [plates]);
 
   const groups = useRef<Array<THREE.Group | null>>([]);
+  const canvasBox = useRef({ w: 0, h: 0, left: 0, top: 0, width: 0, height: 0 });
   const pos = useRef<V3>([0, 0, 0]).current;
 
   useProgressFrame((_p, ex, state, scroll) => {
@@ -572,15 +585,27 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
      * while the tour is parked on that plate — anywhere else the button is
      * away at an angle, or off the screen entirely.
      */
+    // where the canvas sits on the page: it only moves when the window is
+    // resized, so it is measured then and not on every frame
+    const seen = canvasBox.current;
+    if (seen.w !== state.size.width || seen.h !== state.size.height) {
+      const box = state.gl.domElement.getBoundingClientRect();
+      seen.w = state.size.width;
+      seen.h = state.size.height;
+      seen.left = box.left;
+      seen.top = box.top;
+      seen.width = box.width;
+      seen.height = box.height;
+    }
     eachPlateAction((id, el) => {
       const i = STOPS.findIndex((st) => st.id === id);
       const b = i < 0 ? null : plates[i]?.button;
       const g = i < 0 ? null : groups.current[i];
       if (!b || !g || Math.abs(scroll - STOPS[i].p) >= PARKED) {
-        el.style.visibility = "hidden";
+        hide(el);
         return;
       }
-      place(el, b, g, state);
+      place(el, b, g, state.camera, seen);
     });
   });
 

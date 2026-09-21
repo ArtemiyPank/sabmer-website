@@ -31,8 +31,28 @@ export const COAST = {
   minSpeed: 0.03,
   /** px/ms below which a release is not worth coasting at all */
   throwSpeed: 0.12,
-  /** ms after a wheel notch that did not fade: a hand is still on it */
+  /** ms after the last wheel notch before the gesture counts as over */
   handFor: 140,
+  /**
+   * ms of quiet that separates one wheel gesture from the next.
+   *
+   * Generous on purpose: under load a browser delivers wheel events in bursts,
+   * and a short gap would cut one flick into several gestures — each of them
+   * starting over with the page handed back to the visitor, which is the one
+   * state where nothing holds it to the plates.
+   */
+  gestureGap: 220,
+  /**
+   * How far a notch has to fall below the biggest one of the gesture before
+   * it reads as momentum rather than a hand. A trackpad's notches wobble
+   * while the fingers move, so this is a share of the peak, not of the notch
+   * before it.
+   */
+  fade: 0.6,
+  /** how many fallen notches in a row settle it */
+  fadeFor: 3,
+  /** px: a gesture whose biggest notch is smaller than this is not a throw */
+  wheelPeak: 10,
   /** ms without the page being pushed: the browser's own fling is spent */
   stillFor: 320,
   /** ms a landing is held before the visitor gets the page back regardless */

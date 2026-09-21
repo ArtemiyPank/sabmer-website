@@ -31,7 +31,25 @@ export default function ScrollSnap() {
     // --- what the visitor is doing -----------------------------------------
     let touching = false;
     let handAt = 0;
-    let lastWheel = 0;
+    // the wheel gesture being read; see onWheel
+    let gestureAt = 0;
+    let peak = 0;
+    let fading = 0;
+    let handedOver = false;
+    let quiet: ReturnType<typeof setTimeout> | null = null;
+    /**
+     * How fast the wheel is moving the page, px/ms, read from the notches
+     * themselves rather than from the scroll position.
+     *
+     * A notch says how far the page is about to go, which is the speed at the
+     * source; the scroll position says where it got to — a number the browser
+     * may still be animating, and one a per-frame reading loses whenever two
+     * notches land on the same frame or a frame is dropped. On a loaded
+     * machine, which is exactly when this matters, that reading collapses to
+     * nothing and the page is handed a coast with no speed in it, so it sails
+     * on under the browser instead of stopping at the plate.
+     */
+    let wheelV = 0;
 
     // --- reading the speed they leave behind --------------------------------
     let sampleY = window.scrollY;
@@ -231,26 +249,87 @@ export default function ScrollSnap() {
     };
     const onTouchEnd = () => {
       touching = false;
-      lastWheel = 0;
       // the reading taken while the finger was moving is the speed it let go at
       startCoast(observed);
       observed = 0;
     };
 
+    /**
+     * Reading a wheel gesture, which has no "finger lifted" of its own.
+     *
+     * A trackpad sends the same kind of event whether a hand is on it or its
+     * momentum is running, and while the fingers are still moving the notches
+     * wobble — so one notch smaller than the one before it means nothing. The
+     * gesture is read as a whole instead: it opens when the events start, the
+     * page is the visitor's while the notches are climbing to their peak, and
+     * once they have fallen well away from that peak the hand is off and the
+     * coast is ours to finish under the plate rule.
+     *
+     * The handover is decided once per gesture and not taken back, so the page
+     * is never passed to and fro inside a single flick — which is what a rule
+     * reading each notch against the last one does, and it shows as both
+     * stutter and a page that sails past its plate. Only a fresh push, a notch
+     * back up near the peak, gives the page to the visitor again.
+     */
+    const handOver = () => {
+      if (handedOver) return;
+      handedOver = true;
+      startCoast(wheelV);
+    };
+
     const onWheel = (e: WheelEvent) => {
+      // the moment the notch happened, not the moment we got round to it: on
+      // a loaded machine handlers run late and bunched, and a clock read here
+      // would report a gesture shape that never occurred
+      const now = e.timeStamp || performance.now();
       const d = Math.abs(e.deltaY);
-      const now = performance.now();
-      if (d >= lastWheel) {
-        // a notch that holds its size or grows: a hand is still on the wheel
-        if (now - handAt > COAST.handFor) giveBack();
-        handAt = now;
-        startSampling();
-      } else if (coastFrame === 0 && held === null) {
-        // the notches are fading — this is the trackpad's momentum, and it is
-        // ours to finish
-        startCoast(observed);
+      const since = now - gestureAt;
+      if (since > COAST.gestureGap) {
+        // a new gesture: the page is theirs again until it says otherwise
+        peak = 0;
+        fading = 0;
+        wheelV = 0;
+        handedOver = false;
+        giveBack();
       }
-      lastWheel = d;
+      // a notch says how far the page is about to travel; that over the time
+      // since the last one is the speed the visitor is driving at
+      wheelV = wheelV * 0.6 + (e.deltaY / Math.min(Math.max(since, 8), 200)) * 0.4;
+      gestureAt = now;
+      handAt = now;
+
+      if (handedOver) {
+        if (d > peak * COAST.fade) {
+          // a fresh push under our coast: hand it straight back
+          handedOver = false;
+          peak = d;
+          fading = 0;
+          giveBack();
+        }
+      } else if (d > peak) {
+        peak = d;
+        fading = 0;
+      } else if (d < peak * COAST.fade) {
+        fading += 1;
+        /**
+         * The hand has eased off. If a plate is within reach of the speed the
+         * page is carrying, the gesture ends here and the coast lands on it.
+         *
+         * This is the rule that holds when the shape of the notches says
+         * nothing — a browser under load delivers them coalesced, several
+         * merged into one, and a run of fading notches may never appear at
+         * all. Where the page *is* cannot be coalesced away.
+         */
+        const y = window.scrollY;
+        const plate = beyond(y, Math.sign(e.deltaY) || 1);
+        if (plate !== null && Math.abs(plate - y) <= Math.abs(wheelV) * COAST.tau) handOver();
+        else if (fading >= COAST.fadeFor && peak >= COAST.wheelPeak) handOver();
+      }
+
+      // a gesture that simply stops — a mouse wheel, or a flick too short to
+      // show a fade at all — hands over once the wheel has gone quiet
+      if (quiet) clearTimeout(quiet);
+      quiet = setTimeout(handOver, COAST.handFor);
     };
 
     const onKeyDown = () => giveBack();
@@ -265,6 +344,7 @@ export default function ScrollSnap() {
       giveBack();
       if (sampler) cancelAnimationFrame(sampler);
       if (restTimer) clearTimeout(restTimer);
+      if (quiet) clearTimeout(quiet);
       removeEventListener("scroll", onScroll);
       removeEventListener("wheel", onWheel);
       removeEventListener("touchstart", onTouchStart);
