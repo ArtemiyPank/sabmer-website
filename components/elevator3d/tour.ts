@@ -77,12 +77,12 @@ export type Stop = {
 export const STOPS: Stop[] = [
   // 1. the cab interior, read through the open doors before they shut
   { id: "about", group: "wallBack", at: [0, CAB_H / 2, CAB_BACK + 0.03], face: "square", size: [CAB_W - 0.04, CAB_H - 0.12], pad: 1.15, p: 0.03, context: 1.1, liftoff: 4.7 },
-  // 2. the flank of the car as it runs down the shaft. The sign is on the
-  //    right-hand panel and toward the front of it: the left side of the shaft
-  //    carries the governor rope and the traveling cable, which hang in front
-  //    of that flank and would cross the sign in any shot square enough to
-  //    read it. Nothing hangs on this side above the pit.
-  { id: "jobs", group: "wallR", at: [CAB_X + 0.09, 1.2, 0.46], face: "right", size: [0.64, 1.02], pad: 1.25, p: 0.36, context: 1.15, liftoff: 5.1 },
+  // 2. the flank of the car as it runs down the shaft, on the left-hand panel.
+  //    How far forward it sits is set by what hangs in front of that flank: the
+  //    governor rope passes within a hand's breadth of the panel, so the sign
+  //    starts ahead of where that rope crosses the shot, and the traveling
+  //    cable further out decides how far round the camera has to lean.
+  { id: "jobs", group: "wallL", at: [-CAB_X - 0.09, 1.2, 0.6], face: "left", size: [0.6, 1.02], pad: 1.25, p: 0.36, context: 1.15, liftoff: 5.1 },
   // 3. the counterweight, rising past it. The frame is only so wide, so the
   //    shot comes in close rather than the plate growing: a taller plate on a
   //    narrow face only buys shorter lines, since the camera steps back with it
@@ -172,9 +172,12 @@ export function travelAt(p: number) {
 /** unit normal of a lettered face, tilted toward the front so the shot reads */
 const NORMALS: Record<Face, V3> = {
   front: [0.22, 0.1, 0.97],
-  // The right of the shaft is clear above the pit, so these faces are read
-  // nearly square on — the flatter the shot, the less the type foreshortens.
-  left: [-0.88, 0.09, 0.46],
+  // Three-quarter on the left, nearly square on the right. The left of the
+  // shaft carries the traveling cable, which hangs in front of that flank: the
+  // sight line onto the sign has to pass behind the cable's run, and the wider
+  // the sign the further back its edge reaches, so the shot leans further
+  // round than it otherwise would. Nothing hangs on the right above the pit.
+  left: [-0.8, 0.09, 0.6],
   right: [0.96, 0.08, 0.27],
   // dead square on: the closing frame sits level with the equipment
   square: [0, 0, 1],
@@ -187,7 +190,7 @@ const NORMALS: Record<Face, V3> = {
  */
 const NORMALS_PORTRAIT: Record<Face, V3> = {
   front: [0.12, 0.06, 0.99],
-  left: [-0.86, 0.07, 0.5],
+  left: [-0.78, 0.07, 0.63],
   right: [0.95, 0.06, 0.3],
   square: [0, 0, 1],
 };
