@@ -23,22 +23,28 @@ export default function FloorIndicator() {
   const [dir, setDir] = useState<"up" | "down" | null>(null);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  // the stop the arrow was last decided against. Kept beside the state rather
+  // than read out of it: a state updater has to be able to run twice without
+  // changing what it does, and this one would set the arrow again each time.
+  const was = useRef(0);
 
   // initial stop (e.g. when landing on an #anchor mid-page)
   useEffect(() => {
     const id = requestAnimationFrame(() => {
       const max = document.documentElement.scrollHeight - window.innerHeight;
-      setStop(currentStop(max > 0 ? window.scrollY / max : 0));
+      const at = currentStop(max > 0 ? window.scrollY / max : 0);
+      was.current = at;
+      setStop(at);
     });
     return () => cancelAnimationFrame(id);
   }, []);
 
   useMotionValueEvent(scrollYProgress, "change", (v) => {
     const next = currentStop(v);
-    setStop((prev) => {
-      if (next !== prev) setDir(next > prev ? "down" : "up");
-      return next;
-    });
+    if (next === was.current) return;
+    setDir(next > was.current ? "down" : "up");
+    was.current = next;
+    setStop(next);
   });
 
   // close the panel on outside click / Escape

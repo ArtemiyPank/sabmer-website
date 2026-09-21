@@ -96,6 +96,24 @@ export const STOPS: Stop[] = [
 ];
 
 /**
+ * The order of this table is load-bearing: `beyond` in
+ * `components/site/ScrollSnap.tsx` walks it to find the next plate along, and
+ * `tourAt` below scans it for the slice the camera is in. Both read it as
+ * ascending, and neither would fail loudly on a table that is not — the tour
+ * would simply skip a stop and the plate rule would aim at the wrong one. It
+ * can only go wrong while editing, so it is checked where editing happens.
+ */
+if (process.env.NODE_ENV !== "production") {
+  for (let i = 1; i < STOPS.length; i++) {
+    if (STOPS[i].p <= STOPS[i - 1].p) {
+      throw new Error(
+        `STOPS must ascend by p: "${STOPS[i - 1].id}" (${STOPS[i - 1].p}) is listed before "${STOPS[i].id}" (${STOPS[i].p})`
+      );
+    }
+  }
+}
+
+/**
  * How far the car doors stand open. The tour opens on a car parked at the top
  * landing with its doors open and shuts them on the first pixel of scroll,
  * before it sets off.
