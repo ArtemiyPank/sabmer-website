@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { STOPS, refuge } from "@/components/elevator3d/tour";
 import { getRide, rideToProgress, setHold } from "@/lib/ride";
 import { COAST } from "@/lib/tuning";
-import { probeGesture, probeHandover, probeNotch, probeReady, probeRest, probing } from "@/lib/scroll-probe";
+import { probeGaveBack, probeGesture, probeHandover, probeNotch, probeReady, probeRest, probing } from "@/lib/scroll-probe";
 
 /**
  * Runs the page's coast itself instead of arguing with the browser's.
@@ -54,17 +54,6 @@ export default function ScrollSnap() {
     let wheelV = 0;
     /** where the page was when the coast was handed over, for the read-out */
     let handoverY = 0;
-    /**
-     * The plate this gesture is allowed to reach, and the way it is going.
-     *
-     * One flick carries one plate. The fingers themselves can cross several:
-     * a trackpad's notches are accelerated by the system, and a brisk flick
-     * hands over hundreds of pixels at a time — so a rule that only governs
-     * the momentum governs almost nothing. The gesture ends where it first
-     * arrives at a plate, and the next one has to be asked for.
-     */
-    let gate: number | null = null;
-    let gateDir = 1;
 
     // --- reading the speed they leave behind --------------------------------
     let sampleY = window.scrollY;
@@ -181,24 +170,19 @@ export default function ScrollSnap() {
      * coast is given a decay that lands it exactly on the next plate whenever
      * it would otherwise cross one — same shape of curve either way, only the
      * time constant differs, so nothing about it reads as a snap.
+     *
+     * Where it ends is always ahead of where it starts. A coast aimed at a
+     * plate the page has already gone past would drive it back the way it came
+     * under a hand that is still pushing it forward, which reads as the page
+     * snatching itself back to the sign before last. `beyond` below only ever
+     * answers with a plate the page has yet to reach.
      */
-    const startCoast = (v0: number, land?: number) => {
+    const startCoast = (v0: number) => {
       if (!engraved() || getRide().running || performance.now() - mounted < 600) return;
       const v = clamp(v0, -COAST.maxSpeed, COAST.maxSpeed);
-      if (Math.abs(v) < COAST.throwSpeed && land === undefined) return;
+      if (Math.abs(v) < COAST.throwSpeed) return;
       releaseHold();
       cy = window.scrollY;
-      if (land !== undefined) {
-        // told where to end: the plate the gesture has just reached, which may
-        // be a little behind by the time we hear about it
-        const d = land - cy;
-        ctarget = land;
-        ctau = clamp(Math.abs(d) / Math.max(Math.abs(v), COAST.throwSpeed), COAST.tauMin, COAST.tauMax);
-        cv = d / ctau;
-        lastStep = performance.now();
-        if (!coastFrame) coastFrame = requestAnimationFrame(coast);
-        return;
-      }
       const dir = Math.sign(v);
       const natural = cy + v * COAST.tau; // where it would come to rest, left alone
       const plate = beyond(cy, dir);
@@ -323,12 +307,12 @@ export default function ScrollSnap() {
      * stutter and a page that sails past its plate. Only a fresh push, a notch
      * back up near the peak, gives the page to the visitor again.
      */
-    const handOver = (land?: number) => {
+    const handOver = () => {
       if (handedOver) return;
       handedOver = true;
       probeHandover(wheelV);
       handoverY = window.scrollY;
-      startCoast(wheelV, land);
+      startCoast(wheelV);
     };
 
     const onWheel = (e: WheelEvent) => {
@@ -349,10 +333,6 @@ export default function ScrollSnap() {
         fading = 0;
         wheelV = 0;
         handedOver = false;
-        gateDir = Math.sign(e.deltaY) || 1;
-        // the floor this flick is asking for: the one the page is standing on
-        // does not count, however few pixels above it the page happens to be
-        gate = beyond(window.scrollY, gateDir, COAST.gateMin);
         probeGesture(window.scrollY);
         giveBack();
       }
@@ -377,26 +357,32 @@ export default function ScrollSnap() {
        * some share of the peak waits out most of the flight instead, and by
        * then several plates have gone by — which is exactly what it did.
        */
-      // arrived at the plate this gesture was allowed: that is the end of it
-      if (!handedOver && gate !== null) {
-        const y = window.scrollY;
-        if (gateDir > 0 ? y >= gate - 2 : y <= gate + 2) {
-          handOver(gate);
-          return;
-        }
-      }
-
       const rising = d > lastD * 1.05;
       const falling = d < lastD * 0.95 || (peak > 0 && d < peak * COAST.fade);
+      /**
+       * A notch bigger than anything this gesture has yet produced: the one
+       * thing momentum cannot do.
+       *
+       * Momentum starts at the speed the fingers left behind and only ever
+       * loses to it, so no notch of a fling can exceed the peak of the push
+       * that threw it. Fingers can, and a hand coming back to the trackpad is
+       * the only reason to take the page off a coast that is already aimed at
+       * a plate. Asking merely for a notch bigger than the one before it —
+       * which is what this used to do — is asking for nothing: a fling's
+       * notches are whole pixels, so they tick back up on rounding alone
+       * several times on the way down, and every one of those handed the page
+       * back to a fling in full flight. That is the page sailing past its
+       * plate, and it is also the page seeming to leap.
+       */
+      const pushedAgain = peak > 0 && d > peak * COAST.push;
       lastD = d;
       if (d > peak) peak = d;
 
       if (handedOver) {
-        // a real push takes the page back: bigger than the last notch, and
-        // not merely two momentum notches the browser delivered as one
-        if (rising && d >= peak * COAST.fade) {
+        if (pushedAgain) {
           handedOver = false;
           fading = 0;
+          probeGaveBack();
           giveBack();
         }
       } else {
