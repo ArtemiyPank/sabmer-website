@@ -120,6 +120,15 @@ html[data-ui="engraved"] .sheet {
   opacity: 0 !important;
   pointer-events: none;
 }
+/* The sections stay in the page for assistive technology, which means their
+   links stay in the tab order — and a link that cannot be seen is a link a
+   keyboard visitor lands on with nothing to tell them where they are. So the
+   sheet comes back the moment anything inside it takes focus: the browser
+   scrolls it into view, and what is focused is on the screen, as it must be. */
+html[data-ui="engraved"] .sheet:focus-within {
+  opacity: 1 !important;
+  pointer-events: auto;
+}
 /* one screenful of scroll per section: that is the dwell on one camera stop */
 /* One screenful of scroll per section: that is the dwell on one camera stop.
    Raising it slows the camera down for the same scrolling; see lib/tuning.ts. */

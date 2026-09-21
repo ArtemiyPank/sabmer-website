@@ -26,6 +26,10 @@ export default function BackToTop() {
         borderColor: "var(--bp-line-soft)",
         color: "var(--bp-accent)",
         opacity: shown ? 1 : 0,
+        // hidden, not merely transparent: a transparent button keeps its place
+        // in the tab order, and a visitor working down the page with the
+        // keyboard would land on something that is not on the screen
+        visibility: shown ? "visible" : "hidden",
         pointerEvents: shown ? "auto" : "none",
         transform: shown ? undefined : "translateY(8px)",
       }}
