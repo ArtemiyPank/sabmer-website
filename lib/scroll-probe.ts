@@ -89,7 +89,7 @@ export function probeHandover(v: number) {
 }
 
 /** called once the page has come to rest; `stops` are the plates it passed */
-export function probeRest(y: number, range: number, crossedAfterHand: number) {
+export function probeRest(y: number, range: number, crossedAfterHand: number, refused = 0) {
   if (!probing()) return;
   if (watching) {
     cancelAnimationFrame(watching);
@@ -109,5 +109,6 @@ export function probeRest(y: number, range: number, crossedAfterHand: number) {
       : `handover: notch ${handoverAt} of ${notches.length}, v ${handoverV.toFixed(2)} px/ms\n`) +
     `from p=${(from / range).toFixed(3)} to p=${(y / range).toFixed(3)}, ` +
     `plates crossed after the handover: ${crossedAfterHand}\n` +
-    `handed back mid-gesture: ${given}   ·   driven backwards: ${Math.round(back)}px`;
+    `handed back mid-gesture: ${given}   ·   driven backwards: ${Math.round(back)}px\n` +
+    `notches refused so the flick kept to one plate: ${refused}`;
 }
