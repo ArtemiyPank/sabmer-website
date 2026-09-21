@@ -54,6 +54,11 @@ export default buildConfig({
     },
     {
       slug: "media",
+      // The pictures hang on a public page, so the file route has to let a
+      // visitor through. Payload's default is "signed in only", which would
+      // answer every <img> on the site with a 403; everything else about the
+      // collection stays behind the admin session.
+      access: { read: () => true },
       upload: {
         staticDir: path.resolve(dirname, "public/media"),
         imageSizes: [
