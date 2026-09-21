@@ -60,12 +60,13 @@ export const COAST = {
    */
   reach: 60,
   /**
-   * How many notches after a flick has been given its plate before a stream
-   * that is still going strong counts as a hand rather than a fling. A fling
-   * is well down from its largest notch by then; a steady drag is not.
+   * ms after a flick has been given its plate before a stream that is still
+   * going strong counts as a hand rather than a fling, and the share of its
+   * own largest notch that counts as going strong. A fling is well under this
+   * by then however it decays; fingers on the glass are not.
    */
-  spentFor: 8,
-  spentHold: 0.85,
+  spentFor: 700,
+  spentHold: 0.55,
   /** ms without the page being pushed: the browser's own fling is spent */
   stillFor: 320,
   /** ms a landing is held before the visitor gets the page back regardless */

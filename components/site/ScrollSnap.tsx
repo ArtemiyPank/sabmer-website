@@ -72,9 +72,28 @@ export default function ScrollSnap() {
      */
     let aim: number | null = null;
     let aimDir = 1;
+    /**
+     * Whether this gesture is ours to refuse.
+     *
+     * Chromium sends the first wheel event of a scroll sequence blocking and,
+     * if the page lets it through, sends every later one non-blocking — thirty
+     * notches of a flick arrive with `cancelable` false and `preventDefault`
+     * does nothing at all. A page that waits to see where a flick is heading
+     * therefore finds, at the moment it wants to act, that it gave away the
+     * only lever it had on the first notch.
+     *
+     * So the first notch is taken: refused, and its distance applied here
+     * instead, which costs nothing visible and keeps the whole sequence
+     * blocking. Only then can the notch that would carry the page past its
+     * plate be refused — and on a trackpad that notch is the seventh or the
+     * ninth, never the first.
+     */
+    let owned = false;
+    /** is this the notch that opened the gesture? */
+    let first = false;
     let spent = false;
     /** how the notches have behaved since the flick was given its plate */
-    let spentN = 0;
+    let spentAt = 0;
     let spentMax = 0;
     let refused = 0;
 
@@ -372,7 +391,7 @@ export default function ScrollSnap() {
       if (handedOver) return;
       handedOver = true;
       spent = true;
-      spentN = 0;
+      spentAt = performance.now();
       spentMax = 0;
       probeHandover(wheelV);
       handoverY = window.scrollY;
@@ -407,8 +426,14 @@ export default function ScrollSnap() {
         refused = 0;
         aimDir = Math.sign(e.deltaY) || 1;
         aim = engraved() ? beyond(window.scrollY, aimDir, COAST.reach) : null;
+        // sideways scrolling is not ours, and neither is a sequence the
+        // browser has already decided it will not let us cancel
+        owned = aim !== null && e.cancelable && Math.abs(e.deltaY) >= Math.abs(e.deltaX);
+        first = true;
         probeGesture(window.scrollY);
         giveBack();
+      } else {
+        first = false;
       }
       probeNotch(d);
       // a notch says how far the page is about to travel; that over the time
@@ -452,25 +477,27 @@ export default function ScrollSnap() {
       if (d > peak) peak = d;
 
       if (spent) {
-        spentN += 1;
         if (d > spentMax) spentMax = d;
         /**
          * Is this still the fling, or a hand that never left?
          *
-         * A fling decays, and fast: a handful of notches past the landing it
-         * is down to a third of the largest notch it produced, and by ten it
-         * is a tenth. A hand holding a steady drag does not decay at all. So
-         * notches still arriving at full size this long after the plate was
-         * given are fingers, and a visitor dragging deliberately down the page
-         * must not find it nailed to one sign.
+         * Told apart by how long the stream keeps its strength, which is the
+         * one thing the two cannot both do. A fling is spent energy: by the
+         * time two thirds of a second have passed it is a small fraction of
+         * the notch that started it, whatever shape its decay took. Fingers on
+         * the glass are not spending anything, and a notch still arriving at
+         * half strength that late is a hand — and a visitor dragging
+         * deliberately down the page must not find it nailed to one sign.
          *
-         * Nothing else takes the page back. A single notch bigger than the
-         * ones around it will not do it, however big: the finger phase of one
-         * flick spikes several times on its way — the read-out from a real
-         * trackpad shows 208 then 448, 240 then 574 — and treating each of
-         * those as a fresh push is what let one flick spend four plates.
+         * Counting notches instead of time does not work: a flick's stream is
+         * noisy, a drag's is smooth, and both produce runs of similar notches.
+         * Nor does a single big notch mean anything — the finger phase of one
+         * flick spikes several times on its way (a real read-out shows 208
+         * then 448, 240 then 574), and treating each spike as a fresh push is
+         * what let one flick spend four plates.
          */
-        const stillDriving = spentN > COAST.spentFor && d > spentMax * COAST.spentHold;
+        const stillDriving =
+          performance.now() - spentAt > COAST.spentFor && d > spentMax * COAST.spentHold;
         if (stillDriving) {
           spent = false;
           handedOver = false;
@@ -480,7 +507,7 @@ export default function ScrollSnap() {
           aim = beyond(window.scrollY, aimDir, COAST.reach);
         } else {
           // the flick has had its plate; the rest of it moves nothing
-          if (e.cancelable) {
+          if (owned && e.cancelable) {
             e.preventDefault();
             refused += 1;
           }
@@ -490,15 +517,22 @@ export default function ScrollSnap() {
         }
       }
 
-      // would this notch carry the page onto the plate the flick asked for?
-      // The event is sent before the page moves, so there is still time.
-      if (aim !== null && !handedOver && e.cancelable) {
-        const willBe = window.scrollY + e.deltaY;
+      // A wheel event is sent before the page moves, so where this notch would
+      // put it is still a question rather than a fact.
+      if (owned && !handedOver && aim !== null) {
+        const willBe = clamp(window.scrollY + e.deltaY, 0, maxY());
         if (aimDir > 0 ? willBe >= aim : willBe <= aim) {
+          // it would carry the page onto the plate the flick asked for, and
+          // past it: refuse it, and let the coast cover the last of the way
           e.preventDefault();
           refused += 1;
           takeOver(aim);
           return;
+        }
+        if (first) {
+          // the notch that bought the right to refuse the rest
+          e.preventDefault();
+          window.scrollTo({ top: willBe, behavior: "instant" });
         }
       }
 
