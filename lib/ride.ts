@@ -113,8 +113,23 @@ export function rideToProgress(p: number) {
     ride.flying = true;
   }
 
-  // the visitor takes over the moment they touch the page themselves
-  const interrupt = () => cancel();
+  /**
+   * The visitor takes over the moment they touch the page themselves — but
+   * only when they actually do. A wheel event carrying no distance is the tail
+   * of a fling the browser has already given up on (the same one
+   * `components/site/ScrollSnap.tsx` ignores), and a key that does not scroll
+   * is not a hand on the page: either one cancelling the trip would strand the
+   * camera exactly where the trip was taking it away from.
+   */
+  const SCROLLS = new Set([
+    "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
+    "PageUp", "PageDown", "Home", "End", " ", "Spacebar",
+  ]);
+  const interrupt = (e: Event) => {
+    if (e.type === "wheel" && (e as WheelEvent).deltaY === 0) return;
+    if (e.type === "keydown" && !SCROLLS.has((e as KeyboardEvent).key)) return;
+    cancel();
+  };
   addEventListener("wheel", interrupt, { passive: true });
   addEventListener("touchstart", interrupt, { passive: true });
   addEventListener("keydown", interrupt);

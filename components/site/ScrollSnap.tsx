@@ -238,8 +238,20 @@ export default function ScrollSnap() {
     };
 
     // -------------------------------------------------- where the page settles
-    /** is anything still moving the page? */
-    const driving = () => touching || getRide().running || coastFrame !== 0 || held !== null;
+    /**
+     * Is anything still moving the page?
+     *
+     * A wheel gesture that has not handed over yet counts: the hand is on the
+     * trackpad, and nothing else — no coast, no hold — is watching the page on
+     * its behalf. Without it a visitor who simply pauses mid-gesture would be
+     * taken somewhere by the rest rule while still holding the page.
+     */
+    const driving = () =>
+      touching ||
+      getRide().running ||
+      coastFrame !== 0 ||
+      held !== null ||
+      (!handedOver && performance.now() - handAt < COAST.gestureGap);
 
     /**
      * Nearly all of the tour is worth stopping in, and a little of it is not —
@@ -399,7 +411,52 @@ export default function ScrollSnap() {
       quiet = setTimeout(handOver, COAST.handFor);
     };
 
-    const onKeyDown = () => giveBack();
+    /**
+     * The keyboard is a tour of its own.
+     *
+     * Every other way of driving the page leaves a speed behind that the coast
+     * can be aimed with. A key press leaves none: the browser simply moves the
+     * page a screenful and stops, which on this page is always *between* two
+     * plates — so a visitor who navigates by keyboard could read the copy on
+     * the machine at no point at all. A page key therefore asks for the next
+     * plate outright and the page rides there, the same trip a floor button
+     * takes. The arrow keys are left alone: a nudge of a few lines is the one
+     * keyboard gesture that is not asking to go anywhere.
+     */
+    const typing = () => {
+      const el = document.activeElement as HTMLElement | null;
+      if (!el) return false;
+      const tag = el.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable;
+    };
+    /** a space bar pressed on a control is that control's, not the page's */
+    const onAControl = () => {
+      const el = document.activeElement as HTMLElement | null;
+      return !!el?.closest?.("a[href], button, [role='button']");
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      giveBack();
+      if (!engraved() || e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (typing()) return;
+      const space = e.key === " " || e.key === "Spacebar";
+      if (space && onAControl()) return;
+      let dir = 0;
+      if (e.key === "PageDown" || (space && !e.shiftKey)) dir = 1;
+      else if (e.key === "PageUp" || (space && e.shiftKey)) dir = -1;
+      else if (e.key === "End") dir = 2;
+      else if (e.key === "Home") dir = -2;
+      else return;
+      e.preventDefault();
+      const y = window.scrollY;
+      const land =
+        Math.abs(dir) === 2
+          ? dir > 0
+            ? maxY()
+            : 0
+          : (beyond(y, dir) ?? (dir > 0 ? maxY() : 0));
+      rideToProgress(land / range());
+    };
 
     probeReady();
     addEventListener("scroll", onScroll, { passive: true });
