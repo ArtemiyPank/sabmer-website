@@ -16,6 +16,27 @@ let notches: number[] = [];
 let handoverAt = -1;
 let handoverV = 0;
 let from = 0;
+/**
+ * The two numbers that tell one wrong gesture from another.
+ *
+ * `given` counts the times the page was handed back to the visitor in the
+ * middle of one gesture: a coast that is aimed at a plate and then cancelled is
+ * a page that sails past it, and more than one of these in a flick is the whole
+ * of that fault. `back` is the furthest the page was driven the way it came —
+ * a coast aimed at a plate already gone past, which reads as the page snatching
+ * itself back to the sign it just passed.
+ */
+let given = 0;
+let back = 0;
+let watching = 0;
+let highest = 0;
+
+function watch() {
+  const y = window.scrollY;
+  if (y < highest) back = Math.max(back, highest - y);
+  else highest = y;
+  watching = requestAnimationFrame(watch);
+}
 
 export const probing = () =>
   typeof location !== "undefined" && location.search.includes("scrollProbe");
@@ -42,7 +63,17 @@ export function probeGesture(y: number) {
   notches = [];
   handoverAt = -1;
   handoverV = 0;
+  given = 0;
+  back = 0;
   from = y;
+  highest = y;
+  if (!watching) watching = requestAnimationFrame(watch);
+}
+
+/** the page was handed back to the visitor without the gesture having ended */
+export function probeGaveBack() {
+  if (!probing()) return;
+  if (handoverAt >= 0) given += 1;
 }
 
 export function probeNotch(d: number) {
@@ -60,6 +91,10 @@ export function probeHandover(v: number) {
 /** called once the page has come to rest; `stops` are the plates it passed */
 export function probeRest(y: number, range: number, crossedAfterHand: number) {
   if (!probing()) return;
+  if (watching) {
+    cancelAnimationFrame(watching);
+    watching = 0;
+  }
   if (notches.length === 0) {
     panel().textContent = "the page came to rest with no wheel gesture behind it";
     return;
@@ -73,5 +108,6 @@ export function probeRest(y: number, range: number, crossedAfterHand: number) {
       ? "handover: never — the page was the browser's the whole way\n"
       : `handover: notch ${handoverAt} of ${notches.length}, v ${handoverV.toFixed(2)} px/ms\n`) +
     `from p=${(from / range).toFixed(3)} to p=${(y / range).toFixed(3)}, ` +
-    `plates crossed after the handover: ${crossedAfterHand}`;
+    `plates crossed after the handover: ${crossedAfterHand}\n` +
+    `handed back mid-gesture: ${given}   ·   driven backwards: ${Math.round(back)}px`;
 }
