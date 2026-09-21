@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { STOPS, refuge } from "@/components/elevator3d/tour";
 import { getRide, rideToProgress, setHold } from "@/lib/ride";
 import { COAST } from "@/lib/tuning";
-import { probeGesture, probeHandover, probeNotch, probeRest, probing } from "@/lib/scroll-probe";
+import { probeGesture, probeHandover, probeNotch, probeReady, probeRest, probing } from "@/lib/scroll-probe";
 
 /**
  * Runs the page's coast itself instead of arguing with the browser's.
@@ -358,6 +358,7 @@ export default function ScrollSnap() {
 
     const onKeyDown = () => giveBack();
 
+    probeReady();
     addEventListener("scroll", onScroll, { passive: true });
     addEventListener("wheel", onWheel, { passive: true });
     addEventListener("touchstart", onTouchStart, { passive: true });

@@ -31,6 +31,12 @@ function panel() {
   return box;
 }
 
+/** draw the panel as soon as the page is open with the probe asked for */
+export function probeReady() {
+  if (!probing()) return;
+  panel().textContent = "scroll read-out is on — scroll with the trackpad";
+}
+
 export function probeGesture(y: number) {
   if (!probing()) return;
   notches = [];
@@ -40,7 +46,9 @@ export function probeGesture(y: number) {
 }
 
 export function probeNotch(d: number) {
-  if (probing()) notches.push(Math.round(d));
+  if (!probing()) return;
+  notches.push(Math.round(d));
+  panel().textContent = `reading a gesture… ${notches.length} notches`;
 }
 
 export function probeHandover(v: number) {
@@ -51,7 +59,11 @@ export function probeHandover(v: number) {
 
 /** called once the page has come to rest; `stops` are the plates it passed */
 export function probeRest(y: number, range: number, crossedAfterHand: number) {
-  if (!probing() || notches.length === 0) return;
+  if (!probing()) return;
+  if (notches.length === 0) {
+    panel().textContent = "the page came to rest with no wheel gesture behind it";
+    return;
+  }
   const peak = Math.max(...notches);
   const shown = notches.length > 24 ? [...notches.slice(0, 12), -1, ...notches.slice(-10)] : notches;
   panel().textContent =
