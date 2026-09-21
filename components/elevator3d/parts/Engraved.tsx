@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import * as THREE from "three";
 import { useProgressFrame, useScene } from "../scene-context";
-import { explosion, type V3 } from "../dims";
+import type { RootState } from "@react-three/fiber";
+import { explosion, type Explosion, type V3 } from "../dims";
 import { FACE_ROT, STOPS, frameDistance, shotRoom, stopAt, type Stop } from "../tour";
 import type { SiteNote, SiteNotes } from "@/lib/site-notes";
 import { getReview, subscribeReview } from "@/lib/reviews";
 import { PLATE, TOUR } from "@/lib/tuning";
 import { WA_GLYPH } from "@/lib/whatsapp";
-import { eachPlateAction } from "@/lib/plate-action";
+import { getPlateAction } from "@/lib/plate-action";
 
 /**
  * The page text lettered onto the machine: each section is drawn into a
@@ -500,21 +501,165 @@ function noteOf(notes: SiteNotes, id: Stop["id"], review: number): SiteNote {
   };
 }
 
+/**
+ * Where the canvas sits on the page, for projecting an anchor onto it.
+ *
+ * It only moves when the window is resized, so it is measured then and not on
+ * every frame: reading a layout box back after styles have been written forces
+ * the browser to lay the page out again, which is the one thing per-frame DOM
+ * work must not do. One canvas, so one cached box.
+ */
+const canvasBox = { w: 0, h: 0, left: 0, top: 0, width: 0, height: 0 };
+function canvasRect(state: RootState) {
+  if (canvasBox.w !== state.size.width || canvasBox.h !== state.size.height) {
+    const box = state.gl.domElement.getBoundingClientRect();
+    canvasBox.w = state.size.width;
+    canvasBox.h = state.size.height;
+    canvasBox.left = box.left;
+    canvasBox.top = box.top;
+    canvasBox.width = box.width;
+    canvasBox.height = box.height;
+  }
+  return canvasBox;
+}
+
+/** scratch for the per-frame placement; the callbacks run one after another */
+const pos: V3 = [0, 0, 0];
+
+/**
+ * The explosion offsets for the frame in progress.
+ *
+ * Every plate wants the same ones, and building them is a fresh object and
+ * fifteen little arrays each time. They are asked for once per frame and the
+ * rest of the plates are handed what the first one got.
+ */
+let lastEx: { p: number; e: number; v: Explosion } = { p: NaN, e: NaN, v: explosion(0, 0) };
+function explosionFor(p: number, e: number): Explosion {
+  if (p !== lastEx.p || e !== lastEx.e) lastEx = { p, e, v: explosion(p, e) };
+  return lastEx.v;
+}
+
+/**
+ * Everything about a plate that the copy alone decides, measured without
+ * marking any canvas: how the surface is cut up, how each of its notes has to
+ * be set to fit, and the height the sign comes to. A plate that pages through
+ * cards is measured against its tallest one, so the sign does not resize under
+ * the visitor as they page.
+ */
+type Sheet = {
+  m: Metrics;
+  c: Colors;
+  rtl: boolean;
+  h: number;
+  notes: SiteNote[];
+  fits: Fit[];
+};
+
+/**
+ * One lettered plate: its texture, its place on the machine, and the page
+ * anchor that covers the button printed on it.
+ *
+ * A plate of its own rather than a row in a table, because the reviews plate
+ * changes under the arrows and the other four do not. Drawing them together
+ * meant paging a review threw away five canvases of up to four megapixels each
+ * and uploaded five textures, to change one sign; here the note handed to each
+ * plate keeps its identity unless that plate's own copy changed, so the other
+ * four never redraw.
+ */
+function Plate({ stop, note, fit, sheet }: { stop: Stop; note: SiteNote; fit: Fit; sheet: Sheet }) {
+  const g = useRef<THREE.Group>(null);
+
+  const plate = useMemo(() => {
+    const { m, h, c, rtl } = sheet;
+    const { tex, hit } = noteTexture(note, m, fit, h, c, rtl);
+    const height = h / m.scale;
+    const width = m.w / m.scale;
+    return {
+      tex,
+      width,
+      height,
+      // the printed button, in metres from the middle of the plate, which is
+      // what the anchor over it has to be projected from
+      button: hit && {
+        cx: (hit.x + hit.w / 2) / m.scale - width / 2,
+        cy: height / 2 - (hit.y + hit.h / 2) / m.scale,
+        hw: hit.w / 2 / m.scale,
+        hh: hit.h / 2 / m.scale,
+      },
+    };
+  }, [note, fit, sheet]);
+
+  useEffect(() => () => plate.tex.dispose(), [plate]);
+
+  useProgressFrame((_p, ex, state, scroll) => {
+    const group = g.current;
+    if (!group) return;
+    // the tour is scheduled against the page; stopAt maps it to travel itself
+    stopAt(pos, stop, scroll, explosionFor(scroll, ex));
+    group.position.set(pos[0], pos[1], pos[2]);
+
+    /**
+     * Lay the page's anchor over the button printed on the plate.
+     *
+     * The button is part of the lettering, so where it lands on screen is
+     * whatever the camera says: its four corners are carried into the world by
+     * the plate's own transform and projected. The anchor is only offered
+     * while the tour is parked on that plate — anywhere else the button is
+     * away at an angle, or off the screen entirely.
+     */
+    const el = getPlateAction(stop.id);
+    if (!el) return;
+    if (!plate.button || Math.abs(scroll - stop.p) >= PARKED) {
+      hide(el);
+      return;
+    }
+    place(el, plate.button, group, state.camera, canvasRect(state));
+  });
+
+  return (
+    <group rotation={FACE_ROT[stop.face]} ref={g}>
+      <mesh renderOrder={2}>
+        <planeGeometry args={[plate.width, plate.height]} />
+        <meshBasicMaterial
+          map={plate.tex}
+          transparent
+          depthWrite={false}
+          toneMapped={false}
+          side={THREE.FrontSide}
+        />
+      </mesh>
+    </group>
+  );
+}
+
 export default function Engraved({ notes }: { notes: SiteNotes }) {
   const { mobile } = useScene();
   // redraw the plates when the page theme changes, and once webfonts land
   const [tick, setTick] = useState(0);
   useEffect(() => {
-    const bump = () => setTick((t) => t + 1);
+    let live = true;
+    const bump = () => {
+      if (live) setTick((t) => t + 1);
+    };
     const mo = new MutationObserver(bump);
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    // webfonts can land long after the page is gone from the screen
     document.fonts?.ready.then(bump);
-    return () => mo.disconnect();
+    return () => {
+      live = false;
+      mo.disconnect();
+    };
   }, []);
 
   const review = useSyncExternalStore(subscribeReview, getReview, () => 0);
 
-  const plates = useMemo(() => {
+  /**
+   * The measuring pass, which the card on show has no part in: it is the copy
+   * and the surface that decide how the plate is cut, and both are the same
+   * whichever review is facing outward. Kept clear of `review` so that paging
+   * cannot set five plates measuring again.
+   */
+  const sheets = useMemo<Sheet[]>(() => {
     void tick;
     const c = readColors();
     // Hebrew sets from the right; the page tells the plates which way it reads
@@ -528,113 +673,27 @@ export default function Engraved({ notes }: { notes: SiteNotes }) {
       /**
        * The paper is cut to the copy, not to the surface it hangs on: a sign
        * with four lines on it should not be a board with four lines adrift in
-       * the middle. A plate that pages through cards is cut to its longest
-       * one, so the sign does not resize under the visitor as they page.
+       * the middle.
        */
-      const cards = notes[s.id].cards;
-      const count = cards?.length ?? 0;
-      const shown = count ? ((review % count) + count) % count : 0;
-      const fits = (count ? cards! : [null]).map((_, i) => {
-        const note = noteOf(notes, s.id, i);
-        return { note, fit: fitNote(probe, note, m, c, rtl) };
-      });
-      const tallest = Math.max(...fits.map((f) => f.fit.needed + f.fit.ends * 2));
-      const h = Math.min(m.hMax, Math.round(tallest));
-      const { note, fit } = fits[shown];
-      const { tex, hit } = noteTexture(note, m, fit, h, c, rtl);
-      const height = h / m.scale;
-      const width = m.w / m.scale;
-      return {
-        tex,
-        height,
-        // the printed button, in metres from the middle of the plate, which is
-        // what the anchor over it has to be projected from
-        width,
-        button: hit && {
-          cx: (hit.x + hit.w / 2) / m.scale - width / 2,
-          cy: height / 2 - (hit.y + hit.h / 2) / m.scale,
-          hw: hit.w / 2 / m.scale,
-          hh: hit.h / 2 / m.scale,
-        },
-      };
+      const count = notes[s.id].cards?.length ?? 0;
+      const all = Array.from({ length: Math.max(count, 1) }, (_, i) => noteOf(notes, s.id, i));
+      const fits = all.map((note) => fitNote(probe, note, m, c, rtl));
+      const tallest = Math.max(...fits.map((f) => f.needed + f.ends * 2));
+      return { m, c, rtl, h: Math.min(m.hMax, Math.round(tallest)), notes: all, fits };
     });
-  }, [notes, tick, review, mobile]);
-
-  useEffect(() => () => plates.forEach((p) => p.tex.dispose()), [plates]);
-
-  const groups = useRef<Array<THREE.Group | null>>([]);
-  const canvasBox = useRef({ w: 0, h: 0, left: 0, top: 0, width: 0, height: 0 });
-  const pos = useRef<V3>([0, 0, 0]).current;
-
-  useProgressFrame((_p, ex, state, scroll) => {
-    // the tour is scheduled against the page; stopAt maps it to travel itself
-    const e = explosion(scroll, ex);
-    for (let i = 0; i < STOPS.length; i++) {
-      const g = groups.current[i];
-      if (!g) continue;
-      stopAt(pos, STOPS[i], scroll, e);
-      g.position.set(pos[0], pos[1], pos[2]);
-    }
-
-    /**
-     * Lay the page's anchor over the button printed on the plate.
-     *
-     * The button is part of the lettering, so where it lands on screen is
-     * whatever the camera says: its four corners are carried into the world by
-     * the plate's own transform and projected. The anchor is only offered
-     * while the tour is parked on that plate — anywhere else the button is
-     * away at an angle, or off the screen entirely.
-     */
-    // where the canvas sits on the page: it only moves when the window is
-    // resized, so it is measured then and not on every frame
-    const seen = canvasBox.current;
-    if (seen.w !== state.size.width || seen.h !== state.size.height) {
-      const box = state.gl.domElement.getBoundingClientRect();
-      seen.w = state.size.width;
-      seen.h = state.size.height;
-      seen.left = box.left;
-      seen.top = box.top;
-      seen.width = box.width;
-      seen.height = box.height;
-    }
-    eachPlateAction((id, el) => {
-      const i = STOPS.findIndex((st) => st.id === id);
-      const b = i < 0 ? null : plates[i]?.button;
-      const g = i < 0 ? null : groups.current[i];
-      if (!b || !g || Math.abs(scroll - STOPS[i].p) >= PARKED) {
-        hide(el);
-        return;
-      }
-      place(el, b, g, state.camera, seen);
-    });
-  });
-
-
+  }, [notes, tick, mobile]);
 
   return (
     <group>
       {STOPS.map((s, i) => {
-        const plate = plates[i];
-        if (!plate) return null;
+        const sheet = sheets[i];
+        if (!sheet) return null;
+        // which of this plate's notes is facing outward. Only the reviews plate
+        // has more than one, so every other plate is handed the very same note
+        // object on a paging render and never redraws
+        const shown = sheet.notes.length > 1 ? ((review % sheet.notes.length) + sheet.notes.length) % sheet.notes.length : 0;
         return (
-          <group
-            key={s.id}
-            rotation={FACE_ROT[s.face]}
-            ref={(el) => {
-              groups.current[i] = el;
-            }}
-          >
-            <mesh renderOrder={2}>
-              <planeGeometry args={[plate.width, plate.height]} />
-              <meshBasicMaterial
-                map={plate.tex}
-                transparent
-                depthWrite={false}
-                toneMapped={false}
-                side={THREE.FrontSide}
-              />
-            </mesh>
-          </group>
+          <Plate key={s.id} stop={s} note={sheet.notes[shown]} fit={sheet.fits[shown]} sheet={sheet} />
         );
       })}
     </group>

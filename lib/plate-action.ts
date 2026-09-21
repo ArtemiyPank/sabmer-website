@@ -20,5 +20,3 @@ export const setPlateAction = (id: Stop["id"], node: HTMLElement | null) => {
   else anchors.delete(id);
 };
 export const getPlateAction = (id: Stop["id"]) => anchors.get(id) ?? null;
-export const eachPlateAction = (fn: (id: Stop["id"], el: HTMLElement) => void) =>
-  anchors.forEach((el, id) => fn(id, el));
