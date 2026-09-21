@@ -53,6 +53,12 @@ export const COAST = {
   fadeFor: 3,
   /** px: a gesture whose biggest notch is smaller than this is not a throw */
   wheelPeak: 10,
+  /**
+   * px: how far ahead a plate has to be to be the one a flick is asking for.
+   * Nearer than this it is the plate the page is already standing on, and a
+   * flick that crosses it in its first notch is not trying to land back on it.
+   */
+  gateMin: 260,
   /** ms without the page being pushed: the browser's own fling is spent */
   stillFor: 320,
   /** ms a landing is held before the visitor gets the page back regardless */

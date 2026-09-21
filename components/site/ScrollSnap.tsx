@@ -54,6 +54,17 @@ export default function ScrollSnap() {
     let wheelV = 0;
     /** where the page was when the coast was handed over, for the read-out */
     let handoverY = 0;
+    /**
+     * The plate this gesture is allowed to reach, and the way it is going.
+     *
+     * One flick carries one plate. The fingers themselves can cross several:
+     * a trackpad's notches are accelerated by the system, and a brisk flick
+     * hands over hundreds of pixels at a time — so a rule that only governs
+     * the momentum governs almost nothing. The gesture ends where it first
+     * arrives at a plate, and the next one has to be asked for.
+     */
+    let gate: number | null = null;
+    let gateDir = 1;
 
     // --- reading the speed they leave behind --------------------------------
     let sampleY = window.scrollY;
@@ -79,13 +90,17 @@ export default function ScrollSnap() {
     const range = () => Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
     const maxY = () => range();
     const stopY = (i: number) => STOPS[i].p * range();
-    /** the first stop the page would pass travelling in `dir` from `y` */
-    const beyond = (y: number, dir: number) => {
+    /**
+     * The first stop the page would pass travelling in `dir` from `y`, ignoring
+     * any nearer than `slack`. A plate a few pixels away is the one the page is
+     * standing on, not one it is heading for.
+     */
+    const beyond = (y: number, dir: number, slack = 8) => {
       if (dir > 0) {
-        for (let i = 0; i < STOPS.length; i++) if (stopY(i) > y + 8) return stopY(i);
+        for (let i = 0; i < STOPS.length; i++) if (stopY(i) > y + slack) return stopY(i);
         return null;
       }
-      for (let i = STOPS.length - 1; i >= 0; i--) if (stopY(i) < y - 8) return stopY(i);
+      for (let i = STOPS.length - 1; i >= 0; i--) if (stopY(i) < y - slack) return stopY(i);
       return null;
     };
     const engraved = () => document.documentElement.dataset.ui === "engraved";
@@ -167,12 +182,23 @@ export default function ScrollSnap() {
      * it would otherwise cross one — same shape of curve either way, only the
      * time constant differs, so nothing about it reads as a snap.
      */
-    const startCoast = (v0: number) => {
+    const startCoast = (v0: number, land?: number) => {
       if (!engraved() || getRide().running || performance.now() - mounted < 600) return;
       const v = clamp(v0, -COAST.maxSpeed, COAST.maxSpeed);
-      if (Math.abs(v) < COAST.throwSpeed) return;
+      if (Math.abs(v) < COAST.throwSpeed && land === undefined) return;
       releaseHold();
       cy = window.scrollY;
+      if (land !== undefined) {
+        // told where to end: the plate the gesture has just reached, which may
+        // be a little behind by the time we hear about it
+        const d = land - cy;
+        ctarget = land;
+        ctau = clamp(Math.abs(d) / Math.max(Math.abs(v), COAST.throwSpeed), COAST.tauMin, COAST.tauMax);
+        cv = d / ctau;
+        lastStep = performance.now();
+        if (!coastFrame) coastFrame = requestAnimationFrame(coast);
+        return;
+      }
       const dir = Math.sign(v);
       const natural = cy + v * COAST.tau; // where it would come to rest, left alone
       const plate = beyond(cy, dir);
@@ -285,12 +311,12 @@ export default function ScrollSnap() {
      * stutter and a page that sails past its plate. Only a fresh push, a notch
      * back up near the peak, gives the page to the visitor again.
      */
-    const handOver = () => {
+    const handOver = (land?: number) => {
       if (handedOver) return;
       handedOver = true;
       probeHandover(wheelV);
       handoverY = window.scrollY;
-      startCoast(wheelV);
+      startCoast(wheelV, land);
     };
 
     const onWheel = (e: WheelEvent) => {
@@ -299,6 +325,10 @@ export default function ScrollSnap() {
       // would report a gesture shape that never occurred
       const now = e.timeStamp || performance.now();
       const d = Math.abs(e.deltaY);
+      // the tail of a fling the browser has already given up on: no distance,
+      // no information, and letting it keep the gesture alive would hold the
+      // page for seconds after the hand is long gone
+      if (d === 0) return;
       const since = now - gestureAt;
       if (since > COAST.gestureGap) {
         // a new gesture: the page is theirs again until it says otherwise
@@ -307,6 +337,10 @@ export default function ScrollSnap() {
         fading = 0;
         wheelV = 0;
         handedOver = false;
+        gateDir = Math.sign(e.deltaY) || 1;
+        // the floor this flick is asking for: the one the page is standing on
+        // does not count, however few pixels above it the page happens to be
+        gate = beyond(window.scrollY, gateDir, COAST.gateMin);
         probeGesture(window.scrollY);
         giveBack();
       }
@@ -331,6 +365,15 @@ export default function ScrollSnap() {
        * some share of the peak waits out most of the flight instead, and by
        * then several plates have gone by — which is exactly what it did.
        */
+      // arrived at the plate this gesture was allowed: that is the end of it
+      if (!handedOver && gate !== null) {
+        const y = window.scrollY;
+        if (gateDir > 0 ? y >= gate - 2 : y <= gate + 2) {
+          handOver(gate);
+          return;
+        }
+      }
+
       const rising = d > lastD * 1.05;
       const falling = d < lastD * 0.95 || (peak > 0 && d < peak * COAST.fade);
       lastD = d;
