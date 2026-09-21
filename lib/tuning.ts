@@ -54,12 +54,18 @@ export const COAST = {
   /** px: a gesture whose biggest notch is smaller than this is not a throw */
   wheelPeak: 10,
   /**
-   * How far above the biggest notch of a gesture a notch has to be to count as
-   * a hand coming back to the trackpad rather than the fling running on.
-   * Momentum never exceeds the push that threw it, so anything over 1 is proof
-   * of fingers; the margin is only there for rounding.
+   * px: how far ahead a plate has to be to be the one a flick is asking for.
+   * Nearer than this the page is standing on it already, within the pixel or
+   * two a landing is pinned to.
    */
-  push: 1.05,
+  reach: 60,
+  /**
+   * How many notches after a flick has been given its plate before a stream
+   * that is still going strong counts as a hand rather than a fling. A fling
+   * is well down from its largest notch by then; a steady drag is not.
+   */
+  spentFor: 8,
+  spentHold: 0.85,
   /** ms without the page being pushed: the browser's own fling is spent */
   stillFor: 320,
   /** ms a landing is held before the visitor gets the page back regardless */

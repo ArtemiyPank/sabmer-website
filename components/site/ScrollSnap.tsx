@@ -54,6 +54,29 @@ export default function ScrollSnap() {
     let wheelV = 0;
     /** where the page was when the coast was handed over, for the read-out */
     let handoverY = 0;
+    /**
+     * The plate this flick may reach, and whether it has had it yet.
+     *
+     * A trackpad's notches are accelerated by the system: one hard flick's
+     * *fingers* deliver two to four thousand pixels before any momentum exists
+     * at all, which is two to four plates on this page. Every rule that only
+     * governs the coast is therefore governing the tail end of a journey that
+     * was already over. The one lever that reaches the fingers is the notch
+     * itself — a wheel event is sent before the page moves, so refusing it
+     * stops the movement it was going to cause.
+     *
+     * So the flick is given exactly one plate. The notch that would carry the
+     * page onto it is refused, and the coast covers the last of the distance;
+     * every notch after that is refused too, because the flick has had what it
+     * asked for. The next plate is a new flick's to ask for.
+     */
+    let aim: number | null = null;
+    let aimDir = 1;
+    let spent = false;
+    /** how the notches have behaved since the flick was given its plate */
+    let spentN = 0;
+    let spentMax = 0;
+    let refused = 0;
 
     // --- reading the speed they leave behind --------------------------------
     let sampleY = window.scrollY;
@@ -200,6 +223,30 @@ export default function ScrollSnap() {
       coastFrame = requestAnimationFrame(coast);
     };
 
+    /**
+     * Carries the page the last of the way onto `land`, at the speed the
+     * visitor was driving at. Used only where the notch that would have
+     * crossed that plate has just been refused, so the plate is still ahead of
+     * the page and this can never run backwards; the check is kept anyway,
+     * because a browser may decline to let a notch be refused.
+     */
+    const coastTo = (land: number, v0: number) => {
+      if (!engraved() || getRide().running || performance.now() - mounted < 600) return;
+      releaseHold();
+      cy = window.scrollY;
+      const d = land - cy;
+      if (d * aimDir <= 0) {
+        startCoast(v0);
+        return;
+      }
+      const v = clamp(Math.abs(v0), COAST.throwSpeed, COAST.maxSpeed);
+      ctarget = land;
+      ctau = clamp(Math.abs(d) / v, COAST.tauMin, COAST.tauMax);
+      cv = d / ctau;
+      lastStep = performance.now();
+      if (!coastFrame) coastFrame = requestAnimationFrame(coast);
+    };
+
     // ------------------------------------------------------- watching the page
     /** keeps a reading of how fast the page is actually moving */
     const sample = () => {
@@ -225,17 +272,20 @@ export default function ScrollSnap() {
     /**
      * Is anything still moving the page?
      *
-     * A wheel gesture that has not handed over yet counts: the hand is on the
-     * trackpad, and nothing else — no coast, no hold — is watching the page on
-     * its behalf. Without it a visitor who simply pauses mid-gesture would be
-     * taken somewhere by the rest rule while still holding the page.
+     * A wheel gesture still delivering notches counts, whether or not those
+     * notches are being allowed to move anything. A hand on the trackpad has
+     * obviously not finished; and a flick that has had its plate goes on
+     * sending notches for a second or more after the page has stopped dead,
+     * so a page that has stopped moving is not yet a page that has come to
+     * rest. Counting it as one takes the visitor somewhere mid-gesture, and
+     * writes the read-out before there is anything to read.
      */
     const driving = () =>
       touching ||
       getRide().running ||
       coastFrame !== 0 ||
       held !== null ||
-      (!handedOver && performance.now() - handAt < COAST.gestureGap);
+      performance.now() - handAt < COAST.gestureGap;
 
     /**
      * Nearly all of the tour is worth stopping in, and a little of it is not —
@@ -261,7 +311,7 @@ export default function ScrollSnap() {
           const p = st.p * range();
           return p > lo + 8 && p < hi - 8;
         }).length;
-        probeRest(y, range(), past);
+        probeRest(y, range(), past, refused);
       }
       if (!engraved()) return;
       const to = refuge(window.scrollY / range());
@@ -307,18 +357,37 @@ export default function ScrollSnap() {
      * stutter and a page that sails past its plate. Only a fresh push, a notch
      * back up near the peak, gives the page to the visitor again.
      */
-    const handOver = () => {
+    /**
+     * The page becomes ours for the rest of this gesture.
+     *
+     * `land` is the plate the flick asked for, when it was a refused notch
+     * that brought us here; without one the ordinary plate rule picks where
+     * the coast ends. Either way the gesture is now spent: every notch it has
+     * left is refused, so neither the fingers nor the fling can add to a
+     * journey that has already been decided. Nothing takes the page back but
+     * a new gesture — or notches that go on arriving at full size, which is a
+     * hand that never left (see the `spent` branch in onWheel).
+     */
+    const takeOver = (land: number | null) => {
       if (handedOver) return;
       handedOver = true;
+      spent = true;
+      spentN = 0;
+      spentMax = 0;
       probeHandover(wheelV);
       handoverY = window.scrollY;
-      startCoast(wheelV);
+      if (land === null) startCoast(wheelV);
+      else coastTo(land, wheelV);
     };
+    const handOver = () => takeOver(null);
 
     const onWheel = (e: WheelEvent) => {
       // the moment the notch happened, not the moment we got round to it: on
       // a loaded machine handlers run late and bunched, and a clock read here
       // would report a gesture shape that never occurred
+      // a pinch on the trackpad arrives as a wheel event too, and is nobody's
+      // business here: it is not asking the page to go anywhere
+      if (e.ctrlKey) return;
       const now = e.timeStamp || performance.now();
       const d = Math.abs(e.deltaY);
       // the tail of a fling the browser has already given up on: no distance,
@@ -327,12 +396,17 @@ export default function ScrollSnap() {
       if (d === 0) return;
       const since = now - gestureAt;
       if (since > COAST.gestureGap) {
-        // a new gesture: the page is theirs again until it says otherwise
+        // a new gesture: the page is theirs again, and the plate it is asking
+        // for is the next one along from where it stands
         peak = 0;
         lastD = 0;
         fading = 0;
         wheelV = 0;
         handedOver = false;
+        spent = false;
+        refused = 0;
+        aimDir = Math.sign(e.deltaY) || 1;
+        aim = engraved() ? beyond(window.scrollY, aimDir, COAST.reach) : null;
         probeGesture(window.scrollY);
         giveBack();
       }
@@ -374,18 +448,61 @@ export default function ScrollSnap() {
        * back to a fling in full flight. That is the page sailing past its
        * plate, and it is also the page seeming to leap.
        */
-      const pushedAgain = peak > 0 && d > peak * COAST.push;
       lastD = d;
       if (d > peak) peak = d;
 
-      if (handedOver) {
-        if (pushedAgain) {
+      if (spent) {
+        spentN += 1;
+        if (d > spentMax) spentMax = d;
+        /**
+         * Is this still the fling, or a hand that never left?
+         *
+         * A fling decays, and fast: a handful of notches past the landing it
+         * is down to a third of the largest notch it produced, and by ten it
+         * is a tenth. A hand holding a steady drag does not decay at all. So
+         * notches still arriving at full size this long after the plate was
+         * given are fingers, and a visitor dragging deliberately down the page
+         * must not find it nailed to one sign.
+         *
+         * Nothing else takes the page back. A single notch bigger than the
+         * ones around it will not do it, however big: the finger phase of one
+         * flick spikes several times on its way — the read-out from a real
+         * trackpad shows 208 then 448, 240 then 574 — and treating each of
+         * those as a fresh push is what let one flick spend four plates.
+         */
+        const stillDriving = spentN > COAST.spentFor && d > spentMax * COAST.spentHold;
+        if (stillDriving) {
+          spent = false;
           handedOver = false;
           fading = 0;
           probeGaveBack();
           giveBack();
+          aim = beyond(window.scrollY, aimDir, COAST.reach);
+        } else {
+          // the flick has had its plate; the rest of it moves nothing
+          if (e.cancelable) {
+            e.preventDefault();
+            refused += 1;
+          }
+          // and the landing is held for as long as it goes on arriving
+          if (held !== null) heldAt = performance.now();
+          return;
         }
-      } else {
+      }
+
+      // would this notch carry the page onto the plate the flick asked for?
+      // The event is sent before the page moves, so there is still time.
+      if (aim !== null && !handedOver && e.cancelable) {
+        const willBe = window.scrollY + e.deltaY;
+        if (aimDir > 0 ? willBe >= aim : willBe <= aim) {
+          e.preventDefault();
+          refused += 1;
+          takeOver(aim);
+          return;
+        }
+      }
+
+      if (!handedOver) {
         if (falling) fading += 1;
         else if (rising) fading = 0;
         if (fading >= COAST.fadeFor && peak >= COAST.wheelPeak) handOver();
@@ -446,7 +563,9 @@ export default function ScrollSnap() {
 
     probeReady();
     addEventListener("scroll", onScroll, { passive: true });
-    addEventListener("wheel", onWheel, { passive: true });
+    // not passive: a notch that would carry the page past the plate the flick
+    // asked for is refused, and only a listener allowed to refuse can do that
+    addEventListener("wheel", onWheel, { passive: false });
     addEventListener("touchstart", onTouchStart, { passive: true });
     addEventListener("touchend", onTouchEnd, { passive: true });
     addEventListener("touchcancel", onTouchEnd, { passive: true });
