@@ -16,18 +16,25 @@ function WaIcon({ className }: { className: string }) {
  * card, a compact icon for the footer, or a raised one to sit over the
  * drawing. `message` fills the chat in advance, so an applicant writing from
  * the Work section does not have to open with "hello, about the job".
+ *
+ * The number is handed in rather than read from the translations: it is
+ * business content, so the CMS owns it, and a button that dialled the copy in
+ * messages/*.json would go on reaching the old number after it was changed in
+ * the admin.
  */
 export default function WhatsAppButton({
+  phone,
   variant = "button",
   label,
   message,
 }: {
+  phone: string;
   variant?: "button" | "icon" | "raised";
   label?: string;
   message?: string;
 }) {
   const t = useTranslations("Contacts");
-  const href = whatsappLink(t("phone"), message);
+  const href = whatsappLink(phone, message);
 
   if (variant === "icon") {
     return (

@@ -58,6 +58,12 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
     },
   };
 
+  // Structured data goes into a <script> as raw text, and every field in it is
+  // editable from the admin. JSON escapes quotes but not "<", so a stray
+  // "</script>" in a description would close the tag and let the rest of the
+  // field run as markup. Escaping the one character that can do that is enough.
+  const inlineJson = (v: unknown) => JSON.stringify(v).replace(/</g, "\\u003c");
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
@@ -83,7 +89,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
     <div id="top">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: inlineJson(jsonLd) }}
       />
       <ElevatorBackdrop notes={notes} />
       <ScrollSnap />
@@ -166,7 +172,11 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
               </a>
             </p>
             <div className="mt-4">
-              <WhatsAppButton label={t("Jobs.whatsapp")} message={t("Jobs.whatsappText")} />
+              <WhatsAppButton
+                phone={c.contacts.phone}
+                label={t("Jobs.whatsapp")}
+                message={t("Jobs.whatsappText")}
+              />
             </div>
           </FadeCard>
         </section>
@@ -271,11 +281,13 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
                   <dt className="opacity-60">
                     {t("Contacts.registrationLabel")}
                   </dt>
-                  <dd className="mt-0.5">{c.contacts.registration}</dd>
+                  {/* Hebrew in every locale: isolated so a Latin sentence
+                      around it cannot reorder its digits */}
+                  <dd className="mt-0.5"><bdi>{c.contacts.registration}</bdi></dd>
                 </div>
               </dl>
               <div className="mt-6">
-                <WhatsAppButton />
+                <WhatsAppButton phone={c.contacts.phone} />
               </div>
             </FadeCard>
           </div>
@@ -295,7 +307,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
             © {year} SABMER. {c.footer.rights}
           </p>
           <div className="flex items-center gap-2">
-            <WhatsAppButton variant="icon" />
+            <WhatsAppButton phone={c.contacts.phone} variant="icon" />
             <LanguageSwitcher />
             <ThemeToggle />
           </div>
