@@ -152,10 +152,14 @@ export const PLATE = {
      * under a title.
      */
     heading: 0.9,
-    /** units, between one run of copy and the next */
-    copy: 1.15,
+    /**
+     * Units, between one run of copy and the next. Comfortably more than the
+     * leading inside a paragraph (about 0.7 units), or a new run reads as one
+     * more line of the one above it.
+     */
+    copy: 1.5,
     /** units, between one list item and the next */
-    item: 0.85,
+    item: 1.15,
     /**
      * Share of the name's size, between a name and the line under it — its
      * role, or the years worked. They belong together, so this is the one gap

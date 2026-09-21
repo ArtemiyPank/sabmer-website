@@ -77,12 +77,16 @@ export type Stop = {
 export const STOPS: Stop[] = [
   // 1. the cab interior, read through the open doors before they shut
   { id: "about", group: "wallBack", at: [0, CAB_H / 2, CAB_BACK + 0.03], face: "square", size: [CAB_W - 0.04, CAB_H - 0.12], pad: 1.15, p: 0.03, context: 1.1, liftoff: 4.7 },
-  // 2. the flank of the car as it runs down the shaft; the sign sits toward
-  //    the front of the panel, clear of the sling stile, the guide rail and
-  //    the governor rope, which all run down the middle of the car
-  { id: "jobs", group: "wallL", at: [-CAB_X - 0.09, 1.2, 0.55], face: "left", size: [0.46, 1.02], pad: 1.25, p: 0.36, context: 1.15, liftoff: 5.1 },
-  // 3. the counterweight, rising past it
-  { id: "reviews", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.66, 1.02], pad: 1.2, p: 0.55, context: 1.35 },
+  // 2. the flank of the car as it runs down the shaft. The sign is on the
+  //    right-hand panel and toward the front of it: the left side of the shaft
+  //    carries the governor rope and the traveling cable, which hang in front
+  //    of that flank and would cross the sign in any shot square enough to
+  //    read it. Nothing hangs on this side above the pit.
+  { id: "jobs", group: "wallR", at: [CAB_X + 0.09, 1.2, 0.46], face: "right", size: [0.64, 1.02], pad: 1.25, p: 0.36, context: 1.15, liftoff: 5.1 },
+  // 3. the counterweight, rising past it. The frame is only so wide, so the
+  //    shot comes in close rather than the plate growing: a taller plate on a
+  //    narrow face only buys shorter lines, since the camera steps back with it
+  { id: "reviews", group: "cwt", at: [CWT_X + 0.09, 1.3, CWT_Z], face: "right", size: [0.66, 1.15], pad: 1.2, p: 0.55, context: 1.05 },
   // 4. the closed landing doors one floor down
   { id: "founders", group: "world", at: [0, LEVELS[1] + 1.05, LDOOR_PANEL_Z + 0.03], face: "front", size: [0.84, 1.62], pad: 1.2, p: 0.78, context: 1.25 },
   // 5. the pit, straight on: a wide plaque hung across the middle of it. It
@@ -168,10 +172,10 @@ export function travelAt(p: number) {
 /** unit normal of a lettered face, tilted toward the front so the shot reads */
 const NORMALS: Record<Face, V3> = {
   front: [0.22, 0.1, 0.97],
-  // three-quarter, not flat side on: a flat one looks past the car through the
-  // traveling cable, which then crosses the sign
+  // The right of the shaft is clear above the pit, so these faces are read
+  // nearly square on — the flatter the shot, the less the type foreshortens.
   left: [-0.88, 0.09, 0.46],
-  right: [0.88, 0.09, 0.46],
+  right: [0.96, 0.08, 0.27],
   // dead square on: the closing frame sits level with the equipment
   square: [0, 0, 1],
 };
@@ -184,7 +188,7 @@ const NORMALS: Record<Face, V3> = {
 const NORMALS_PORTRAIT: Record<Face, V3> = {
   front: [0.12, 0.06, 0.99],
   left: [-0.86, 0.07, 0.5],
-  right: [0.86, 0.07, 0.5],
+  right: [0.95, 0.06, 0.3],
   square: [0, 0, 1],
 };
 
