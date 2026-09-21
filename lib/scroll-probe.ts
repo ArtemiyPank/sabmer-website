@@ -1,0 +1,65 @@
+"use client";
+
+/**
+ * A read-out of the last wheel gesture, for the one device this project's
+ * harness cannot imitate: a trackpad. A headless browser has no fingers and
+ * no momentum, so the shape of a real gesture — how many notches, how they
+ * decay, where the hand comes off — can only be seen on the machine that has
+ * one. Open the page with `?scrollProbe=1` and it reports each gesture in a
+ * corner of the screen.
+ *
+ * Off unless asked for, and it writes nothing anywhere else.
+ */
+
+let box: HTMLElement | null = null;
+let notches: number[] = [];
+let handoverAt = -1;
+let handoverV = 0;
+let from = 0;
+
+export const probing = () =>
+  typeof location !== "undefined" && location.search.includes("scrollProbe");
+
+function panel() {
+  if (box) return box;
+  box = document.createElement("div");
+  box.style.cssText =
+    "position:fixed;left:8px;bottom:8px;z-index:9999;max-width:min(92vw,760px);" +
+    "padding:8px 10px;border-radius:8px;background:rgba(17,24,39,.92);color:#e5e7eb;" +
+    "font:12px/1.5 ui-monospace,SFMono-Regular,monospace;white-space:pre-wrap;pointer-events:none";
+  document.body.appendChild(box);
+  return box;
+}
+
+export function probeGesture(y: number) {
+  if (!probing()) return;
+  notches = [];
+  handoverAt = -1;
+  handoverV = 0;
+  from = y;
+}
+
+export function probeNotch(d: number) {
+  if (probing()) notches.push(Math.round(d));
+}
+
+export function probeHandover(v: number) {
+  if (!probing()) return;
+  handoverAt = notches.length;
+  handoverV = v;
+}
+
+/** called once the page has come to rest; `stops` are the plates it passed */
+export function probeRest(y: number, range: number, crossedAfterHand: number) {
+  if (!probing() || notches.length === 0) return;
+  const peak = Math.max(...notches);
+  const shown = notches.length > 24 ? [...notches.slice(0, 12), -1, ...notches.slice(-10)] : notches;
+  panel().textContent =
+    `notches ${notches.length}, peak ${peak}\n` +
+    `[${shown.map((d) => (d < 0 ? "…" : d)).join(" ")}]\n` +
+    (handoverAt < 0
+      ? "handover: never — the page was the browser's the whole way\n"
+      : `handover: notch ${handoverAt} of ${notches.length}, v ${handoverV.toFixed(2)} px/ms\n`) +
+    `from p=${(from / range).toFixed(3)} to p=${(y / range).toFixed(3)}, ` +
+    `plates crossed after the handover: ${crossedAfterHand}`;
+}

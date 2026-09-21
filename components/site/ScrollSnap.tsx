@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { STOPS, refuge } from "@/components/elevator3d/tour";
 import { getRide, rideToProgress, setHold } from "@/lib/ride";
 import { COAST } from "@/lib/tuning";
+import { probeGesture, probeHandover, probeNotch, probeRest, probing } from "@/lib/scroll-probe";
 
 /**
  * Runs the page's coast itself instead of arguing with the browser's.
@@ -34,6 +35,7 @@ export default function ScrollSnap() {
     // the wheel gesture being read; see onWheel
     let gestureAt = 0;
     let peak = 0;
+    let lastD = 0;
     let fading = 0;
     let handedOver = false;
     let quiet: ReturnType<typeof setTimeout> | null = null;
@@ -50,6 +52,8 @@ export default function ScrollSnap() {
      * on under the browser instead of stopping at the plate.
      */
     let wheelV = 0;
+    /** where the page was when the coast was handed over, for the read-out */
+    let handoverY = 0;
 
     // --- reading the speed they leave behind --------------------------------
     let sampleY = window.scrollY;
@@ -227,6 +231,16 @@ export default function ScrollSnap() {
         restTimer = setTimeout(settle, COAST.restMs);
         return;
       }
+      if (probing()) {
+        const y = window.scrollY;
+        const lo = Math.min(handoverY, y);
+        const hi = Math.max(handoverY, y);
+        const past = STOPS.filter((st) => {
+          const p = st.p * range();
+          return p > lo + 8 && p < hi - 8;
+        }).length;
+        probeRest(y, range(), past);
+      }
       if (!engraved()) return;
       const to = refuge(window.scrollY / range());
       if (to !== null) rideToProgress(to);
@@ -274,6 +288,8 @@ export default function ScrollSnap() {
     const handOver = () => {
       if (handedOver) return;
       handedOver = true;
+      probeHandover(wheelV);
+      handoverY = window.scrollY;
       startCoast(wheelV);
     };
 
@@ -287,43 +303,51 @@ export default function ScrollSnap() {
       if (since > COAST.gestureGap) {
         // a new gesture: the page is theirs again until it says otherwise
         peak = 0;
+        lastD = 0;
         fading = 0;
         wheelV = 0;
         handedOver = false;
+        probeGesture(window.scrollY);
         giveBack();
       }
+      probeNotch(d);
       // a notch says how far the page is about to travel; that over the time
       // since the last one is the speed the visitor is driving at
       wheelV = wheelV * 0.6 + (e.deltaY / Math.min(Math.max(since, 8), 200)) * 0.4;
       gestureAt = now;
       handAt = now;
 
+      /**
+       * Fingers and momentum, told apart by what the notches *do* rather than
+       * by how big they are. Momentum only ever decays: every notch a little
+       * smaller than the one before, for as long as it runs. Fingers do not —
+       * they push, ease, push again, hold steady. So a run of notches each
+       * smaller than the last is the hand coming off, and a notch back up is
+       * the hand returning.
+       *
+       * Read this way the handover falls in the first few notches of the
+       * momentum, while the page is still moving fast and the next plate is
+       * still ahead of it. A rule that waits for the notches to drop below
+       * some share of the peak waits out most of the flight instead, and by
+       * then several plates have gone by — which is exactly what it did.
+       */
+      const rising = d > lastD * 1.05;
+      const falling = d < lastD * 0.95 || (peak > 0 && d < peak * COAST.fade);
+      lastD = d;
+      if (d > peak) peak = d;
+
       if (handedOver) {
-        if (d > peak * COAST.fade) {
-          // a fresh push under our coast: hand it straight back
+        // a real push takes the page back: bigger than the last notch, and
+        // not merely two momentum notches the browser delivered as one
+        if (rising && d >= peak * COAST.fade) {
           handedOver = false;
-          peak = d;
           fading = 0;
           giveBack();
         }
-      } else if (d > peak) {
-        peak = d;
-        fading = 0;
-      } else if (d < peak * COAST.fade) {
-        fading += 1;
-        /**
-         * The hand has eased off. If a plate is within reach of the speed the
-         * page is carrying, the gesture ends here and the coast lands on it.
-         *
-         * This is the rule that holds when the shape of the notches says
-         * nothing — a browser under load delivers them coalesced, several
-         * merged into one, and a run of fading notches may never appear at
-         * all. Where the page *is* cannot be coalesced away.
-         */
-        const y = window.scrollY;
-        const plate = beyond(y, Math.sign(e.deltaY) || 1);
-        if (plate !== null && Math.abs(plate - y) <= Math.abs(wheelV) * COAST.tau) handOver();
-        else if (fading >= COAST.fadeFor && peak >= COAST.wheelPeak) handOver();
+      } else {
+        if (falling) fading += 1;
+        else if (rising) fading = 0;
+        if (fading >= COAST.fadeFor && peak >= COAST.wheelPeak) handOver();
       }
 
       // a gesture that simply stops — a mouse wheel, or a flick too short to
