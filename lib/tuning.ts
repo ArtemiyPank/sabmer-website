@@ -263,8 +263,16 @@ export const SCENE = {
  * turns linearly.
  */
 export const DRAWING = {
-  /** ms: the time constant of the approach, which eases both ends of a flight */
-  follow: 170,
+  /**
+   * ms: the time constant of the approach, which eases both ends of a flight.
+   *
+   * It is also what the machine spends arriving. The ceiling governs the
+   * crossing, but the last stretch is this easing off, and it is the tail of
+   * it that reads as the drawing carrying on after the hand has stopped. Short
+   * enough and the arrival is crisp without the crossing being any quicker —
+   * the two are separate numbers on purpose.
+   */
+  follow: 110,
   /** progress per ms: the fastest the machine may move, however it is thrown */
   topSpeed: 0.0001,
   /**
