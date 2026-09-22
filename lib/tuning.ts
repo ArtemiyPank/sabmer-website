@@ -243,14 +243,15 @@ export const SCENE = {
  * reaches it whatever floor you press.
  *
  * In progress per millisecond. The longest flight of the tour is 0.33 of the
- * page, so 0.00022 crosses it in a second and a half — about what the same
- * trip takes when a floor button is pressed (see RIDE).
+ * page, so 0.00015 crosses it in a little over two seconds. Lowering it slows
+ * the machine and nothing else: it is the one number to turn for that, and it
+ * turns linearly.
  */
 export const DRAWING = {
   /** ms: the time constant of the approach, which eases both ends of a flight */
   follow: 170,
   /** progress per ms: the fastest the machine may move, however it is thrown */
-  topSpeed: 0.00022,
+  topSpeed: 0.00015,
   /**
    * How near counts as arrived, in progress. A quarter of a pixel of scroll:
    * past that the approach is asking the page for frames to move nothing, and
