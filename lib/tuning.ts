@@ -23,8 +23,12 @@ export const COAST = {
   maxSpeed: 3.4,
   /** ms: how long a coast left to its own devices takes to fade */
   tau: 430,
-  /** ms: the quickest it may be made to fade when aimed at a plate */
-  tauMin: 240,
+  /**
+   * ms: the quickest it may be made to fade when aimed at a plate. A hard
+   * flick has speed to spare, so this is what it always comes down to — and a
+   * quarter of a second to cross the last of a flight is a snap, not a coast.
+   */
+  tauMin: 400,
   /** ms: and the slowest */
   tauMax: 900,
   /** px/ms at which the coast is judged over */
@@ -219,13 +223,40 @@ export const SCENE = {
 } as const;
 
 /**
- * How the drawing follows the page. It trails the scroll through a spring so
- * that however the scroll position jumps — a fling, a jump, a ride — the
- * machine only ever glides. Overdamped on purpose: it must not overshoot a
- * plate and swing back.
+ * How the drawing follows the page.
+ *
+ * Two numbers, and they do different jobs. `follow` is how closely the machine
+ * tracks the scroll: a scroll position is not a smooth thing — a fling arrives
+ * in big uneven steps, a jump arrives all at once — and read straight, every
+ * one of those shows as a jolt. Read as a target to be approached, they are
+ * all the same thing, and the drawing always glides.
+ *
+ * `topSpeed` is the machine's rated speed, and it is what stops the camera
+ * darting. A trackpad's fingers hand the page a thousand pixels in a sixth of
+ * a second — the notches are accelerated by the system and there is no
+ * governing them — so anything that merely smooths the scroll still crosses a
+ * whole flight of the tour in about the time it takes to blink. A spring is no
+ * help here and is in fact backwards: being linear, the harder it is thrown
+ * the faster it goes, when what is wanted is that a nudge follows at once and
+ * a flick takes its time. A ceiling on speed gives exactly that, and it is
+ * also the truthful thing to give a lift: a real one has a rated speed and
+ * reaches it whatever floor you press.
+ *
+ * In progress per millisecond. The longest flight of the tour is 0.33 of the
+ * page, so 0.00022 crosses it in a second and a half — about what the same
+ * trip takes when a floor button is pressed (see RIDE).
  */
 export const DRAWING = {
-  spring: { stiffness: 165, damping: 34, mass: 1, restDelta: 0.00008 },
+  /** ms: the time constant of the approach, which eases both ends of a flight */
+  follow: 170,
+  /** progress per ms: the fastest the machine may move, however it is thrown */
+  topSpeed: 0.00022,
+  /**
+   * How near counts as arrived, in progress. A quarter of a pixel of scroll:
+   * past that the approach is asking the page for frames to move nothing, and
+   * an idle tab should ask for none.
+   */
+  rest: 0.00005,
   /** below this width the scene draws its cheaper, closer-framed variant */
   mobileQuery: "(max-width: 767px)",
 } as const;

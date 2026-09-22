@@ -6,8 +6,8 @@ import {
   useMotionValue,
   useReducedMotion,
   useScroll,
-  useSpring,
   useTransform,
+  type MotionValue,
 } from "framer-motion";
 import ElevatorSchematic from "./ElevatorSchematic";
 import { getHold } from "@/lib/ride";
@@ -63,6 +63,59 @@ const isMobileSnapshot = () => window.matchMedia(MOBILE_QUERY).matches;
  * - mobile (<768px): car still travels, exploded view reduced, no callouts,
  *   no shadows
  */
+/**
+ * A follower with a rated speed.
+ *
+ * It closes on its target the way anything settling does — quickly while it is
+ * far off, easing as it arrives, so neither end of a move has a corner in it —
+ * except that it may never travel faster than `topSpeed`, whatever it is
+ * handed. That ceiling is the whole point: a trackpad flick moves the scroll a
+ * thousand pixels in a sixth of a second, and without one the machine crosses
+ * a whole flight of the tour in that same sixth of a second. With one, a small
+ * move still follows at once (it is nowhere near the ceiling) and a thrown one
+ * becomes a flight of a length the machine chooses.
+ *
+ * It sleeps when it has arrived and the scroll wakes it, so a page nobody is
+ * touching asks for no frames.
+ */
+function useGoverned(source: MotionValue<number>, tau: number, topSpeed: number, rest: number) {
+  const out = useMotionValue(source.get());
+  useEffect(() => {
+    let frame = 0;
+    let last = 0;
+    const step = (now: number) => {
+      // a frame the browser was too busy to deliver must not be paid for in
+      // one lurch: the machine moves at most a frame's worth of distance
+      const dt = Math.min(now - (last || now), 64);
+      last = now;
+      const want = source.get();
+      const d = want - out.get();
+      if (Math.abs(d) < rest) {
+        out.set(want);
+        frame = 0;
+        last = 0;
+        return;
+      }
+      const v = Math.max(Math.min(d / tau, topSpeed), -topSpeed);
+      out.set(out.get() + v * dt);
+      frame = requestAnimationFrame(step);
+    };
+    const wake = () => {
+      if (!frame) {
+        last = 0;
+        frame = requestAnimationFrame(step);
+      }
+    };
+    const stop = source.on("change", wake);
+    wake();
+    return () => {
+      stop();
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [source, tau, topSpeed, rest, out]);
+  return out;
+}
+
 export default function ElevatorBackdrop({ notes }: { notes: SiteNotes }) {
   const { scrollY } = useScroll();
   const reducedMotion = useReducedMotion();
@@ -89,7 +142,7 @@ export default function ElevatorBackdrop({ notes }: { notes: SiteNotes }) {
    * Overdamped on purpose (damping well past 2*sqrt(stiffness)), so it never
    * overshoots a plate and swings back.
    */
-  const smoothed = useSpring(target, DRAWING.spring);
+  const smoothed = useGoverned(target, DRAWING.follow, DRAWING.topSpeed, DRAWING.rest);
 
   useEffect(() => {
     // keep in sync with .backdrop-viewport top offset in globals.css
