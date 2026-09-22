@@ -1,7 +1,7 @@
 "use client";
 
 import { STOPS } from "@/components/elevator3d/tour";
-import { RIDE } from "@/lib/tuning";
+import { DRAWING, RIDE } from "@/lib/tuning";
 
 /**
  * The trip the page takes when a floor button is pressed.
@@ -69,9 +69,14 @@ function flies(from: number, to: number) {
   return STOPS.some((s) => s.p > lo + clear && s.p < hi - clear);
 }
 
-/** ms for a trip of `distance` pixels: unhurried, but not slow */
-const duration = (distance: number) =>
-  Math.min(RIDE.maxMs, RIDE.baseMs + distance * RIDE.msPerPx);
+/**
+ * ms for a trip covering `dp` of the tour: the time the machine needs at its
+ * rated speed, so that a button press and a flick to the same plate are the
+ * same journey. Held between the two ends in RIDE — a trip to the next plate
+ * along may not be instant, and one across the whole tour may not be a wait.
+ */
+const duration = (dp: number) =>
+  Math.min(Math.max(Math.abs(dp) / DRAWING.topSpeed, RIDE.minMs), RIDE.maxMs);
 
 function cancel() {
   if (frame) cancelAnimationFrame(frame);
@@ -101,7 +106,7 @@ export function rideToProgress(p: number) {
     return;
   }
 
-  const ms = duration(Math.abs(delta));
+  const ms = duration(delta / max);
   const t0 = performance.now();
   const to = Math.min(Math.max((start + delta) / max, 0), 1);
   const flying = flies(start / max, to);

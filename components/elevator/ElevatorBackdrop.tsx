@@ -10,7 +10,7 @@ import {
   type MotionValue,
 } from "framer-motion";
 import ElevatorSchematic from "./ElevatorSchematic";
-import { getHold } from "@/lib/ride";
+import { getHold, getRide } from "@/lib/ride";
 import { DRAWING } from "@/lib/tuning";
 import type { SiteNotes } from "@/lib/site-notes";
 
@@ -75,6 +75,15 @@ const isMobileSnapshot = () => window.matchMedia(MOBILE_QUERY).matches;
  * move still follows at once (it is nowhere near the ceiling) and a thrown one
  * becomes a flight of a length the machine chooses.
  *
+ * The ceiling is lifted while a floor button's trip is running. It is there to
+ * tame an input nobody can govern — a trackpad's notches are accelerated by
+ * the system and arrive at whatever speed they arrive at — and a trip is not
+ * that: it is the page moving itself along a curve of its own choosing, at a
+ * pace already set to this very speed (see `duration` in lib/ride.ts). Holding
+ * it back there only starves it: the page would arrive at the far plate while
+ * the machine was still crawling towards it, seconds behind and with nothing
+ * left driving it but the shortfall.
+ *
  * It sleeps when it has arrived and the scroll wakes it, so a page nobody is
  * touching asks for no frames.
  */
@@ -96,8 +105,13 @@ function useGoverned(source: MotionValue<number>, tau: number, topSpeed: number,
         last = 0;
         return;
       }
-      const v = Math.max(Math.min(d / tau, topSpeed), -topSpeed);
-      out.set(out.get() + v * dt);
+      if (getRide().running) {
+        // the page is animating itself: follow it exactly
+        out.set(want);
+      } else {
+        const v = Math.max(Math.min(d / tau, topSpeed), -topSpeed);
+        out.set(out.get() + v * dt);
+      }
       frame = requestAnimationFrame(step);
     };
     const wake = () => {

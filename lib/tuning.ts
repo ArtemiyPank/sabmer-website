@@ -201,14 +201,29 @@ export const PLATE = {
   shot: { desktop: 1.6, mobile: 0.46 },
 } as const;
 
-/** Navigation: the trip the page takes when a floor button is pressed. */
+/**
+ * Navigation: the trip the page takes when a floor button is pressed.
+ *
+ * How long it takes is not a number of its own: it is the distance at the
+ * machine's rated speed (`DRAWING.topSpeed`), so that pressing a button and
+ * flicking to the same plate take the same time and the drawing moves at one
+ * pace whichever way it was asked to. Only the two ends are dials — the
+ * shortest a trip may take however near it is, and the longest however far,
+ * because a trip across the whole tour at rated speed would be a wait rather
+ * than a journey.
+ */
 export const RIDE = {
   /** ms: the shortest such trip */
-  baseMs: 700,
-  /** ms added per pixel of distance */
-  msPerPx: 0.62,
-  /** ms: and the longest, however far it has to go */
-  maxMs: 3000,
+  minMs: 700,
+  /**
+   * ms: and the longest, however far it has to go.
+   *
+   * It has to rise as the rated speed falls, or every trip of more than one
+   * plate lands on the ceiling together and the distance stops telling: the
+   * whole tour at the present speed would be some ten seconds, which is a wait
+   * and not a journey.
+   */
+  maxMs: 4200,
   /** ms the camera takes to ease back on after a trip is cut short */
   settleMs: 450,
 } as const;
@@ -243,7 +258,7 @@ export const SCENE = {
  * reaches it whatever floor you press.
  *
  * In progress per millisecond. The longest flight of the tour is 0.33 of the
- * page, so 0.00015 crosses it in a little over two seconds. Lowering it slows
+ * page, so 0.0001 crosses it in a little over three seconds. Lowering it slows
  * the machine and nothing else: it is the one number to turn for that, and it
  * turns linearly.
  */
@@ -251,7 +266,7 @@ export const DRAWING = {
   /** ms: the time constant of the approach, which eases both ends of a flight */
   follow: 170,
   /** progress per ms: the fastest the machine may move, however it is thrown */
-  topSpeed: 0.00015,
+  topSpeed: 0.0001,
   /**
    * How near counts as arrived, in progress. A quarter of a pixel of scroll:
    * past that the approach is asking the page for frames to move nothing, and
