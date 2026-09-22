@@ -21,8 +21,18 @@
 export const COAST = {
   /** px/ms the coast may never exceed, however hard the page is thrown */
   maxSpeed: 3.4,
-  /** ms: how long a coast left to its own devices takes to fade */
-  tau: 430,
+  /**
+   * ms: how long a coast left to its own devices takes to fade.
+   *
+   * It decides how much room there is to come to rest between two plates,
+   * which is the whole of its job. A coast reaches about `maxSpeed × tau`, so
+   * at 430 it could travel fifteen hundred pixels — further than the gap
+   * between two plates — and so almost any gesture ended up crossing one and
+   * being landed on it. Shorter, and where the page stops is once again a
+   * question of how hard it was pushed: a gesture that was going to fall short
+   * falls short and stays there.
+   */
+  tau: 230,
   /**
    * ms: the quickest it may be made to fade when aimed at a plate. A hard
    * flick has speed to spare, so this is what it always comes down to — and a
