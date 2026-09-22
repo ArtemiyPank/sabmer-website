@@ -129,7 +129,6 @@ html[data-ui="engraved"] .sheet:focus-within {
   opacity: 1 !important;
   pointer-events: auto;
 }
-/* one screenful of scroll per section: that is the dwell on one camera stop */
 /* One screenful of scroll per section: that is the dwell on one camera stop.
    Raising it slows the camera down for the same scrolling; see lib/tuning.ts. */
 html[data-ui="engraved"] {
@@ -142,4 +141,14 @@ html[data-ui="engraved"] {
 }
 html[data-ui="engraved"] main section {
   min-height: var(--tour-section);
+}
+/* A wide screen has none of the viewing windows the phone layout puts between
+   its sections (the `h-[30svh] md:hidden` spacers), so the same tour is run
+   over four fewer screenfuls of scroll and the camera crosses the shaft that
+   much faster. The section is lengthened to put those screenfuls back: the
+   machine then moves at one pace whatever it is being read on. */
+@media (min-width: 768px) {
+  html[data-ui="engraved"] {
+    --tour-section: 129svh;
+  }
 }
