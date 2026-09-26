@@ -140,6 +140,23 @@ function doorsCover(share: number) {
 }
 
 /**
+ * The share of the first leg the camera spends parked in the cab.
+ *
+ * Every other stop is held for `TOUR.dwell` of the way to the next one, but
+ * the first has the doors to wait for and nothing to wait for after that. Held
+ * for the usual share it goes on staring at a shut door: the car has set off
+ * by then, but at this stop the camera is fixed to the car and the cab fills
+ * the frame, so what little of the shaft slides past the edges does not read
+ * as movement — measured, four or five per cent of the picture against the
+ * twenty-four the flight itself changes. The visitor sees a frozen page.
+ *
+ * So the camera leaves exactly when the doors finish, which is also when the
+ * car sets off (`TOUR.depart`). Three things that used to happen one after
+ * another now happen at once, and there is no beat with nothing in it.
+ */
+const DWELL_FIRST = clamp01((TOUR.doorsShutBy - STOPS[0].p) / (STOPS[1].p - STOPS[0].p));
+
+/**
  * The stretches of the tour with nothing in them to stop at, and the stop the
  * page belongs on instead.
  *
@@ -259,7 +276,8 @@ export function tourAt(p: number) {
   if (i === last || to <= from) return { i: last, next: last, t: 0 };
   // parked on the stop for the first part of the gap, then a long flight
   const local = (q - from) / (to - from);
-  const t = local <= TOUR.dwell ? 0 : smooth(Math.min((local - TOUR.dwell) / (1 - TOUR.dwell), 1));
+  const dwell = i === 0 ? DWELL_FIRST : TOUR.dwell;
+  const t = local <= dwell ? 0 : smooth(Math.min((local - dwell) / (1 - dwell), 1));
   return { i, next: i + 1, t };
 }
 

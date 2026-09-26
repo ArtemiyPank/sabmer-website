@@ -115,11 +115,11 @@ export const TOUR = {
   fovMobile: 42,
   /**
    * scroll progress by which the doors have shut and the car may set off.
-   * It follows `doorsShutBy` closely: the stretch between the two is a spell
-   * with the sign covered and the journey not begun, which is the one part of
-   * the tour worth nobody's time (see `BLIND` in ../components/elevator3d/tour.ts).
+   * It is `doorsShutBy` exactly: any later and there is a spell with the doors
+   * closed and nothing at all in motion, which reads as the page having frozen
+   * (see `BLIND` and `DWELL_FIRST` in ../components/elevator3d/tour.ts).
    */
-  depart: 0.11,
+  depart: 0.1,
   /**
    * scroll progress over which the doors close, and so how quickly they move:
    * the same slide packed into less of the page is the same slide done sooner.
