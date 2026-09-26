@@ -268,9 +268,10 @@ export const SCENE = {
  * reaches it whatever floor you press.
  *
  * In progress per millisecond. The longest flight of the tour is 0.33 of the
- * page, so 0.0001 crosses it in a little over three seconds. Lowering it slows
- * the machine and nothing else: it is the one number to turn for that, and it
- * turns linearly.
+ * page, so 0.0001 crosses it in a little over three seconds on a desk and
+ * 0.00016 in two on a phone. Lowering either slows the machine on that device
+ * and nothing else: it is the one number to turn for that, and it turns
+ * linearly.
  */
 export const DRAWING = {
   /**
@@ -283,8 +284,18 @@ export const DRAWING = {
    * the two are separate numbers on purpose.
    */
   follow: 110,
-  /** progress per ms: the fastest the machine may move, however it is thrown */
-  topSpeed: 0.0001,
+  /**
+   * progress per ms: the fastest the machine may move, however it is thrown.
+   *
+   * A phone gets a higher ceiling for the same tour. The number is in progress
+   * per millisecond and so says nothing about the device — the flight between
+   * two plates is the same fraction of the page on both — but a finger on the
+   * glass is direct in a way a trackpad is not: the page moves under the touch
+   * that moved it, and a machine that then takes three seconds to catch up
+   * reads as the phone thinking about it. On a desk the same wait reads as the
+   * lift travelling.
+   */
+  topSpeed: { desktop: 0.0001, mobile: 0.00016 },
   /**
    * How near counts as arrived, in progress. A quarter of a pixel of scroll:
    * past that the approach is asking the page for frames to move nothing, and

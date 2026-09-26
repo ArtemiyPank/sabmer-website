@@ -144,19 +144,22 @@ export default function ElevatorBackdrop({ notes }: { notes: SiteNotes }) {
     return held ?? Math.min(Math.max(v / rangeRef.current, 0), 1);
   });
 
+  // resolved before the first client commit, so the Canvas mounts once with
+  // the right settings instead of switching from desktop to mobile
+  const isMobile = useSyncExternalStore(subscribeMobile, isMobileSnapshot, () => false);
+
   /**
-   * The drawing follows the scroll through a spring rather than being pinned
-   * to it. A scroll position is not a smooth thing: a fling arrives in big
-   * uneven steps, a jump arrives all at once, and while a caught fling is
-   * being eased onto its plate the page and the browser's momentum are
-   * pulling against each other. Read straight, every one of those shows up as
-   * a jolt in the machine. Read through a spring, they are all the same
-   * thing — a target that moved — and the drawing always glides to it.
-   *
-   * Overdamped on purpose (damping well past 2*sqrt(stiffness)), so it never
-   * overshoots a plate and swings back.
+   * The drawing follows the scroll rather than being pinned to it, and never
+   * moves faster than the machine's rated speed — which a phone is given more
+   * of, because a finger on the glass is direct in a way a trackpad is not.
+   * See `useGoverned` above and DRAWING in lib/tuning.ts.
    */
-  const smoothed = useGoverned(target, DRAWING.follow, DRAWING.topSpeed, DRAWING.rest);
+  const smoothed = useGoverned(
+    target,
+    DRAWING.follow,
+    isMobile ? DRAWING.topSpeed.mobile : DRAWING.topSpeed.desktop,
+    DRAWING.rest
+  );
 
   useEffect(() => {
     // keep in sync with .backdrop-viewport top offset in globals.css
@@ -182,10 +185,6 @@ export default function ElevatorBackdrop({ notes }: { notes: SiteNotes }) {
       ro.disconnect();
     };
   }, []);
-
-  // resolved before the first client commit, so the Canvas mounts once with
-  // the right settings instead of switching from desktop to mobile
-  const isMobile = useSyncExternalStore(subscribeMobile, isMobileSnapshot, () => false);
 
   // null during SSR / hydration; false -> 2D schematic fallback
   const webgl = useSyncExternalStore(noopSubscribe, detectWebGL, () => null);

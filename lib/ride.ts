@@ -75,8 +75,14 @@ function flies(from: number, to: number) {
  * same journey. Held between the two ends in RIDE — a trip to the next plate
  * along may not be instant, and one across the whole tour may not be a wait.
  */
-const duration = (dp: number) =>
-  Math.min(Math.max(Math.abs(dp) / DRAWING.topSpeed, RIDE.minMs), RIDE.maxMs);
+const duration = (dp: number) => {
+  // the same ceiling the drawing is held to, so a button and a flick to the
+  // same plate take the same time on whichever device is being used
+  const speed = matchMedia(DRAWING.mobileQuery).matches
+    ? DRAWING.topSpeed.mobile
+    : DRAWING.topSpeed.desktop;
+  return Math.min(Math.max(Math.abs(dp) / speed, RIDE.minMs), RIDE.maxMs);
+};
 
 function cancel() {
   if (frame) cancelAnimationFrame(frame);
