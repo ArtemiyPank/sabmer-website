@@ -113,10 +113,20 @@ export const TOUR = {
   /** field of view the framing is computed for */
   fov: 34,
   fovMobile: 42,
-  /** scroll progress by which the doors have shut and the car may set off */
-  depart: 0.17,
-  /** scroll progress over which the doors close */
-  doorsShutBy: 0.16,
+  /**
+   * scroll progress by which the doors have shut and the car may set off.
+   * It follows `doorsShutBy` closely: the stretch between the two is a spell
+   * with the sign covered and the journey not begun, which is the one part of
+   * the tour worth nobody's time (see `BLIND` in ../components/elevator3d/tour.ts).
+   */
+  depart: 0.11,
+  /**
+   * scroll progress over which the doors close, and so how quickly they move:
+   * the same slide packed into less of the page is the same slide done sooner.
+   * At the machine's rated speed this is a second on a desk rather than the
+   * second and a half it was.
+   */
+  doorsShutBy: 0.1,
   /**
    * How much of the sign the closing doors must have covered before the spot
    * in front of them counts as having nothing left to look at.
@@ -295,7 +305,7 @@ export const DRAWING = {
    * reads as the phone thinking about it. On a desk the same wait reads as the
    * lift travelling.
    */
-  topSpeed: { desktop: 0.0001, mobile: 0.00016 },
+  topSpeed: { desktop: 0.0001, mobile: 0.00014 },
   /**
    * How near counts as arrived, in progress. A quarter of a pixel of scroll:
    * past that the approach is asking the page for frames to move nothing, and
