@@ -1,76 +1,21 @@
 /**
- * Seeds the CMS from messages/{ru,he,en}.json and creates the first admin
- * user if none exists. Idempotent: overwrites the site-content global.
+ * Overwrites the site-content global from messages/{ru,he,en}.json, and
+ * creates the first admin user if there is none.
  *
- * Run: npx payload run scripts/seed.ts
+ * Unlike `bootstrap.ts` this always writes, so it will discard anything edited
+ * in the admin. It is for a database being set up by hand, not for a deploy.
+ *
+ * Run: npm run seed
  */
 import { getPayload } from "payload";
 import config from "@payload-config";
-import { readFileSync } from "fs";
-
-const locales = ["ru", "he", "en"] as const;
-
-const read = (locale: string) =>
-  JSON.parse(readFileSync(`messages/${locale}.json`, "utf8"));
+import { createFirstAdmin, writeContent } from "./content.js";
 
 const payload = await getPayload({ config });
 
-// --- the first admin user ---
-// Credentials come from the environment and are never written down here: a
-// password in the repository is a password everyone has, and this script is
-// the one thing that could put it on a live site.
-const existing = await payload.find({ collection: "users", limit: 1 });
-if (existing.totalDocs === 0) {
-  const email = process.env.ADMIN_EMAIL;
-  const password = process.env.ADMIN_PASSWORD;
-  if (!email || !password) {
-    throw new Error(
-      "No admin user yet. Set ADMIN_EMAIL and ADMIN_PASSWORD to create one — see .env.example"
-    );
-  }
-  await payload.create({ collection: "users", data: { email, password } });
-  console.log(`Created admin user: ${email}`);
-} else {
-  console.log("Admin user already exists, skipping");
-}
+const users = await payload.find({ collection: "users", limit: 1, depth: 0 });
+if (users.totalDocs === 0) await createFirstAdmin(payload);
+else console.log("  admin user already exists, left alone");
 
-// --- site content per locale ---
-for (const locale of locales) {
-  const m = read(locale);
-  await payload.updateGlobal({
-    slug: "site-content",
-    locale,
-    data: {
-      metaTitle: m.Meta.title,
-      metaDescription: m.Meta.description,
-      heroTagline: m.Hero.tagline,
-      heroSub: m.Hero.sub,
-      heroCtaContact: m.Hero.ctaContact,
-      heroCtaCareers: m.Hero.ctaCareers,
-      aboutTitle: m.About.title,
-      aboutText: m.About.text,
-      aboutStages: Object.values(m.About.stages).map((text) => ({ text: text as string })),
-      foundersTitle: m.Founders.title,
-      foundersText: m.Founders.text,
-      founders: [
-        { name: m.Founders.amirName, role: m.Founders.amirRole },
-        { name: m.Founders.vovaName, role: m.Founders.vovaRole },
-      ],
-      jobsTitle: m.Jobs.title,
-      jobsIntro: m.Jobs.intro,
-      jobsTerms: Object.values(m.Jobs.terms).map((text) => ({ text: text as string })),
-      jobsApply: m.Jobs.apply,
-      reviewsTitle: m.Reviews.title,
-      reviews: m.Reviews.items,
-      contactsTitle: m.Contacts.title,
-      phone: m.Contacts.phone,
-      email: m.Contacts.email,
-      address: m.Contacts.address,
-      registration: m.Contacts.registration,
-      footerRights: m.Footer.rights,
-    },
-  });
-  console.log(`Seeded site-content [${locale}]`);
-}
-
+await writeContent(payload);
 process.exit(0);

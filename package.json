@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:deploy": "npm run migrate:deploy && next build",
+    "build:deploy": "npm run migrate:deploy && npm run bootstrap && next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
@@ -13,6 +13,7 @@
     "migrate:deploy": "sh -c 'if [ -n \"$DATABASE_URL_UNPOOLED\" ]; then export DATABASE_URI=\"$DATABASE_URL_UNPOOLED\"; fi; exec payload migrate'",
     "migrate:create": "payload migrate:create",
     "migrate:status": "payload migrate:status",
+    "bootstrap": "sh -c 'if [ -n \"$DATABASE_URL_UNPOOLED\" ]; then export DATABASE_URI=\"$DATABASE_URL_UNPOOLED\"; fi; exec payload run scripts/bootstrap.ts'",
     "seed": "payload run scripts/seed.ts",
     "types": "payload generate:types"
   },
