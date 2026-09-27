@@ -5,11 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:deploy": "payload migrate && next build",
+    "build:deploy": "npm run migrate:deploy && next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "migrate": "payload migrate",
+    "migrate:deploy": "sh -c 'if [ -n \"$DATABASE_URL_UNPOOLED\" ]; then export DATABASE_URI=\"$DATABASE_URL_UNPOOLED\"; fi; exec payload migrate'",
     "migrate:create": "payload migrate:create",
     "migrate:status": "payload migrate:status",
     "seed": "payload run scripts/seed.ts",

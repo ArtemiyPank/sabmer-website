@@ -35,10 +35,22 @@ export default buildConfig({
   secret,
   ...(site ? { serverURL: site, cors: [site], csrf: [site] } : {}),
   db: postgresAdapter({
-    // DATABASE_URI (local dev) or DATABASE_URL (injected by Vercel/Neon)
+    /**
+     * `DATABASE_URI` is ours, and local development sets it. The other two are
+     * what the Neon integration writes into the project on Vercel: the modern
+     * name and the legacy one, both pooled. Reading all three means the
+     * database works whichever of them the integration decides to set.
+     *
+     * Migrations do not come through here — they are given the direct
+     * connection instead, because data-definition statements through a
+     * transaction pooler are not reliable (see `migrate:deploy`).
+     */
     pool: {
       connectionString:
-        process.env.DATABASE_URI || process.env.DATABASE_URL || "",
+        process.env.DATABASE_URI ||
+        process.env.DATABASE_URL ||
+        process.env.POSTGRES_URL ||
+        "",
     },
     /**
      * The schema is moved by migrations, never by the adapter — here as well
