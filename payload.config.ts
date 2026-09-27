@@ -40,6 +40,23 @@ export default buildConfig({
       connectionString:
         process.env.DATABASE_URI || process.env.DATABASE_URL || "",
     },
+    /**
+     * The schema is moved by migrations, never by the adapter — here as well
+     * as in production.
+     *
+     * Left to push, the adapter reshapes whatever database it is pointed at to
+     * match the config, which is convenient right up until the two databases
+     * stop being the same: a field renamed here and pushed only here leaves
+     * the deployed one querying columns it does not have, and Payload builds
+     * one query for the whole global, so a single missing table takes the
+     * entire read down. That is not hypothetical — it is how this project
+     * spent a month silently serving its fallback copy.
+     *
+     * So: change the config, run `npm run migrate:create`, commit what it
+     * writes. `npm run migrate` brings any database up to it, and the deploy
+     * runs it before the build (see vercel.json).
+     */
+    push: false,
   }),
   editor: lexicalEditor(),
   sharp,

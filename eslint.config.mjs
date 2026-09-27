@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Payload writes these: a record of what was run against the database,
+    // not code anybody edits or styles.
+    "migrations/**",
   ]),
 ]);
 
