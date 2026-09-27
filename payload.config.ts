@@ -4,6 +4,7 @@ import { buildConfig } from "payload";
 import { postgresAdapter } from "@payloadcms/db-postgres";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import sharp from "sharp";
+import { SITE_URL } from "@/lib/site";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -17,8 +18,18 @@ if (!secret) {
   throw new Error("PAYLOAD_SECRET is not set — see .env.example");
 }
 
-/** the site's own origin, when it is known: requests are held to it */
-const site = process.env.NEXT_PUBLIC_SITE_URL;
+/**
+ * The origin the admin holds its requests to (CORS and CSRF), and only where
+ * the site is really served from it.
+ *
+ * `VERCEL` is set by Vercel on its own builds and by nothing else, which is
+ * the question being asked: is this the deployment, or a copy of it? A
+ * production build run anywhere else — the demo on a developer's machine, a
+ * colleague's laptop — would otherwise hold its admin to an origin it is not
+ * being served from, and lock itself out of its own login. Checking NODE_ENV
+ * would do exactly that: `next build` sets it to production everywhere.
+ */
+const site = process.env.VERCEL ? SITE_URL : process.env.NEXT_PUBLIC_SITE_URL;
 
 export default buildConfig({
   secret,
