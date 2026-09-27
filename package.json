@@ -10,7 +10,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "migrate": "payload migrate",
-    "migrate:deploy": "sh -c 'if [ -n \"$DATABASE_URL_UNPOOLED\" ]; then export DATABASE_URI=\"$DATABASE_URL_UNPOOLED\"; fi; exec payload migrate'",
+    "migrate:deploy": "sh scripts/migrate-deploy.sh",
     "migrate:create": "payload migrate:create",
     "migrate:status": "payload migrate:status",
     "bootstrap": "sh -c 'if [ -n \"$DATABASE_URL_UNPOOLED\" ]; then export DATABASE_URI=\"$DATABASE_URL_UNPOOLED\"; fi; exec payload run scripts/bootstrap.ts'",
