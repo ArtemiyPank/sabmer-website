@@ -31,8 +31,14 @@ fi
 
 if [ "$MIGRATE_RESET" = "1" ]; then
   echo "MIGRATE_RESET is set: dropping every table and rebuilding from migrations."
-  exec payload migrate:fresh --force-accept-warning
+  payload migrate:fresh --force-accept-warning
+  payload migrate:status
+  exit 0
 fi
 
 payload run scripts/clear-dev-marker.ts
-exec payload migrate
+payload migrate
+# Say where the database ended up. A migration that runs prints two lines and
+# one that is already applied prints none, so silence on its own says nothing:
+# without this the log cannot be told apart from a migration that was skipped.
+payload migrate:status
