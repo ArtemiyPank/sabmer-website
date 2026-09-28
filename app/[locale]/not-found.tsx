@@ -45,23 +45,13 @@ export default async function NotFound() {
         <div className="sheet w-full max-w-lg max-md:p-6">
           <h1 className="sheet-title text-2xl sm:text-3xl">{t("title")}</h1>
           <p className="mt-4 leading-relaxed opacity-85">{t("body")}</p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-8">
             <Link
               href="/"
-              className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              className="inline-block rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: "#1e3a8a" }}
             >
               {t("home")}
-            </Link>
-            <Link
-              href="/#jobs"
-              className="rounded-lg border px-5 py-2.5 text-sm font-semibold transition-opacity hover:opacity-80"
-              style={{
-                borderColor: "var(--card-border)",
-                backgroundColor: "var(--card)",
-              }}
-            >
-              {t("jobs")}
             </Link>
           </div>
         </div>
