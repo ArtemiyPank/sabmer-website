@@ -15,7 +15,7 @@ export type Content = {
     title: string;
     /** one text for the two of them */
     text: string;
-    people: { name: string; role: string; photoUrl: string | null }[];
+    people: { name: string; role: string }[];
   };
   jobs: { title: string; intro: string; terms: string[]; apply: string };
   reviews: {
@@ -51,8 +51,8 @@ const fromMessages = async (locale: string): Promise<Content> => {
       title: m.Founders.title,
       text: m.Founders.text,
       people: [
-        { name: m.Founders.amirName, role: m.Founders.amirRole, photoUrl: null },
-        { name: m.Founders.vovaName, role: m.Founders.vovaRole, photoUrl: null },
+        { name: m.Founders.amirName, role: m.Founders.amirRole },
+        { name: m.Founders.vovaName, role: m.Founders.vovaRole },
       ],
     },
     jobs: {
@@ -103,14 +103,7 @@ export async function getContent(locale: "ru" | "he" | "en"): Promise<Content> {
         text: g.foundersText ?? fallback.founders.text,
         people:
           g.founders && g.founders.length > 0
-            ? g.founders.map((f) => ({
-                name: f.name,
-                role: f.role ?? "",
-                photoUrl:
-                  f.photo && typeof f.photo === "object" && f.photo.url
-                    ? f.photo.url
-                    : null,
-              }))
+            ? g.founders.map((f) => ({ name: f.name, role: f.role ?? "" }))
             : fallback.founders.people,
       },
       jobs: {

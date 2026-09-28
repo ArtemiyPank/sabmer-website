@@ -3,7 +3,6 @@ import { fileURLToPath } from "url";
 import { buildConfig } from "payload";
 import { postgresAdapter } from "@payloadcms/db-postgres";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
-import sharp from "sharp";
 import { SITE_URL } from "@/lib/site";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -71,7 +70,6 @@ export default buildConfig({
     push: false,
   }),
   editor: lexicalEditor(),
-  sharp,
   // content is edited per locale, mirroring the site's next-intl locales
   localization: {
     locales: [
@@ -91,23 +89,6 @@ export default buildConfig({
       auth: true,
       admin: { useAsTitle: "email" },
       fields: [],
-    },
-    {
-      slug: "media",
-      // The pictures hang on a public page, so the file route has to let a
-      // visitor through. Payload's default is "signed in only", which would
-      // answer every <img> on the site with a 403; everything else about the
-      // collection stays behind the admin session.
-      access: { read: () => true },
-      upload: {
-        staticDir: path.resolve(dirname, "public/media"),
-        imageSizes: [
-          { name: "thumbnail", width: 240, height: 240, position: "centre" },
-          { name: "card", width: 640 },
-        ],
-        mimeTypes: ["image/*"],
-      },
-      fields: [{ name: "alt", type: "text", localized: true }],
     },
   ],
   globals: [
@@ -162,7 +143,6 @@ export default buildConfig({
                   fields: [
                     { name: "name", type: "text", required: true },
                     { name: "role", type: "text" },
-                    { name: "photo", type: "upload", relationTo: "media" },
                   ],
                 },
               ],

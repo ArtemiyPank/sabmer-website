@@ -222,26 +222,16 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
           <div className="mt-6 grid max-w-4xl gap-4 md:grid-cols-2">
             {c.founders.people.map((f) => (
               <FadeCard key={f.name} className={card}>
-                {f.photoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={f.photoUrl}
-                    alt={f.name}
-                    className="h-20 w-20 rounded-full border object-cover"
-                    style={{ borderColor: "var(--bp-accent)" }}
-                  />
-                ) : (
-                  <div
-                    className="flex h-20 w-20 items-center justify-center rounded-full border text-2xl font-bold"
-                    style={{
-                      borderColor: "var(--bp-accent)",
-                      color: "var(--bp-accent)",
-                    }}
-                    aria-hidden="true"
-                  >
-                    {f.name.slice(0, 1)}
-                  </div>
-                )}
+                <div
+                  className="flex h-20 w-20 items-center justify-center rounded-full border text-2xl font-bold"
+                  style={{
+                    borderColor: "var(--bp-accent)",
+                    color: "var(--bp-accent)",
+                  }}
+                  aria-hidden="true"
+                >
+                  {f.name.slice(0, 1)}
+                </div>
                 <h3 className="mt-4 text-xl font-semibold">{f.name}</h3>
                 <p className="text-sm" style={{ color: "var(--bp-accent)" }}>
                   {f.role}
