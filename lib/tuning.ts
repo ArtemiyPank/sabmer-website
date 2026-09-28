@@ -119,14 +119,24 @@ export const TOUR = {
    * closed and nothing at all in motion, which reads as the page having frozen
    * (see `BLIND` and `DWELL_FIRST` in ../components/elevator3d/tour.ts).
    */
-  depart: 0.1,
+  depart: 0.08,
   /**
-   * scroll progress over which the doors close, and so how quickly they move:
-   * the same slide packed into less of the page is the same slide done sooner.
-   * At the machine's rated speed this is a second on a desk rather than the
-   * second and a half it was.
+   * scroll progress at which the doors begin to close.
+   *
+   * They stand still until then, which is what lets them shut quickly. The
+   * sign on the back wall is read from the first stop at p = 0.03, and closing
+   * from nothing means the doors are already part way across it by the time
+   * the visitor gets there — squeeze the window enough to make them quick and
+   * they are halfway shut at the very stop that exists to be read. Waiting
+   * until the stop is behind them costs nothing and buys all of it.
    */
-  doorsShutBy: 0.1,
+  doorsStart: 0.035,
+  /**
+   * scroll progress by which the doors have finished closing. The span from
+   * `doorsStart` is how quickly they move: at the machine's rated speed this
+   * is under half a second on a desk and a third of one on a phone.
+   */
+  doorsShutBy: 0.08,
   /**
    * How much of the sign the closing doors must have covered before the spot
    * in front of them counts as having nothing left to look at.

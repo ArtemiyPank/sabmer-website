@@ -119,7 +119,7 @@ if (process.env.NODE_ENV !== "production") {
  * before it sets off.
  */
 export function doorPhase(p: number) {
-  return 1 - smooth(clamp01(p / TOUR.doorsShutBy));
+  return 1 - smooth(clamp01((p - TOUR.doorsStart) / (TOUR.doorsShutBy - TOUR.doorsStart)));
 }
 
 /**
@@ -128,7 +128,7 @@ export function doorPhase(p: number) {
  * the doors are ever given a different one.
  */
 function doorsCover(share: number) {
-  let lo = 0;
+  let lo: number = TOUR.doorsStart;
   // annotated: the tuning table is `as const`, so this would narrow to a literal
   let hi: number = TOUR.doorsShutBy;
   for (let k = 0; k < 20; k++) {
