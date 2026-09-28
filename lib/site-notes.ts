@@ -26,6 +26,24 @@ export type SiteNote = {
   action?: { label: string; href: string; mark?: "whatsapp" };
 };
 
+/**
+ * A phone number or an email address set inside running text, fenced off
+ * from the bidirectional algorithm.
+ *
+ * On the Hebrew page the line around it runs right to left, and "+972 55-994-0205"
+ * is not one thing to that algorithm: the leading "+" is a neutral character,
+ * so it takes the direction of the line and lands at the far end — the number
+ * renders as "55-994-0205 972+". An isolate says this run is left-to-right and
+ * nothing outside it may reach in, which leaves the line itself right-to-left
+ * and the number intact.
+ *
+ * It is done to the note rather than in a renderer because both renderers need
+ * it and only one of them is HTML: the flowing layout could use <bdi>, the
+ * plate is drawn into a canvas and has nothing but the string. Canvas applies
+ * the same algorithm, isolates included (measured).
+ */
+export const ltr = (s: string) => `\u2066${s}\u2069`;
+
 export type ReviewCard = {
   name: string;
   period: string;

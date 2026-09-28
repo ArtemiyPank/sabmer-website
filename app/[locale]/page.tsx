@@ -13,16 +13,13 @@ import ReviewArrows from "@/components/site/ReviewArrows";
 import PlateAction from "@/components/site/PlateAction";
 import ReviewCall from "@/components/site/ReviewCall";
 import FadeCard from "@/components/site/FadeCard";
+import NoteSheet from "@/components/site/NoteSheet";
 import { SITE_URL } from "@/lib/site";
 import { getContent } from "@/lib/content";
 import { whatsappLink } from "@/lib/whatsapp";
-import type { SiteNotes } from "@/lib/site-notes";
+import { ltr, type SiteNotes } from "@/lib/site-notes";
 
 export const revalidate = 300;
-
-// one class for every text container; `data-ui` on <html> restyles them all
-// (frosted card / drafting callout / title block / bare lettering)
-const card = "sheet";
 
 export default async function Home({ params }: PageProps<"/[locale]">) {
   const { locale } = await params;
@@ -43,18 +40,31 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
   const notes: SiteNotes = {
     about: { n: "01", title: c.about.title, body: c.about.text, items: c.about.stages },
     jobs: { n: "02", title: c.jobs.title, body: c.jobs.intro, items: c.jobs.terms, action: apply },
-    reviews: { n: "03", title: c.reviews.title, cards: c.reviews.items },
-    founders: { n: "04", title: c.founders.title, body: c.founders.text },
+    reviews: {
+      n: "03",
+      title: c.reviews.title,
+      // the number a review is signed with is dialled, so it has to read the
+      // way it is dialled whichever way the page runs
+      cards: c.reviews.items.map((r) => ({ ...r, contact: ltr(r.contact) })),
+    },
+    founders: {
+      n: "04",
+      title: c.founders.title,
+      body: c.founders.text,
+      // who they are, named. This used to appear only in the flowing layout,
+      // so the drawing described two people it never introduced
+      blocks: c.founders.people.map((f) => ({ title: f.name, caption: f.role })),
+    },
     contacts: {
       n: "05",
       title: c.contacts.title,
       // the registration number rides in the title block, where a drawing
-      // keeps that sort of thing; the address is left to the Contacts section,
-      // which can hold it properly
+      // keeps that sort of thing
       caption: c.contacts.registration,
-      // the separator is tied to the address after it, so that a narrow plate
+      // the separator is tied to what follows it, so that a narrow plate
       // breaks the line before the mark instead of leaving it hanging
-      body: `${c.contacts.phone}  ·\u00A0${c.contacts.email}`,
+      body: `${ltr(c.contacts.phone)}  ·\u00A0${ltr(c.contacts.email)}`,
+      items: [c.contacts.address],
     },
   };
 
@@ -100,187 +110,53 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
       <ReviewCall contacts={c.reviews.items.map((r) => r.contact)} />
 
       <main className="mx-auto max-w-6xl px-4 md:px-6">
-        {/* ---- About: who we are and what we take on ---- */}
+        {/*
+          The same five plates the drawing letters, set as cards for a browser
+          that cannot run it — one description, two renderers, so the two can no
+          longer drift apart (see components/site/NoteSheet.tsx).
+
+          While the scene is running these only hold the scroll open: the tour
+          shows the copy on the machine and `data-ui="engraved"` takes them off
+          the screen, leaving them in the page for assistive technology and for
+          anything that reads it without running it.
+        */}
         <section id="about" className="flex min-h-svh items-center pt-16">
-          <FadeCard className="sheet w-full max-w-xl max-md:p-6">
-            <p
-              className="text-sm font-medium uppercase tracking-[0.3em]"
-              style={{ color: "var(--bp-accent)" }}
-            >
-              SABMER
-            </p>
-            <h1 className="sheet-title mt-4 text-3xl font-bold leading-tight sm:text-4xl md:text-5xl">
-              {c.hero.tagline}
-            </h1>
-            <p className="mt-6 leading-relaxed opacity-85">{c.about.text}</p>
-            <ul className="mt-4 space-y-2">
-              {c.about.stages.map((line) => (
-                <li key={line} className="flex gap-2 text-sm leading-relaxed">
-                  <span aria-hidden="true" style={{ color: "var(--bp-accent)" }}>
-                    —
-                  </span>
-                  {line}
-                </li>
-              ))}
-            </ul>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a
-                href="#contacts"
-                className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                style={{ backgroundColor: "#1e3a8a" }}
-              >
-                {c.hero.ctaContact}
-              </a>
-              <a
-                href="#jobs"
-                className="rounded-lg border px-5 py-2.5 text-sm font-semibold backdrop-blur-md transition-opacity hover:opacity-80"
-                style={{
-                  borderColor: "var(--card-border)",
-                  backgroundColor: "var(--card)",
-                }}
-              >
-                {c.hero.ctaCareers}
-              </a>
-            </div>
+          <FadeCard className="w-full max-w-xl">
+            <NoteSheet note={notes.about} className="max-md:p-6" />
           </FadeCard>
         </section>
 
         {/* mobile viewing window: the schematic plays on a clean stage */}
         <div aria-hidden="true" className="h-[30svh] md:hidden" />
 
-        {/* ---- Work: the terms ---- */}
         <section id="jobs" className="scroll-mt-24 py-16 md:py-24">
-          <FadeCard className={`${card} max-w-3xl`}>
-            <h2 className="sheet-title">{c.jobs.title}</h2>
-            <p className="mt-4 leading-relaxed opacity-85">{c.jobs.intro}</p>
-            <ul className="mt-4 space-y-2">
-              {c.jobs.terms.map((term) => (
-                <li key={term} className="flex items-center gap-2 text-sm">
-                  <span style={{ color: "var(--bp-accent)" }}>✓</span>
-                  {term}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-8 text-sm">
-              {c.jobs.apply}{" "}
-              <a
-                className="font-semibold"
-                style={{ color: "var(--bp-accent)" }}
-                href={`tel:${c.contacts.phone.replace(/[^+\d]/g, "")}`}
-              >
-                {c.contacts.phone}
-              </a>
-            </p>
-            <div className="mt-4">
-              <WhatsAppButton
-                phone={c.contacts.phone}
-                label={t("Jobs.whatsapp")}
-                message={t("Jobs.whatsappText")}
-              />
-            </div>
+          <FadeCard className="max-w-3xl">
+            <NoteSheet note={notes.jobs} className="max-md:p-6" />
           </FadeCard>
         </section>
 
         <div aria-hidden="true" className="h-[30svh] md:hidden" />
 
-        {/* ---- Reviews: what the crew says ---- */}
         <section id="reviews" className="scroll-mt-24 py-16 md:py-24">
-          <FadeCard className={`${card} inline-block`}>
-            <h2 className="sheet-title">{c.reviews.title}</h2>
+          <FadeCard className="max-w-3xl">
+            <NoteSheet note={notes.reviews} className="max-md:p-6" />
           </FadeCard>
-          <div className="mt-6 grid max-w-4xl gap-4 md:grid-cols-3">
-            {c.reviews.items.map((r, i) => (
-              <FadeCard key={`${r.name}-${i}`} className={card}>
-                <h3 className="text-lg font-semibold">{r.name}</h3>
-                <p className="text-sm" style={{ color: "var(--bp-accent)" }}>
-                  {r.period}
-                </p>
-                <p className="mt-3 text-sm leading-relaxed opacity-80">{r.text}</p>
-                {r.contact ? (
-                  <p className="mt-3 text-sm">
-                    <a
-                      className="opacity-70 hover:opacity-100"
-                      href={`tel:${r.contact.replace(/[^+\d]/g, "")}`}
-                    >
-                      {r.contact}
-                    </a>
-                  </p>
-                ) : null}
-              </FadeCard>
-            ))}
-          </div>
         </section>
 
         <div aria-hidden="true" className="h-[30svh] md:hidden" />
 
-        {/* ---- Founders ---- */}
         <section id="founders" className="scroll-mt-24 py-16 md:py-24">
-          <FadeCard className={`${card} max-w-2xl`}>
-            <h2 className="sheet-title">{c.founders.title}</h2>
-            <p className="mt-4 leading-relaxed opacity-85">{c.founders.text}</p>
+          <FadeCard className="max-w-2xl">
+            <NoteSheet note={notes.founders} className="max-md:p-6" />
           </FadeCard>
-          <div className="mt-6 grid max-w-4xl gap-4 md:grid-cols-2">
-            {c.founders.people.map((f) => (
-              <FadeCard key={f.name} className={card}>
-                <div
-                  className="flex h-20 w-20 items-center justify-center rounded-full border text-2xl font-bold"
-                  style={{
-                    borderColor: "var(--bp-accent)",
-                    color: "var(--bp-accent)",
-                  }}
-                  aria-hidden="true"
-                >
-                  {f.name.slice(0, 1)}
-                </div>
-                <h3 className="mt-4 text-xl font-semibold">{f.name}</h3>
-                <p className="text-sm" style={{ color: "var(--bp-accent)" }}>
-                  {f.role}
-                </p>
-              </FadeCard>
-            ))}
-          </div>
         </section>
 
         <div aria-hidden="true" className="h-[30svh] md:hidden" />
 
-        {/* ---- Contacts ---- */}
         <section id="contacts" className="scroll-mt-24 py-16 md:py-24">
-          <div className="grid max-w-4xl gap-4">
-            <FadeCard className={`${card} max-w-md`}>
-              <h2 className="sheet-title">{c.contacts.title}</h2>
-              <dl className="mt-6 space-y-4 text-sm">
-                <div>
-                  <dt className="opacity-60">{t("Contacts.phoneLabel")}</dt>
-                  <dd className="mt-0.5">
-                    <a href={`tel:${c.contacts.phone.replace(/[^+\d]/g, "")}`}>
-                      {c.contacts.phone}
-                    </a>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="opacity-60">{t("Contacts.emailLabel")}</dt>
-                  <dd className="mt-0.5">
-                    <a href={`mailto:${c.contacts.email}`}>{c.contacts.email}</a>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="opacity-60">{t("Contacts.addressLabel")}</dt>
-                  <dd className="mt-0.5">{c.contacts.address}</dd>
-                </div>
-                <div>
-                  <dt className="opacity-60">
-                    {t("Contacts.registrationLabel")}
-                  </dt>
-                  {/* Hebrew in every locale: isolated so a Latin sentence
-                      around it cannot reorder its digits */}
-                  <dd className="mt-0.5"><bdi>{c.contacts.registration}</bdi></dd>
-                </div>
-              </dl>
-              <div className="mt-6">
-                <WhatsAppButton phone={c.contacts.phone} />
-              </div>
-            </FadeCard>
-          </div>
+          <FadeCard className="max-w-xl">
+            <NoteSheet note={notes.contacts} className="max-md:p-6" />
+          </FadeCard>
         </section>
       </main>
 
