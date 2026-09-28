@@ -1,6 +1,36 @@
 import type { SiteNote } from "@/lib/site-notes";
 
 /**
+ * The body, with each of `note.links` wrapped in an anchor.
+ *
+ * The plate has the same words and none of the anchors, so the split happens
+ * here rather than in the note: a run is given as the exact text to find, and
+ * everything around it is set as it stands.
+ */
+function pressable(note: SiteNote) {
+  const body = note.body ?? "";
+  if (!note.links?.length) return body;
+
+  const out: React.ReactNode[] = [];
+  let rest = body;
+  let key = 0;
+  // the links are listed in the order they appear, so one pass is enough
+  for (const link of note.links) {
+    const at = rest.indexOf(link.text);
+    if (at < 0) continue;
+    if (at > 0) out.push(rest.slice(0, at));
+    out.push(
+      <a key={key++} href={link.href} className="underline-offset-2 hover:underline">
+        {link.text}
+      </a>
+    );
+    rest = rest.slice(at + link.text.length);
+  }
+  if (rest) out.push(rest);
+  return out;
+}
+
+/**
  * A plate, set as a card instead of as a texture.
  *
  * The site has two ways of showing the same five plates: lettered onto the
@@ -42,7 +72,7 @@ export default function NoteSheet({
       <h2 className="sheet-title mt-5">{note.title}</h2>
 
       {note.body ? (
-        <p className="mt-4 leading-relaxed opacity-90">{note.body}</p>
+        <p className="mt-4 leading-relaxed opacity-90">{pressable(note)}</p>
       ) : null}
 
       {note.items?.length ? (

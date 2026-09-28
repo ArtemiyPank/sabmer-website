@@ -36,6 +36,11 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
     mark: "whatsapp" as const,
   };
 
+  // the contact line, written once: the plate letters this and the card makes
+  // the same two runs pressable
+  const phone = ltr(c.contacts.phone);
+  const email = ltr(c.contacts.email);
+
   // the same copy the sections render, for the layout that letters it onto the parts
   const notes: SiteNotes = {
     about: { n: "01", title: c.about.title, body: c.about.text, items: c.about.stages },
@@ -63,7 +68,12 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
       caption: c.contacts.registration,
       // the separator is tied to what follows it, so that a narrow plate
       // breaks the line before the mark instead of leaving it hanging
-      body: `${ltr(c.contacts.phone)}  ·\u00A0${ltr(c.contacts.email)}`,
+      body: `${phone}  ·\u00A0${email}`,
+      // the plate letters them; the card lets them be pressed
+      links: [
+        { text: phone, href: `tel:${c.contacts.phone.replace(/[^+\d]/g, "")}` },
+        { text: email, href: `mailto:${c.contacts.email}` },
+      ],
       items: [c.contacts.address],
     },
   };
@@ -173,7 +183,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
             © {year} SABMER. {c.footer.rights}
           </p>
           <div className="flex items-center gap-2">
-            <WhatsAppButton phone={c.contacts.phone} variant="icon" />
+            <WhatsAppButton phone={c.contacts.phone} />
             <LanguageSwitcher />
             <ThemeToggle />
           </div>

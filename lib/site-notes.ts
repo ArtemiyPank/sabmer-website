@@ -19,6 +19,16 @@ export type SiteNote = {
    */
   cards?: ReviewCard[];
   /**
+   * Runs inside `body` a reader can act on — a number to dial, an address to
+   * write to.
+   *
+   * The plate ignores this and letters the body as it stands: it is a texture
+   * and cannot carry a link. The card wraps each run in an anchor. Same words
+   * either way — only one of the two can be pressed, which is the one
+   * difference between the renderers that is not a choice.
+   */
+  links?: { text: string; href: string }[];
+  /**
    * A button printed at the foot of the plate. The plate is a texture and
    * cannot carry a link, so the page lays a transparent anchor over it — see
    * `lib/plate-action.ts`.

@@ -3,73 +3,35 @@
 import { useTranslations } from "next-intl";
 import { WA_GLYPH, whatsappLink } from "@/lib/whatsapp";
 
-function WaIcon({ className }: { className: string }) {
-  return (
-    <svg viewBox="0 0 32 32" className={className} fill="currentColor" aria-hidden="true">
-      <path d={WA_GLYPH} />
-    </svg>
-  );
-}
-
 /**
- * A WhatsApp link on the company's number: a full button for the Contacts
- * card, a compact icon for the footer, or a raised one to sit over the
- * drawing. `message` fills the chat in advance, so an applicant writing from
- * the Work section does not have to open with "hello, about the job".
+ * A WhatsApp link on the company's number, as the compact mark in the footer.
+ *
+ * It used to come in three sizes — a full button for the Contacts card, this
+ * icon, and a raised one to stand over the drawing. The raised one went when
+ * the apply button moved onto the Work plate itself, and the full one when the
+ * sections started being set from the same notes the plates are lettered from
+ * (see NoteSheet.tsx). This is the one that is still placed anywhere.
  *
  * The number is handed in rather than read from the translations: it is
  * business content, so the CMS owns it, and a button that dialled the copy in
  * messages/*.json would go on reaching the old number after it was changed in
  * the admin.
  */
-export default function WhatsAppButton({
-  phone,
-  variant = "button",
-  label,
-  message,
-}: {
-  phone: string;
-  variant?: "button" | "icon" | "raised";
-  label?: string;
-  message?: string;
-}) {
+export default function WhatsAppButton({ phone }: { phone: string }) {
   const t = useTranslations("Contacts");
-  const href = whatsappLink(phone, message);
 
-  if (variant === "icon") {
-    return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={t("whatsapp")}
-        className="flex h-9 w-9 items-center justify-center rounded-full border transition-opacity hover:opacity-80"
-        style={{ borderColor: "var(--card-border)" }}
-      >
-        <WaIcon className="h-5 w-5 opacity-80" />
-      </a>
-    );
-  }
-
-  // raised: the plates cannot carry a link, so this one stands over the
-  // drawing and needs a ground of its own to stay legible against it
-  const raised = variant === "raised";
   return (
     <a
-      href={href}
+      href={whatsappLink(phone)}
       target="_blank"
       rel="noopener noreferrer"
-      className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-80${
-        raised ? " shadow-sm" : ""
-      }`}
-      style={{
-        borderColor: raised ? "var(--bp-line-soft)" : "var(--card-border)",
-        backgroundColor: raised ? "var(--bp-paper)" : undefined,
-        color: "var(--bp-accent)",
-      }}
+      aria-label={t("whatsapp")}
+      className="flex h-9 w-9 items-center justify-center rounded-full border transition-opacity hover:opacity-80"
+      style={{ borderColor: "var(--card-border)" }}
     >
-      <WaIcon className="h-5 w-5" />
-      {label ?? t("whatsapp")}
+      <svg viewBox="0 0 32 32" className="h-5 w-5 opacity-80" fill="currentColor" aria-hidden="true">
+        <path d={WA_GLYPH} />
+      </svg>
     </a>
   );
 }
