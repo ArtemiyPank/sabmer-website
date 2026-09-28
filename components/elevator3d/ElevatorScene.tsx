@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useMemo, useRef } from "react";
+import dynamic from "next/dynamic";
 import * as THREE from "three";
 import { Canvas, useThree } from "@react-three/fiber";
 import { useMotionValueEvent, type MotionValue } from "framer-motion";
@@ -16,8 +17,17 @@ import Car from "./parts/Car";
 import Counterweight from "./parts/Counterweight";
 import Ropes from "./parts/Ropes";
 import Pit from "./parts/Pit";
-import Labels from "./parts/Labels";
 import Engraved from "./parts/Engraved";
+
+/**
+ * The numbered callouts over the parts, fetched only when something asks for
+ * them — which on the site is never: the tour renders the scene with
+ * `annotations={false}` and the copy is lettered onto the machine instead.
+ * They are for the debug harness at /debug3d, which production does not serve
+ * at all, so every visitor was carrying the drafting labels for a drawing they
+ * are not shown.
+ */
+const Labels = dynamic(() => import("./parts/Labels"), { ssr: false });
 import { blendPoses, doorPhase, tourPose, travelAt } from "./tour";
 import { getRide } from "@/lib/ride";
 import { RIDE, SCENE } from "@/lib/tuning";

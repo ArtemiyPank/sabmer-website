@@ -40,8 +40,8 @@
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* the one theme token any utility class here needs; the page's colours are
+     applied through the variables above, not through generated utilities */
   --font-sans: var(--font-rubik);
 }
 

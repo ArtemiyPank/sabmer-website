@@ -9,13 +9,25 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import ElevatorSchematic from "./ElevatorSchematic";
 import { getHold, getRide, setBehind } from "@/lib/ride";
 import { DRAWING } from "@/lib/tuning";
 import type { SiteNotes } from "@/lib/site-notes";
 
 // three.js + the scene are loaded on the client only, after hydration
 const ElevatorScene = dynamic(() => import("../elevator3d/ElevatorScene"), {
+  ssr: false,
+});
+
+/**
+ * The drawing for a browser that cannot run the scene, fetched only by the
+ * browsers that need it.
+ *
+ * It is a thousand lines of vector work and nearly everybody's machine will
+ * render the real thing instead, so shipping it to all of them is paying for a
+ * picture they will never be shown. Asked for at the moment WebGL is found
+ * missing, it costs the rest of them nothing.
+ */
+const ElevatorSchematic = dynamic(() => import("./ElevatorSchematic"), {
   ssr: false,
 });
 

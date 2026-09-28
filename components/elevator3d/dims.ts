@@ -87,7 +87,6 @@ export const PLANK_H = 0.16;
 export const SLING_HALF_SPAN = 0.72; // crosshead / plank reach: x = ±0.72 (to the rail tips)
 export const CAR_TOP_Y = CROSSHEAD_Y + CROSSHEAD_H / 2; // 2.69
 export const SHOE_Y_TOP = 2.6; // roller guide shoe centres (on the crosshead / plank ends)
-export const SHOE_Y_BOT = -0.35;
 
 // car doors (centre opening, on the front)
 export const DOOR_Z = 0.74; // panel centre
@@ -95,7 +94,6 @@ export const DOOR_W = 0.42; // each panel
 export const DOOR_H = 2.1;
 export const DOOR_T = 0.03;
 export const DOOR_OPEN = 0.42; // slide distance when open
-export const DOOR_HEADER_Y = 2.22; // hanger track centre (y 2.15 .. 2.3), z = DOOR_Z
 export const SILL_Z: [number, number] = [0.68, 0.88]; // car sill z range, top at y = 0
 export const APRON_BOTTOM = -0.8; // toe guard from the sill down to this y
 
@@ -107,7 +105,6 @@ export const PULLEY_R = 0.14;
 export const PULLEY_X = 0.52; // car pulley centres at x = ±PULLEY_X
 export const PULLEY_Y = -0.55; // car pulley centres (car-local)
 export const ROPE_DROP_X = PULLEY_X + PULLEY_R; // 0.66: the car-side vertical rope runs (±)
-export const CAR_BOTTOM_Y = PULLEY_Y - PULLEY_R; // -0.69 lowest car point
 
 // governor (left rail, z offset so the rope clears the rail and its brackets)
 export const GOV_X = -0.86;
@@ -116,18 +113,15 @@ export const GOV_R = 0.15;
 export const GOV_Y = 12.55; // governor sheave centre
 export const GOV_TENSION_Y = -1.15; // tension sheave centre (pit)
 export const GOV_ROPE_X: [number, number] = [GOV_X - GOV_R, GOV_X + GOV_R]; // -1.01 (outer), -0.71 (car side)
-export const GOV_CLAMP_Y = CROSSHEAD_Y; // rope clamp on the car crosshead (car-local)
 
 // traveling cable: from the car underside, hanging loop, up the left side to
 // the junction box on the left wall plane. It hangs toward the front of the
 // shaft, clear of the governor rope and of the sight lines onto the car flank.
 export const TCABLE_CAR: V3 = [-0.45, PLANK_Y - PLANK_H / 2, 0.62]; // car-local anchor
 export const TCABLE_WALL: V3 = [-SHAFT_X + 0.05, 12.0, 0.62]; // junction box
-export const TCABLE_R = 0.018;
 
 // ---- counterweight (world x/z; y = frame bottom moves) ----------------------------
 export const CWT_X = 1.08; // centre
-export const CWT_T = 0.14; // thickness (x)
 export const CWT_Z = ROPE_Z; // centre (z); frame spans z = -0.91 .. -0.19
 export const CWT_W = 0.72; // frame width (z), guide shoes reach the rails at -0.15 / -0.95
 export const CWT_H = 2.6; // frame height
@@ -236,10 +230,6 @@ export function explosion(p: number, explode: number): Explosion {
   };
 }
 
-/** world y of the car pulley centres (they hang on the safety plank) */
-export function pulleyY(p: number, explode: number) {
-  return carY(p) + PULLEY_Y + explosion(p, explode).plank[1];
-}
 
 /** world y of the counterweight pulley centre */
 export const cwtPulleyY = (p: number) => cwtY(p) + CWT_PULLEY_DY;
