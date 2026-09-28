@@ -23,10 +23,6 @@ export async function writeContent(payload: Payload) {
       data: {
         metaTitle: m.Meta.title,
         metaDescription: m.Meta.description,
-        heroTagline: m.Hero.tagline,
-        heroSub: m.Hero.sub,
-        heroCtaContact: m.Hero.ctaContact,
-        heroCtaCareers: m.Hero.ctaCareers,
         aboutTitle: m.About.title,
         aboutText: m.About.text,
         aboutStages: Object.values(m.About.stages).map((text) => ({ text: text as string })),
@@ -39,7 +35,6 @@ export async function writeContent(payload: Payload) {
         jobsTitle: m.Jobs.title,
         jobsIntro: m.Jobs.intro,
         jobsTerms: Object.values(m.Jobs.terms).map((text) => ({ text: text as string })),
-        jobsApply: m.Jobs.apply,
         reviewsTitle: m.Reviews.title,
         reviews: m.Reviews.items,
         contactsTitle: m.Contacts.title,
@@ -48,6 +43,32 @@ export async function writeContent(payload: Payload) {
         address: m.Contacts.address,
         registration: m.Contacts.registration,
         footerRights: m.Footer.rights,
+        // the wording of the interface, so an editor finds every word of the
+        // page in the admin rather than all but the six in the navigation
+        nav: {
+          about: m.Header.about,
+          jobs: m.Header.jobs,
+          reviews: m.Header.reviews,
+          founders: m.Header.founders,
+          contacts: m.Header.contacts,
+          home: m.Header.home,
+        },
+        buttons: {
+          whatsapp: m.Contacts.whatsapp,
+          whatsappJobs: m.Jobs.whatsapp,
+          whatsappJobsText: m.Jobs.whatsappText,
+          reviewPrev: m.Reviews.prev,
+          reviewNext: m.Reviews.next,
+          themeToggle: m.Header.themeToggle,
+          langSwitch: m.Header.langSwitch,
+          floorNav: m.Header.floorNav,
+        },
+        notFound: {
+          title: m.NotFound.title,
+          body: m.NotFound.body,
+          home: m.NotFound.home,
+          drawing: m.NotFound.drawing,
+        },
       },
     });
     console.log(`  site-content [${locale}]`);

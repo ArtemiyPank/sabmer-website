@@ -283,10 +283,6 @@ export interface SiteContent {
   id: number;
   metaTitle?: string | null;
   metaDescription?: string | null;
-  heroTagline?: string | null;
-  heroSub?: string | null;
-  heroCtaContact?: string | null;
-  heroCtaCareers?: string | null;
   aboutTitle?: string | null;
   aboutText?: string | null;
   aboutStages?:
@@ -312,7 +308,6 @@ export interface SiteContent {
         id?: string | null;
       }[]
     | null;
-  jobsApply?: string | null;
   reviewsTitle?: string | null;
   reviews?:
     | {
@@ -329,6 +324,30 @@ export interface SiteContent {
   address?: string | null;
   registration?: string | null;
   footerRights?: string | null;
+  nav?: {
+    about?: string | null;
+    jobs?: string | null;
+    reviews?: string | null;
+    founders?: string | null;
+    contacts?: string | null;
+    home?: string | null;
+  };
+  buttons?: {
+    whatsapp?: string | null;
+    whatsappJobs?: string | null;
+    whatsappJobsText?: string | null;
+    reviewPrev?: string | null;
+    reviewNext?: string | null;
+    themeToggle?: string | null;
+    langSwitch?: string | null;
+    floorNav?: string | null;
+  };
+  notFound?: {
+    title?: string | null;
+    body?: string | null;
+    home?: string | null;
+    drawing?: string | null;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -339,10 +358,6 @@ export interface SiteContent {
 export interface SiteContentSelect<T extends boolean = true> {
   metaTitle?: T;
   metaDescription?: T;
-  heroTagline?: T;
-  heroSub?: T;
-  heroCtaContact?: T;
-  heroCtaCareers?: T;
   aboutTitle?: T;
   aboutText?: T;
   aboutStages?:
@@ -368,7 +383,6 @@ export interface SiteContentSelect<T extends boolean = true> {
         text?: T;
         id?: T;
       };
-  jobsApply?: T;
   reviewsTitle?: T;
   reviews?:
     | T
@@ -385,6 +399,36 @@ export interface SiteContentSelect<T extends boolean = true> {
   address?: T;
   registration?: T;
   footerRights?: T;
+  nav?:
+    | T
+    | {
+        about?: T;
+        jobs?: T;
+        reviews?: T;
+        founders?: T;
+        contacts?: T;
+        home?: T;
+      };
+  buttons?:
+    | T
+    | {
+        whatsapp?: T;
+        whatsappJobs?: T;
+        whatsappJobsText?: T;
+        reviewPrev?: T;
+        reviewNext?: T;
+        themeToggle?: T;
+        langSwitch?: T;
+        floorNav?: T;
+      };
+  notFound?:
+    | T
+    | {
+        title?: T;
+        body?: T;
+        home?: T;
+        drawing?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

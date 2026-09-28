@@ -14,12 +14,6 @@
     "floorNav": "Car position: open floor panel",
     "home": "Home"
   },
-  "Hero": {
-    "tagline": "Mitsubishi lift installation",
-    "sub": "End-to-end subcontracting: we fit the equipment, commission it and hand the lift over in service.",
-    "ctaContact": "Get in touch",
-    "ctaCareers": "Terms of work"
-  },
   "About": {
     "title": "About",
     "text": "SABMER has been installing Mitsubishi lifts as a subcontractor for over four years. We carry a job through two stages:",
@@ -38,14 +32,10 @@
   },
   "Contacts": {
     "title": "Contacts",
-    "phoneLabel": "Phone",
     "phone": "+972 55-994-0205",
-    "emailLabel": "Email",
     "email": "info@sabmer.example",
-    "addressLabel": "Address",
     "address": "Bat Yam, Israel",
     "whatsapp": "Chat on WhatsApp",
-    "registrationLabel": "Company registration",
     "registration": "ח.פ. 516589611"
   },
   "Footer": {
@@ -63,7 +53,6 @@
       "t6": "Lunch — 12:00 to 13:00",
       "t7": "Work vehicle and workwear — on the company"
     },
-    "apply": "About work, call:",
     "whatsapp": "Ask about a job",
     "whatsappText": "Hello! I would like to apply as a fitter."
   },

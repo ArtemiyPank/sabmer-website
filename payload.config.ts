@@ -108,15 +108,6 @@ export default buildConfig({
               ],
             },
             {
-              label: "Hero",
-              fields: [
-                { name: "heroTagline", type: "text", localized: true },
-                { name: "heroSub", type: "textarea", localized: true },
-                { name: "heroCtaContact", type: "text", localized: true },
-                { name: "heroCtaCareers", type: "text", localized: true },
-              ],
-            },
-            {
               label: "About",
               fields: [
                 { name: "aboutTitle", type: "text", localized: true },
@@ -159,7 +150,6 @@ export default buildConfig({
                   labels: { singular: "Term", plural: "Terms" },
                   fields: [{ name: "text", type: "text", required: true }],
                 },
-                { name: "jobsApply", type: "text", localized: true },
               ],
             },
             {
@@ -184,15 +174,80 @@ export default buildConfig({
               label: "Contacts",
               fields: [
                 { name: "contactsTitle", type: "text", localized: true },
+                // a number is a number in every language; these two are not
+                // localized on purpose, so there is one of each to keep current
                 { name: "phone", type: "text" },
                 { name: "email", type: "email" },
                 { name: "address", type: "text", localized: true },
-                { name: "registration", type: "text" },
+                // the registration carries a word — "ח.פ." — so it is written
+                // per language even though the number in it never changes
+                { name: "registration", type: "text", localized: true },
               ],
             },
             {
               label: "Footer",
               fields: [{ name: "footerRights", type: "text", localized: true }],
+            },
+            {
+              /**
+               * The wording of the interface itself — the navigation, what
+               * the buttons say, the page for an address that does not exist.
+               *
+               * It used to live only in messages/{locale}.json, on the reasoning
+               * that microcopy belongs to the build and business content to the
+               * CMS. That line is invisible to whoever is editing: they open the
+               * admin, find every word of the page except the six in the
+               * navigation, and have to ask a developer for those. Everything
+               * the visitor reads is here now, and anything left empty falls
+               * back to the file (see i18n/request.ts).
+               */
+              label: "Интерфейс",
+              fields: [
+                {
+                  name: "nav",
+                  type: "group",
+                  label: "Навигация",
+                  fields: [
+                    { name: "about", type: "text", localized: true },
+                    { name: "jobs", type: "text", localized: true },
+                    { name: "reviews", type: "text", localized: true },
+                    { name: "founders", type: "text", localized: true },
+                    { name: "contacts", type: "text", localized: true },
+                    { name: "home", type: "text", localized: true },
+                  ],
+                },
+                {
+                  name: "buttons",
+                  type: "group",
+                  label: "Кнопки",
+                  fields: [
+                    { name: "whatsapp", type: "text", localized: true },
+                    { name: "whatsappJobs", type: "text", localized: true },
+                    {
+                      name: "whatsappJobsText",
+                      type: "textarea",
+                      localized: true,
+                      label: "Текст, подставляемый в чат",
+                    },
+                    { name: "reviewPrev", type: "text", localized: true },
+                    { name: "reviewNext", type: "text", localized: true },
+                    { name: "themeToggle", type: "text", localized: true },
+                    { name: "langSwitch", type: "text", localized: true },
+                    { name: "floorNav", type: "text", localized: true },
+                  ],
+                },
+                {
+                  name: "notFound",
+                  type: "group",
+                  label: "Страница 404",
+                  fields: [
+                    { name: "title", type: "text", localized: true },
+                    { name: "body", type: "textarea", localized: true },
+                    { name: "home", type: "text", localized: true },
+                    { name: "drawing", type: "text", localized: true, label: "Описание схемы для чтения с экрана" },
+                  ],
+                },
+              ],
             },
           ],
         },
