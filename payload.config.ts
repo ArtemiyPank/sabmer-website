@@ -174,14 +174,45 @@ export default buildConfig({
               label: "Contacts",
               fields: [
                 { name: "contactsTitle", type: "text", localized: true },
-                // a number is a number in every language; these two are not
-                // localized on purpose, so there is one of each to keep current
+                /**
+                 * The company's number, and the only contact detail with a
+                 * field of its own: it is what the WhatsApp buttons dial and
+                 * what the Work plate opens a chat on, so it cannot be one row
+                 * among others. A number is a number in every language, so it
+                 * is not localized — there is one of it to keep current.
+                 */
                 { name: "phone", type: "text" },
-                { name: "email", type: "email" },
-                { name: "address", type: "text", localized: true },
                 // the registration carries a word — "ח.פ." — so it is written
                 // per language even though the number in it never changes
                 { name: "registration", type: "text", localized: true },
+                /**
+                 * Everything else the section says, added and removed from
+                 * here rather than by a developer. An email, a second number,
+                 * an office — the page has no opinion about what these are.
+                 *
+                 * Localized, like every other list in this config: a line is
+                 * written in the language it is read in, and a language left
+                 * empty falls back to Russian.
+                 */
+                {
+                  name: "contactLines",
+                  type: "array",
+                  localized: true,
+                  label: "Строки контактов",
+                  labels: { singular: "Строка", plural: "Строки" },
+                  fields: [
+                    { name: "text", type: "text", required: true },
+                    {
+                      name: "href",
+                      type: "text",
+                      label: "Ссылка (необязательно)",
+                      admin: {
+                        description:
+                          "Куда ведёт строка, если по ней можно нажать: https://…, mailto:… или tel:… Оставьте пустым для обычного текста.",
+                      },
+                    },
+                  ],
+                },
               ],
             },
             {

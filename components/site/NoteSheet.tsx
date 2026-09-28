@@ -1,23 +1,23 @@
-import type { SiteNote } from "@/lib/site-notes";
+import { canOpen, type SiteNote } from "@/lib/site-notes";
+import PagedCards, { CardCounter } from "./PagedCards";
 
 /**
- * The body, with each of `note.links` wrapped in an anchor.
+ * A run of text, with any of `links` that appear in it wrapped in an anchor.
  *
  * The plate has the same words and none of the anchors, so the split happens
  * here rather than in the note: a run is given as the exact text to find, and
- * everything around it is set as it stands.
+ * everything around it is set as it stands. Used for the body and for each
+ * line of the list, because a contact line added in the admin can be either.
  */
-function pressable(note: SiteNote) {
-  const body = note.body ?? "";
-  if (!note.links?.length) return body;
+function pressable(text: string, links: SiteNote["links"]) {
+  if (!links?.length) return text;
 
   const out: React.ReactNode[] = [];
-  let rest = body;
+  let rest = text;
   let key = 0;
-  // the links are listed in the order they appear, so one pass is enough
-  for (const link of note.links) {
+  for (const link of links) {
     const at = rest.indexOf(link.text);
-    if (at < 0) continue;
+    if (at < 0 || !canOpen(link.href)) continue;
     if (at > 0) out.push(rest.slice(0, at));
     out.push(
       <a key={key++} href={link.href} className="underline-offset-2 hover:underline">
@@ -26,6 +26,7 @@ function pressable(note: SiteNote) {
     );
     rest = rest.slice(at + link.text.length);
   }
+  if (!out.length) return text;
   if (rest) out.push(rest);
   return out;
 }
@@ -62,7 +63,12 @@ export default function NoteSheet({
         className="font-mono text-xs tracking-wide"
         style={{ color: "var(--bp-accent)" }}
       >
-        {note.n} &nbsp;·&nbsp; {(note.caption ?? "SABMER").toUpperCase()}
+        {note.n} &nbsp;·&nbsp;{" "}
+        {note.cards?.length ? (
+          <CardCounter total={note.cards.length} />
+        ) : (
+          (note.caption ?? "SABMER").toUpperCase()
+        )}
       </p>
       <hr
         className="mt-2 border-0"
@@ -72,7 +78,7 @@ export default function NoteSheet({
       <h2 className="sheet-title mt-5">{note.title}</h2>
 
       {note.body ? (
-        <p className="mt-4 leading-relaxed opacity-90">{pressable(note)}</p>
+        <p className="mt-4 leading-relaxed opacity-90">{pressable(note.body, note.links)}</p>
       ) : null}
 
       {note.items?.length ? (
@@ -82,7 +88,7 @@ export default function NoteSheet({
               <span aria-hidden="true" style={{ color: "var(--bp-accent)" }}>
                 ·
               </span>
-              <span className="opacity-90">{line}</span>
+              <span className="opacity-90">{pressable(line, note.links)}</span>
             </li>
           ))}
         </ul>
@@ -109,41 +115,40 @@ export default function NoteSheet({
         </div>
       ))}
 
-      {/*
-        The drawing shows one card at a time and the arrows page through them;
-        a card has nothing to page with, so it sets them all. Same entries, all
-        of them visible at once.
-      */}
-      {note.cards?.map((card, i) => (
-        <div key={`${card.name}-${i}`} className="mt-6">
-          <hr
-            className="border-0"
-            style={{ height: 1, backgroundColor: "var(--bp-accent)" }}
-          />
-          <h3 className="mt-4 text-lg font-semibold">{card.name}</h3>
-          {card.period ? (
-            <p
-              className="mt-1 font-mono text-xs tracking-wide"
-              style={{ color: "var(--bp-accent)" }}
-            >
-              {card.period.toUpperCase()}
-            </p>
-          ) : null}
-          {card.text ? (
-            <p className="mt-3 text-sm leading-relaxed opacity-90">{card.text}</p>
-          ) : null}
-          {card.contact ? (
-            <p className="mt-3 text-sm">
-              <a
-                className="opacity-70 hover:opacity-100"
-                href={`tel:${card.contact.replace(/[^+\d]/g, "")}`}
-              >
-                {card.contact}
-              </a>
-            </p>
-          ) : null}
-        </div>
-      ))}
+      {note.cards?.length ? (
+        <PagedCards>
+          {note.cards.map((card, i) => (
+            <div key={`${card.name}-${i}`} className="mt-6">
+              <hr
+                className="border-0"
+                style={{ height: 1, backgroundColor: "var(--bp-accent)" }}
+              />
+              <h3 className="mt-4 text-lg font-semibold">{card.name}</h3>
+              {card.period ? (
+                <p
+                  className="mt-1 font-mono text-xs tracking-wide"
+                  style={{ color: "var(--bp-accent)" }}
+                >
+                  {card.period.toUpperCase()}
+                </p>
+              ) : null}
+              {card.text ? (
+                <p className="mt-3 text-sm leading-relaxed opacity-90">{card.text}</p>
+              ) : null}
+              {card.contact ? (
+                <p className="mt-3 text-sm">
+                  <a
+                    className="opacity-70 hover:opacity-100"
+                    href={`tel:${card.contact.replace(/[^+\d]/g, "")}`}
+                  >
+                    {card.contact}
+                  </a>
+                </p>
+              ) : null}
+            </div>
+          ))}
+        </PagedCards>
+      ) : null}
 
       {note.action ? (
         <div className="mt-8">

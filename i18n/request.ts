@@ -73,8 +73,6 @@ function asMessages(g: Awaited<ReturnType<typeof siteContent>>): Dict {
     Contacts: {
       title: g.contactsTitle,
       phone: g.phone,
-      email: g.email,
-      address: g.address,
       registration: g.registration,
       whatsapp: buttons.whatsapp,
     } as Dict,

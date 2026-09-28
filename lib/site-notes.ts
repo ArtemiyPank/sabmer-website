@@ -54,6 +54,18 @@ export type SiteNote = {
  */
 export const ltr = (s: string) => `\u2066${s}\u2069`;
 
+/**
+ * Where a link written in the admin may point.
+ *
+ * `href` on a contact line is whatever somebody typed, so it is checked twice:
+ * here, where the note is built, so a bad one is never serialised to the
+ * browser at all, and again where the anchor is written. These three are what
+ * a contact line could reasonably be — a page, a mailbox, a number — and
+ * anything else (`javascript:` being the one that matters) is dropped and the
+ * line is set as plain text.
+ */
+export const canOpen = (href: string) => /^(https?:|mailto:|tel:)/i.test(href);
+
 export type ReviewCard = {
   name: string;
   period: string;

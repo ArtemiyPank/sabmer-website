@@ -197,3 +197,13 @@ html[data-ui="engraved"] main section {
     animation: none;
   }
 }
+
+/*
+ * One review at a time in the flowing layout, the same one the plate carries.
+ * The rest are written into the page and hidden here rather than left out, so
+ * that <noscript> can bring them back for a visitor whose arrows will never
+ * work (see components/site/PagedCards.tsx).
+ */
+.paged > [data-card]:not([data-current]) {
+  display: none;
+}

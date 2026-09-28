@@ -26,9 +26,9 @@ export type Content = {
   contacts: {
     title: string;
     phone: string;
-    email: string;
-    address: string;
     registration: string;
+    /** everything else the section says, added from the admin */
+    lines: { text: string; href?: string }[];
   };
   footer: { rights: string };
 };
@@ -56,12 +56,14 @@ const fromMessages = async (locale: string): Promise<Content> => {
       terms: Object.values(m.Jobs.terms) as string[],
     },
     reviews: { title: m.Reviews.title, items: m.Reviews.items },
+    // no lines: the shipped copy has a number and nothing else to say. What
+    // the section says beyond that is added in the admin, and a database that
+    // cannot be read has none of it
     contacts: {
       title: m.Contacts.title,
       phone: m.Contacts.phone,
-      email: m.Contacts.email,
-      address: m.Contacts.address,
       registration: m.Contacts.registration,
+      lines: [],
     },
     footer: { rights: m.Footer.rights },
   };
@@ -145,9 +147,10 @@ export async function getContent(locale: "ru" | "he" | "en"): Promise<Content> {
     contacts: {
       title: g.contactsTitle ?? fallback.contacts.title,
       phone: g.phone ?? fallback.contacts.phone,
-      email: g.email ?? fallback.contacts.email,
-      address: g.address ?? fallback.contacts.address,
       registration: g.registration ?? fallback.contacts.registration,
+      lines: (g.contactLines ?? [])
+        .filter((l) => l.text)
+        .map((l) => ({ text: l.text, href: l.href ?? undefined })),
     },
     footer: { rights: g.footerRights ?? fallback.footer.rights },
   };

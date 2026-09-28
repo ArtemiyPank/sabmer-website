@@ -17,7 +17,7 @@ import NoteSheet from "@/components/site/NoteSheet";
 import { SITE_URL } from "@/lib/site";
 import { getContent } from "@/lib/content";
 import { whatsappLink } from "@/lib/whatsapp";
-import { ltr, type SiteNotes } from "@/lib/site-notes";
+import { canOpen, ltr, type SiteNotes } from "@/lib/site-notes";
 
 export const revalidate = 300;
 
@@ -36,10 +36,9 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
     mark: "whatsapp" as const,
   };
 
-  // the contact line, written once: the plate letters this and the card makes
-  // the same two runs pressable
+  // the number, written once: the plate letters this and the card makes the
+  // same run pressable
   const phone = ltr(c.contacts.phone);
-  const email = ltr(c.contacts.email);
 
   // the same copy the sections render, for the layout that letters it onto the parts
   const notes: SiteNotes = {
@@ -66,15 +65,16 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
       // the registration number rides in the title block, where a drawing
       // keeps that sort of thing
       caption: c.contacts.registration,
-      // the separator is tied to what follows it, so that a narrow plate
-      // breaks the line before the mark instead of leaving it hanging
-      body: `${phone}  ·\u00A0${email}`,
+      body: phone,
+      // whatever else the section has been given in the admin
+      items: c.contacts.lines.map((l) => l.text),
       // the plate letters them; the card lets them be pressed
       links: [
         { text: phone, href: `tel:${c.contacts.phone.replace(/[^+\d]/g, "")}` },
-        { text: email, href: `mailto:${c.contacts.email}` },
+        ...c.contacts.lines
+          .filter((l) => l.href && canOpen(l.href))
+          .map((l) => ({ text: l.text, href: l.href as string })),
       ],
-      items: [c.contacts.address],
     },
   };
 
@@ -92,13 +92,6 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
     description: c.meta.description,
     url: `${SITE_URL}/${locale}`,
     telephone: c.contacts.phone,
-    email: c.contacts.email,
-    // the town only: the registered address is a private one
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: "Bat Yam",
-      addressCountry: "IL",
-    },
     founder: c.founders.people.map((f) => ({
       "@type": "Person",
       name: f.name,

@@ -37,9 +37,11 @@ function contentFor(locale: string): Data {
     reviews: m.Reviews.items,
     contactsTitle: m.Contacts.title,
     phone: m.Contacts.phone,
-    email: m.Contacts.email,
-    address: m.Contacts.address,
     registration: m.Contacts.registration,
+    // nothing shipped: what the section says beyond the number is added in the
+    // admin. Listed here so a reset clears it — `blanks` skips an empty list,
+    // so the deploy never proposes it and never reports itself unfinished
+    contactLines: [],
     footerRights: m.Footer.rights,
     // the wording of the interface, so an editor finds every word of the
     // page in the admin rather than all but the six in the navigation
@@ -84,7 +86,9 @@ function blanks(shipped: Data, stored: Data | undefined): Data {
   for (const [k, v] of Object.entries(shipped)) {
     const have = stored?.[k];
     if (Array.isArray(v)) {
-      if (!Array.isArray(have) || have.length === 0) out[k] = v;
+      // an empty shipped list has nothing to offer, and offering it on every
+      // deploy would mean this never reports itself done
+      if (v.length && (!Array.isArray(have) || have.length === 0)) out[k] = v;
     } else if (v && typeof v === "object") {
       const under = blanks(v as Data, (have ?? undefined) as Data | undefined);
       if (Object.keys(under).length > 0) out[k] = under;

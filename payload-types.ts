@@ -320,9 +320,17 @@ export interface SiteContent {
     | null;
   contactsTitle?: string | null;
   phone?: string | null;
-  email?: string | null;
-  address?: string | null;
   registration?: string | null;
+  contactLines?:
+    | {
+        text: string;
+        /**
+         * Куда ведёт строка, если по ней можно нажать: https://…, mailto:… или tel:… Оставьте пустым для обычного текста.
+         */
+        href?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   footerRights?: string | null;
   nav?: {
     about?: string | null;
@@ -395,9 +403,14 @@ export interface SiteContentSelect<T extends boolean = true> {
       };
   contactsTitle?: T;
   phone?: T;
-  email?: T;
-  address?: T;
   registration?: T;
+  contactLines?:
+    | T
+    | {
+        text?: T;
+        href?: T;
+        id?: T;
+      };
   footerRights?: T;
   nav?:
     | T
