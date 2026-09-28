@@ -8,19 +8,24 @@
  * already published, is whoever finds it first. Doing this during the build
  * means the account exists before the deployment is ever served.
  *
- * It runs once and then never does anything again: a database with a user in
- * it is a database somebody is already looking after, and a deploy must not
- * reach in and overwrite what they have written.
+ * It sets a database up once and then never overwrites anything again: a
+ * database with a user in it is a database somebody is already looking after.
+ * What it goes on doing is filling in fields that have never held a value —
+ * the ones a deploy has just added — so the admin shows what the site says
+ * instead of a row of empty boxes. See `fillBlanks`.
  */
 import { getPayload } from "payload";
 import config from "@payload-config";
-import { createFirstAdmin, writeContent } from "./content.js";
+import { createFirstAdmin, fillBlanks, writeContent } from "./content.js";
 
 const payload = await getPayload({ config });
 
 const users = await payload.find({ collection: "users", limit: 1, depth: 0 });
 if (users.totalDocs > 0) {
-  console.log("Bootstrap: the database is already set up, leaving it alone.");
+  console.log("Bootstrap: the database is already set up.");
+  // ...except for fields that have never held anything, which a deploy that
+  // adds them leaves empty. Nothing already written is touched.
+  await fillBlanks(payload);
   process.exit(0);
 }
 
