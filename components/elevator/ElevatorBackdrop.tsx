@@ -10,7 +10,7 @@ import {
   type MotionValue,
 } from "framer-motion";
 import ElevatorSchematic from "./ElevatorSchematic";
-import { getHold, getRide } from "@/lib/ride";
+import { getHold, getRide, setBehind } from "@/lib/ride";
 import { DRAWING } from "@/lib/tuning";
 import type { SiteNotes } from "@/lib/site-notes";
 
@@ -101,10 +101,12 @@ function useGoverned(source: MotionValue<number>, tau: number, topSpeed: number,
       const d = want - out.get();
       if (Math.abs(d) < rest) {
         out.set(want);
+        setBehind(0);
         frame = 0;
         last = 0;
         return;
       }
+      setBehind(Math.abs(d));
       if (getRide().running) {
         // the page is animating itself: follow it exactly
         out.set(want);

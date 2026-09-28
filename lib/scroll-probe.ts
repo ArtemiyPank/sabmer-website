@@ -28,6 +28,8 @@ let from = 0;
  */
 let given = 0;
 let back = 0;
+/** the gesture was turned away: the machine had not arrived yet */
+let ignored = false;
 let watching = 0;
 let highest = 0;
 
@@ -58,7 +60,7 @@ export function probeReady() {
   panel().textContent = "scroll read-out is on — scroll with the trackpad";
 }
 
-export function probeGesture(y: number) {
+export function probeGesture(y: number, turnedAway = false) {
   if (!probing()) return;
   notches = [];
   handoverAt = -1;
@@ -67,6 +69,7 @@ export function probeGesture(y: number) {
   back = 0;
   from = y;
   highest = y;
+  ignored = turnedAway;
   if (!watching) watching = requestAnimationFrame(watch);
 }
 
@@ -110,5 +113,6 @@ export function probeRest(y: number, range: number, crossedAfterHand: number, re
     `from p=${(from / range).toFixed(3)} to p=${(y / range).toFixed(3)}, ` +
     `plates crossed after the handover: ${crossedAfterHand}\n` +
     `handed back mid-gesture: ${given}   ·   driven backwards: ${Math.round(back)}px\n` +
-    `notches refused so the flick kept to one plate: ${refused}`;
+    `notches refused so the flick kept to one plate: ${refused}` +
+    (ignored ? "\nthis flick was turned away — the machine was still travelling" : "");
 }

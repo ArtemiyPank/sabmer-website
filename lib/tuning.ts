@@ -74,6 +74,21 @@ export const COAST = {
    */
   reach: 60,
   /**
+   * How far the machine may still be from the page, in scroll progress, and
+   * the flick still be listened to.
+   *
+   * A flick puts the page on the next plate in a fraction of a second; the
+   * machine takes the two or three seconds its rated speed allows. Flicks
+   * thrown in between used to be taken at face value, each claiming a plate of
+   * its own, and the drawing then played the journeys back to back with the
+   * visitor watching it work through a queue it could not see. So while the
+   * machine is more than this far from where the page already is, a flick asks
+   * for nothing: the journey it would have asked for is the one already
+   * running. Past this the machine is on its final approach, and the next
+   * flick is heard.
+   */
+  busy: 0.02,
+  /**
    * ms after a flick has been given its plate before a stream that is still
    * going strong counts as a hand rather than a fling, and the share of its
    * own largest notch that counts as going strong. A fling is well under this

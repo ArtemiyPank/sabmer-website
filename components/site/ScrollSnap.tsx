@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { STOPS, refuge } from "@/components/elevator3d/tour";
-import { getRide, rideToProgress, setHold } from "@/lib/ride";
+import { getBehind, getRide, rideToProgress, setHold } from "@/lib/ride";
 import { COAST } from "@/lib/tuning";
 import { probeGaveBack, probeGesture, probeHandover, probeNotch, probeReady, probeRest, probing } from "@/lib/scroll-probe";
 
@@ -89,6 +89,15 @@ export default function ScrollSnap() {
      * ninth, never the first.
      */
     let owned = false;
+    /**
+     * Is this gesture being ignored because the machine has not arrived yet?
+     *
+     * Decided once, when the gesture opens, and kept for the whole of it: a
+     * flick that is turned away should stay turned away even if the machine
+     * finishes mid-fling, or its leftover momentum would move the page the
+     * moment the way cleared — which is the queue again, one flick later.
+     */
+    let ignored = false;
     /** is this the notch that opened the gesture? */
     let first = false;
     let spent = false;
@@ -426,14 +435,24 @@ export default function ScrollSnap() {
         refused = 0;
         aimDir = Math.sign(e.deltaY) || 1;
         aim = engraved() ? beyond(window.scrollY, aimDir, COAST.reach) : null;
+        // the machine is still travelling: this flick has nothing to ask for
+        ignored = engraved() && e.cancelable && getBehind() > COAST.busy;
         // sideways scrolling is not ours, and neither is a sequence the
         // browser has already decided it will not let us cancel
         owned = aim !== null && e.cancelable && Math.abs(e.deltaY) >= Math.abs(e.deltaX);
         first = true;
-        probeGesture(window.scrollY);
+        probeGesture(window.scrollY, ignored);
         giveBack();
       } else {
         first = false;
+      }
+      if (ignored) {
+        e.preventDefault();
+        refused += 1;
+        probeNotch(d);
+        gestureAt = now;
+        handAt = now;
+        return;
       }
       probeNotch(d);
       // a notch says how far the page is about to travel; that over the time

@@ -49,6 +49,23 @@ export const setHold = (p: number | null) => {
   holdAt.p = p;
 };
 
+/**
+ * How far the machine still has to travel to be where the page is, in units of
+ * scroll progress. Zero when it has arrived.
+ *
+ * The drawing has a rated speed and the scroll does not, so after a flick the
+ * page is at the next plate long before the machine is. Anything that wants to
+ * know whether the journey is over has to ask the drawing, not the scroll —
+ * `components/site/ScrollSnap.tsx` asks so that a second flick thrown at a
+ * machine still in motion does not simply queue another journey behind the
+ * one playing.
+ */
+const behind = { p: 0 };
+export const getBehind = (): number => behind.p;
+export const setBehind = (p: number) => {
+  behind.p = p;
+};
+
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 /**
