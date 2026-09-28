@@ -152,3 +152,48 @@ html[data-ui="engraved"] main section {
     --tour-section: 129svh;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   The 404: a car running past the last level on the drawing.
+
+   One system of motion, not several — the shaft streams past a car that only
+   breathes. Motion is the whole content of this drawing, which is the one case
+   where it earns its place; stopped, the picture still says what it says, so a
+   visitor who has asked for less of it loses nothing.
+--------------------------------------------------------------------------- */
+
+@keyframes fall-stream {
+  /* exactly one pitch: the loop has no seam */
+  to {
+    transform: translateY(-64px);
+  }
+}
+@keyframes fall-car {
+  50% {
+    transform: translateY(3px);
+  }
+}
+@keyframes fall-rope {
+  50% {
+    transform: translateX(2.5px) rotate(1.2deg);
+  }
+}
+
+.fall-stream {
+  animation: fall-stream 1.3s linear infinite;
+}
+.fall-car {
+  animation: fall-car 2.3s ease-in-out infinite;
+}
+.fall-rope {
+  transform-origin: 100px 168px;
+  animation: fall-rope 0.9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fall-stream,
+  .fall-car,
+  .fall-rope {
+    animation: none;
+  }
+}
