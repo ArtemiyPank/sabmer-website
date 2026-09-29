@@ -1,11 +1,14 @@
 import path from "path";
 import { fileURLToPath } from "url";
-import { buildConfig } from "payload";
+import { buildConfig, ValidationError } from "payload";
 import { postgresAdapter } from "@payloadcms/db-postgres";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { SITE_URL } from "@/lib/site";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
+
+/** the shortest password the admin accepts (see the users collection) */
+const MIN_PASSWORD = 12;
 
 /**
  * Sessions are signed with this. An empty one signs them with nothing, so a
@@ -86,8 +89,51 @@ export default buildConfig({
   collections: [
     {
       slug: "users",
-      auth: true,
+      auth: {
+        /**
+         * The session cookie is sent over HTTPS only, wherever the site is
+         * really served over HTTPS. Payload's default is `secure: false`,
+         * which lets a browser that is sent to http://…/admin — a typed
+         * address, an old link — hand the session over in the clear before
+         * the redirect to https has happened. `VERCEL` rather than NODE_ENV
+         * for the reason `site` below gives: a production build on a
+         * developer's machine is served over plain http, and a cookie it may
+         * not set would lock its own admin out.
+         */
+        cookies: { secure: Boolean(process.env.VERCEL) },
+      },
       admin: { useAsTitle: "email" },
+      hooks: {
+        /**
+         * Payload asks nothing of a password but three characters. The five
+         * wrong guesses and ten-minute lock it does have (its defaults) make
+         * guessing slow, not hopeless, and a short enough password is found
+         * well inside a year of that. Twelve is the floor for an account that
+         * can rewrite the whole site.
+         *
+         * This runs wherever a password is chosen in the admin — creating an
+         * account, changing one's own. The emailed reset link is the one path
+         * it does not see, and that path cannot be used here: there is no
+         * email adapter, so no reset link is ever sent.
+         */
+        beforeValidate: [
+          ({ data }) => {
+            const password = (data as { password?: unknown } | undefined)?.password;
+            if (typeof password === "string" && password.length < MIN_PASSWORD) {
+              throw new ValidationError({
+                collection: "users",
+                errors: [
+                  {
+                    message: `Пароль должен быть не короче ${MIN_PASSWORD} символов`,
+                    path: "password",
+                  },
+                ],
+              });
+            }
+            return data;
+          },
+        ],
+      },
       fields: [],
     },
   ],

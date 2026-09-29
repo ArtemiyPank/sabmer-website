@@ -2,6 +2,7 @@ import { getRequestConfig } from "next-intl/server";
 import { hasLocale } from "next-intl";
 import { routing } from "./routing";
 import { siteContent } from "@/lib/content";
+import { loadMessages } from "@/lib/messages";
 
 /**
  * What the page says, in the language it was asked for.
@@ -87,7 +88,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
     ? requested
     : routing.defaultLocale;
 
-  const shipped = (await import(`../messages/${locale}.json`)).default as Dict;
+  const shipped = (await loadMessages(locale)) as unknown as Dict;
   const edited = asMessages(await siteContent(locale));
 
   return { locale, messages: overlay(shipped, edited) };

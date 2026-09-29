@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { getPayload } from "payload";
 import config from "@payload-config";
+import { loadMessages, type MessagesLocale } from "@/lib/messages";
 
 /**
  * CMS-managed content with graceful fallback: if the database is empty or
@@ -33,8 +34,8 @@ export type Content = {
   footer: { rights: string };
 };
 
-const fromMessages = async (locale: string): Promise<Content> => {
-  const m = (await import(`@/messages/${locale}.json`)).default;
+const fromMessages = async (locale: MessagesLocale): Promise<Content> => {
+  const m = await loadMessages(locale);
   return {
     meta: { title: m.Meta.title, description: m.Meta.description },
     about: {

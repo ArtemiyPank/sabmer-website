@@ -27,7 +27,12 @@ export async function generateMetadata({
   params,
 }: LayoutProps<"/[locale]">): Promise<Metadata> {
   const { locale } = await params;
-  const c = await getContent(locale as "ru" | "he" | "en");
+  // The page checks its locale, but metadata is worked out first, and a path
+  // with a dot in it never went through the i18n proxy to be corrected — so
+  // whatever the first segment was arrived here as a "locale" (see
+  // lib/messages.ts). It is checked before anything is read with it.
+  if (!hasLocale(routing.locales, locale)) notFound();
+  const c = await getContent(locale);
   const languages = Object.fromEntries(
     routing.locales.map((l) => [l, `/${l}`])
   );
