@@ -292,6 +292,13 @@ export const RIDE = {
   maxMs: 4200,
   /** ms the camera takes to ease back on after a trip is cut short */
   settleMs: 450,
+  /**
+   * ms a trip along the tour takes to get up to the rated speed, and to come
+   * down from it at the end (see `liftProfile` in lib/ride.ts). The run in
+   * between is at the rated speed exactly, so this is the whole of the
+   * difference between pressing a floor button and scrolling there.
+   */
+  rampMs: 500,
 } as const;
 
 /** What the renderer is asked for. Draw calls, not pixels, are the cost here. */

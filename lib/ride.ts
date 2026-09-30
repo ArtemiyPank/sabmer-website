@@ -86,20 +86,51 @@ function flies(from: number, to: number) {
   return STOPS.some((s) => s.p > lo + clear && s.p < hi - clear);
 }
 
+/** the same ceiling the drawing is held to, on whichever device this is */
+const ratedSpeed = () =>
+  matchMedia(DRAWING.mobileQuery).matches ? DRAWING.topSpeed.mobile : DRAWING.topSpeed.desktop;
+
 /**
- * ms for a trip covering `dp` of the tour: the time the machine needs at its
- * rated speed, so that a button press and a flick to the same plate are the
- * same journey. Held between the two ends in RIDE — a trip to the next plate
- * along may not be instant, and one across the whole tour may not be a wait.
+ * ms for a flight covering `dp` of the tour: the time the machine needs at its
+ * rated speed, held between the two ends in RIDE — a trip across the whole
+ * tour may not be a wait.
  */
-const duration = (dp: number) => {
-  // the same ceiling the drawing is held to, so a button and a flick to the
-  // same plate take the same time on whichever device is being used
-  const speed = matchMedia(DRAWING.mobileQuery).matches
-    ? DRAWING.topSpeed.mobile
-    : DRAWING.topSpeed.desktop;
-  return Math.min(Math.max(Math.abs(dp) / speed, RIDE.minMs), RIDE.maxMs);
-};
+const duration = (dp: number) =>
+  Math.min(Math.max(Math.abs(dp) / ratedSpeed(), RIDE.minMs), RIDE.maxMs);
+
+/**
+ * The trip to a plate the camera reaches along the tour: a soft start, a run
+ * at the rated speed, a soft stop — the way the car in the drawing moves, and
+ * the way the page moves when it is scrolled there.
+ *
+ * It used to be a single ease-in-out over the time the distance would take at
+ * the rated speed. That has the right average and three times the speed in
+ * the middle, so pressing a floor button swept the camera through the leg
+ * nearly three times faster at its height than scrolling the same leg does —
+ * from Founders back to Reviews the picture turned at 256°/s where scrolling
+ * turns it at 122°/s. Now the run is at the rated speed itself, and the only
+ * difference from scrolling there is the half-second either end.
+ *
+ * A trip too short to get up to speed makes do with a lower one.
+ */
+function liftProfile(dp: number) {
+  const D = Math.abs(dp);
+  const R = RIDE.rampMs;
+  const reach = D >= ratedSpeed() * R;
+  const v = reach ? ratedSpeed() : D / R;
+  const ms = reach ? D / v + R : 2 * R;
+  // distance covered while the speed eases up along smoothstep: its integral
+  const S = (x: number) => x * x * x - (x * x * x * x) / 2;
+  const at = (t: number) => {
+    const now = t * ms;
+    const d =
+      now <= R ? v * R * S(now / R)
+      : now >= ms - R ? D - v * R * S((ms - now) / R)
+      : v * R * 0.5 + v * (now - R);
+    return D > 0 ? Math.min(Math.max(d / D, 0), 1) : 1;
+  };
+  return { ms, ease: at };
+}
 
 function cancel() {
   if (frame) cancelAnimationFrame(frame);
@@ -129,9 +160,13 @@ export function rideToProgress(p: number) {
     return;
   }
 
-  const ms = duration(delta / max);
   const to = Math.min(Math.max((start + delta) / max, 0), 1);
   const flying = flies(start / max, to);
+  // A flight leaves the tour for one sweep out and back in, and keeps the
+  // ease-in-out that shapes it; a trip along the tour moves like the car.
+  const { ms, ease } = flying
+    ? { ms: duration(delta / max), ease: easeInOutCubic }
+    : liftProfile(delta / max);
   ride.running = true;
   if (flying) {
     ride.to = to;
@@ -178,7 +213,7 @@ export function rideToProgress(p: number) {
     elapsed += Math.min(now - (last || now), 48);
     last = now;
     const t = Math.min(elapsed / ms, 1);
-    const eased = easeInOutCubic(t);
+    const eased = ease(t);
     if (flying) ride.t = eased;
     // "instant" matters: the page sets scroll-behavior: smooth, which would
     // otherwise animate every step of this animation
