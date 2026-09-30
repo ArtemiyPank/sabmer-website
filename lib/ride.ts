@@ -130,7 +130,6 @@ export function rideToProgress(p: number) {
   }
 
   const ms = duration(delta / max);
-  const t0 = performance.now();
   const to = Math.min(Math.max((start + delta) / max, 0), 1);
   const flying = flies(start / max, to);
   ride.running = true;
@@ -167,8 +166,18 @@ export function rideToProgress(p: number) {
     removeEventListener("keydown", interrupt);
   };
 
+  // A frame the browser was too busy to deliver is not paid for in one lurch
+  // (the same rule the drawing's governor keeps): the trip advances by at most
+  // a few frames' worth of time per frame. Otherwise a stall — the scene
+  // compiling what it is about to show, fonts landing and the plates being
+  // lettered again — would let the trip jump ahead by however long it lasted,
+  // and the camera with it.
+  let elapsed = 0;
+  let last = 0;
   const step = (now: number) => {
-    const t = Math.min((now - t0) / ms, 1);
+    elapsed += Math.min(now - (last || now), 48);
+    last = now;
+    const t = Math.min(elapsed / ms, 1);
     const eased = easeInOutCubic(t);
     if (flying) ride.t = eased;
     // "instant" matters: the page sets scroll-behavior: smooth, which would

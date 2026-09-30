@@ -8,6 +8,7 @@ import LanguageSwitcher from "@/components/site/LanguageSwitcher";
 import ThemeToggle from "@/components/site/ThemeToggle";
 import WhatsAppButton from "@/components/site/WhatsAppButton";
 import ScrollSnap from "@/components/site/ScrollSnap";
+import ScrollRestore from "@/components/site/ScrollRestore";
 import BackToTop from "@/components/site/BackToTop";
 import ReviewArrows from "@/components/site/ReviewArrows";
 import PlateAction from "@/components/site/PlateAction";
@@ -105,6 +106,8 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
         dangerouslySetInnerHTML={{ __html: inlineJson(jsonLd) }}
       />
       <ElevatorBackdrop notes={notes} />
+      {/* after the backdrop, whose effect decides whether the tour runs */}
+      <ScrollRestore />
       <ScrollSnap />
       <Header />
       <BackToTop />

@@ -19,6 +19,14 @@ const rubik = Rubik({
 // (e.g. locale switching) can't reset the user's choice.
 const themeInitScript = `try{var t=localStorage.getItem("theme");if(!t)t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t}catch(e){}`;
 
+// Before the page is parsed: the browser is not to put the scroll back on a
+// reload, nor to jump to a section named in the address — the page does both
+// itself, by flying there (components/site/ScrollRestore.tsx). The section is
+// kept aside for it and taken off the address, which is the only way to stop
+// the jump: the browser scrolls to a fragment as soon as the element appears.
+// Only on the page with the tour; elsewhere an address keeps its fragment.
+const arrivalScript = `try{history.scrollRestoration="manual";if(/^\\/(ru|he|en)\\/?$/.test(location.pathname)&&location.hash.length>1){window.__arrivalHash=decodeURIComponent(location.hash.slice(1));history.replaceState(history.state,"",location.pathname+location.search)}}catch(e){}`;
+
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
@@ -72,6 +80,7 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <head>
+        <script dangerouslySetInnerHTML={{ __html: arrivalScript }} />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="min-h-full">

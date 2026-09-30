@@ -10,6 +10,7 @@ import {
   type MotionValue,
 } from "framer-motion";
 import { getHold, getRide, setBehind } from "@/lib/ride";
+import { setLayoutMode } from "@/lib/layout-mode";
 import { DRAWING } from "@/lib/tuning";
 import type { SiteNotes } from "@/lib/site-notes";
 
@@ -215,6 +216,12 @@ export default function ElevatorBackdrop({ notes }: { notes: SiteNotes }) {
     if (tour) el.dataset.ui = "engraved";
     else delete el.dataset.ui;
   }, [tour]);
+  // announced only once both questions have answers: the first render has
+  // neither, and a guess made then would place the page in the wrong layout
+  useEffect(() => {
+    if (webgl === null || reducedMotion === null) return;
+    setLayoutMode(tour ? "tour" : "flat");
+  }, [webgl, reducedMotion, tour]);
 
   return (
     <div

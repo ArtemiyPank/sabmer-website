@@ -3,7 +3,7 @@
 import { Suspense, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 import * as THREE from "three";
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useMotionValueEvent, type MotionValue } from "framer-motion";
 import { MaterialsProvider } from "./materials";
 import { SceneProvider, useProgressFrame, useScene } from "./scene-context";
@@ -30,6 +30,7 @@ import Engraved from "./parts/Engraved";
 const Labels = dynamic(() => import("./parts/Labels"), { ssr: false });
 import { blendPoses, doorPhase, tourPose, travelAt } from "./tour";
 import { getRide } from "@/lib/ride";
+import { markSceneReady } from "@/lib/scene-ready";
 import { RIDE, SCENE } from "@/lib/tuning";
 import type { V3 } from "./dims";
 import type { SiteNotes } from "@/lib/site-notes";
@@ -154,6 +155,23 @@ function CameraRig({ tour }: { tour: boolean }) {
   return null;
 }
 
+/**
+ * Says so once the scene has drawn a frame with the machine in it: mounted
+ * inside the same Suspense as the parts, so it cannot fire over an empty
+ * shaft, and after the camera rig, whose pose that first frame sets.
+ */
+function FirstFrame() {
+  const done = useRef(false);
+  useFrame(() => {
+    if (done.current) return;
+    done.current = true;
+    // the frame this runs in is drawn right after it; one more tick and the
+    // picture is on the screen
+    requestAnimationFrame(markSceneReady);
+  });
+  return null;
+}
+
 function Lights() {
   const mid = (PIT_FLOOR + SHAFT_TOP) / 2;
   // the key light aims at the middle of the hoistway; its target object has
@@ -240,6 +258,7 @@ export default function ElevatorScene({
               {annotations && (!only || only.includes("labels")) && <Labels />}
               {notes && <Engraved notes={notes} />}
               {children}
+              <FirstFrame />
             </Fasteners>
             </InstancedBoxes>
           </Suspense>
