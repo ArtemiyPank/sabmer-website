@@ -81,6 +81,13 @@ export type Stop = {
    */
   ends?: number;
   /**
+   * How the plate is fixed to what it hangs on, when it cannot lie flat on it:
+   * `depth` from the lettered face back to that surface, and where along the
+   * plate's width (metres from its centre) the standoffs may land — only
+   * where the surface actually is. See parts/PlateMount.tsx.
+   */
+  mount?: { depth: number; posts: number[] };
+  /**
    * How far the camera swings out over the flight that *leaves* this stop,
    * overriding TOUR.liftoff. The legs down the cab are close quarters, so they get
    * a wider arc than the drop through the shaft further down.
@@ -96,7 +103,10 @@ export const STOPS: Stop[] = [
   //    governor rope passes within a hand's breadth of the panel, so the sign
   //    starts ahead of where that rope crosses the shot, and the traveling
   //    cable further out decides how far round the camera has to lean.
-  { id: "jobs", group: "wallL", at: [-CAB_X - 0.09, 1.2, 0.66], face: "left", size: [0.6, 1.02], pad: 1.25, p: 0.36, context: 1.15, liftoff: 5.1 },
+  //    Nine centimetres off the panel and overhanging the car's front corner,
+  //    so it stands on posts: the side panel ends at z 0.687, which leaves the
+  //    rear half of the plate for them to land on.
+  { id: "jobs", group: "wallL", at: [-CAB_X - 0.09, 1.2, 0.66], face: "left", size: [0.6, 1.02], pad: 1.25, p: 0.36, context: 1.15, liftoff: 5.1, mount: { depth: 0.09, posts: [-0.22, -0.02] } },
   // 3. the counterweight, rising past it. The frame is only so wide, so the
   //    shot comes in close rather than the plate growing: a taller plate on a
   //    narrow face only buys shorter lines, since the camera steps back with it

@@ -11,6 +11,7 @@ import { getReview, subscribeReview } from "@/lib/reviews";
 import { PLATE, TOUR } from "@/lib/tuning";
 import { WA_GLYPH } from "@/lib/whatsapp";
 import { getPlateAction } from "@/lib/plate-action";
+import PlateMount from "./PlateMount";
 
 /**
  * The page text lettered onto the machine: each section is drawn into a
@@ -618,6 +619,9 @@ function Plate({ stop, note, fit, sheet }: { stop: Stop; note: SiteNote; fit: Fi
 
   return (
     <group rotation={FACE_ROT[stop.face]} ref={g}>
+      {stop.mount && (
+        <PlateMount w={plate.width} h={plate.height} depth={stop.mount.depth} posts={stop.mount.posts} />
+      )}
       <mesh renderOrder={2}>
         <planeGeometry args={[plate.width, plate.height]} />
         <meshBasicMaterial
