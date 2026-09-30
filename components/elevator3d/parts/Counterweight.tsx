@@ -31,6 +31,22 @@ const STILE_Z: [number, number] = [CWT_Z + CWT_W / 2 - STILE_B / 2, CWT_Z - CWT_
 const CROSS_H = 0.14;
 const BLOCK_H = 0.15;
 const BLOCKS = 13;
+/**
+ * The weights' thickness across the frame (x).
+ *
+ * They used to be as thick as the stiles are deep, so their faces lay in the
+ * same plane as the stiles' flanges — and, the weights being a centimetre
+ * longer than the gap between the flange tips, overlapped them in a strip down
+ * either side of the stack. Two faces of different colour in one plane: the
+ * depth test cannot say which is in front, so the strip swapped between iron
+ * and steel with every hair the camera moved, which is what showed as the
+ * counterweight shimmering as the camera settled on its plate.
+ *
+ * Real weights slot into the channels, between the flanges. So do these now:
+ * the channel's inside less a millimetre either side, which puts their faces a
+ * centimetre behind the flanges' and in no plane anything else is drawn in.
+ */
+const FILL_T = STILE_H - 2 * 0.01 - 0.002;
 const STACK_Y0 = CROSS_H; // first block bottom
 const STACK_TOP = STACK_Y0 + BLOCKS * BLOCK_H + 0.15; // 13 blocks + two half plates = 2.24
 const ROD_Z = [CWT_Z + 0.2, CWT_Z - 0.2];
@@ -100,12 +116,12 @@ export default function Counterweight() {
 
       {/* ---- filler weights, tie rods, retainer bar ---- */}
       {Array.from({ length: BLOCKS }, (_, i) => (
-        <Box key={i} size={[STILE_H, BLOCK_H, CWT_W - 0.18]} at={[CWT_X, STACK_Y0 + BLOCK_H * (i + 0.5), CWT_Z]} mat="iron" edges />
+        <Box key={i} size={[FILL_T, BLOCK_H, CWT_W - 0.18]} at={[CWT_X, STACK_Y0 + BLOCK_H * (i + 0.5), CWT_Z]} mat="iron" edges />
       ))}
       {[0, 1].map((i) => (
         <Box
           key={i}
-          size={[STILE_H, 0.075, CWT_W - 0.18]}
+          size={[FILL_T, 0.075, CWT_W - 0.18]}
           at={[CWT_X, STACK_Y0 + BLOCKS * BLOCK_H + 0.075 * (i + 0.5), CWT_Z]}
           mat="steelDark"
           edges

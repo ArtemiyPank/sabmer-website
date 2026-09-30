@@ -36,8 +36,16 @@ export function DoorPanel({ sx }: { sx: 1 | -1 }) {
       {sx > 0 && (
         <>
           <Box size={[0.05, 0.3, 0.06]} at={[0.35, 1.0, DOOR_Z + 0.05]} mat="steelDark" edges />
-          {[-0.02, 0.02].map((dx) => (
-            <Box key={dx} size={[0.01, 0.3, 0.04]} at={[0.35 + dx, 1.0, DOOR_Z + 0.09]} />
+          {/*
+            The two blades of the coupler vane, seated in its body. Their outer
+            faces used to lie in the same planes as the body's sides and ends,
+            and where the two overlap — steel against dark steel — the depth
+            test could not tell which was in front, so a strip down the vane
+            flickered whenever the camera moved. A millimetre in from the sides
+            and a little short at either end, nothing they show shares a plane.
+          */}
+          {[-0.019, 0.019].map((dx) => (
+            <Box key={dx} size={[0.01, 0.29, 0.04]} at={[0.35 + dx, 1.0, DOOR_Z + 0.09]} />
           ))}
           <Bolt at={[0.35, 1.12, DOOR_Z + 0.081]} dir="+z" s={0.4} />
           <Bolt at={[0.35, 0.88, DOOR_Z + 0.081]} dir="+z" s={0.4} />
