@@ -122,8 +122,11 @@ export default function ScrollRestore() {
     }
 
     // A visitor who takes the page themselves before it is ready has decided
-    // where to go; nothing is started over them.
-    let cancelled = false;
+    // where to go; nothing is started over them. That includes a scroll made
+    // before this code had even loaded: the browser neither restores the
+    // position any more nor jumps to the section, so a page that is not at
+    // the top by now was put there by the visitor's own hand.
+    let cancelled = window.scrollY > 2;
     const mine = () => {
       cancelled = true;
     };
