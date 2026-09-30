@@ -91,6 +91,20 @@ export default buildConfig({
       slug: "users",
       auth: {
         /**
+         * The admin signs in with a username, not an email address.
+         *
+         * An email address is the one part of a login that is easy to find,
+         * and everything an outsider can do to the admin starts from it:
+         * guessing passwords, and — five wrong guesses being all it takes —
+         * locking the owner out for ten minutes at a time, as often as they
+         * like. With `true`, Payload also refuses email logins outright
+         * (`allowEmailLogin: false`): a request that names no username is
+         * turned away before any account is looked up, so it cannot count
+         * against one. The username is not published anywhere; it lives with
+         * the password.
+         */
+        loginWithUsername: true,
+        /**
          * The session cookie is sent over HTTPS only, wherever the site is
          * really served over HTTPS. Payload's default is `secure: false`,
          * which lets a browser that is sent to http://…/admin — a typed
@@ -102,7 +116,7 @@ export default buildConfig({
          */
         cookies: { secure: Boolean(process.env.VERCEL) },
       },
-      admin: { useAsTitle: "email" },
+      admin: { useAsTitle: "username" },
       hooks: {
         /**
          * Payload asks nothing of a password but three characters. The five

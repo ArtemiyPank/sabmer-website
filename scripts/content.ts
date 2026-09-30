@@ -140,14 +140,18 @@ export async function fillBlanks(payload: Payload) {
  * repository is a password everyone has.
  */
 export async function createFirstAdmin(payload: Payload) {
-  const email = process.env.ADMIN_EMAIL;
+  const username = process.env.ADMIN_USERNAME?.trim();
   const password = process.env.ADMIN_PASSWORD;
-  if (!email || !password) {
+  // optional: the admin signs in with the username, and there is no email
+  // adapter to send anything to the address
+  const email = process.env.ADMIN_EMAIL?.trim() || undefined;
+  if (!username || !password) {
     throw new Error(
-      "The database has no admin user and ADMIN_EMAIL / ADMIN_PASSWORD are not set, " +
+      "The database has no admin user and ADMIN_USERNAME / ADMIN_PASSWORD are not set, " +
         "so one cannot be made — see .env.example"
     );
   }
-  await payload.create({ collection: "users", data: { email, password } });
-  console.log(`  admin user ${email}`);
+  await payload.create({ collection: "users", data: { username, password, email } });
+  // the username is half of the login now, so it is not written to the log
+  console.log("  admin user created");
 }
