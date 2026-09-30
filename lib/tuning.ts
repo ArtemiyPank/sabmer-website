@@ -115,8 +115,29 @@ export const COAST = {
  * them, and how much of the machine each shot keeps in view.
  */
 export const TOUR = {
-  /** share of the gap between two stops spent parked on the first */
-  dwell: 0.34,
+  /**
+   * Share of the gap between two stops spent parked on the first.
+   *
+   * It was a third, and a third of a leg is some three hundred pixels of
+   * scrolling during which nothing on the screen answered the hand — on the
+   * Work plate, which rides on the car, not even the car, since the camera
+   * rode with it. Keeping the plate in view while the page barely moves is
+   * the scroll's job now: a nudge that is let go is taken back to the plate
+   * (see COAST), so the camera no longer has to pretend it did not notice.
+   */
+  dwell: 0,
+  /**
+   * How briskly the camera sets off from a plate, as a share of the flight's
+   * average rate: 0 starts from a standstill, 1 at full cruise.
+   *
+   * The flight used to begin from zero speed and zero acceleration, and a
+   * curve that flat at its foot moves the camera by less than one percent of
+   * the way over the first tenth of the scroll — which on the screen is no
+   * motion at all. Half the cruise answers the first notch without lurching.
+   * The arrival is untouched: the camera still settles onto the next plate
+   * from rest.
+   */
+  pickup: 0.5,
   /** how much room around a plate the shot leaves (1 = plate fills the frame) */
   context: 2.25,
   /** how far the camera swings out over the middle of a flight */

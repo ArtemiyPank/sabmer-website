@@ -32,6 +32,20 @@ import { TOUR } from "@/lib/tuning";
 
 /** smootherstep: eases in and out with no kick at either end */
 const smooth = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
+
+/**
+ * The flight between two plates: sets off at `TOUR.pickup` of its average rate
+ * and settles onto the next plate from rest.
+ *
+ * Smootherstep with its foot lifted. Both are quintics with no acceleration at
+ * either end, so nothing jerks; this one leaves with a slope instead of from
+ * zero, so the first notch of scroll moves the picture. At `pickup` 0 it is
+ * smootherstep exactly, and for any value up to 1 it only ever moves forward.
+ */
+const depart = (u: number) => {
+  const s = TOUR.pickup;
+  return u * (s + u * u * (10 - 6 * s + u * (8 * s - 15 + u * (6 - 3 * s))));
+};
 const clamp01 = (t: number) => Math.min(Math.max(t, 0), 1);
 
 /** which way the lettered face looks; also where the camera comes from */
@@ -261,8 +275,9 @@ export function stopAt(out: V3, s: Stop, p: number, e: Explosion): V3 {
 
 /**
  * Where the tour is at progress `p`: index of the stop being looked at, the
- * next one, and how far the flight between them has got. The camera rests on
- * a stop for the first two thirds of its slice, then travels.
+ * next one, and how far the flight between them has got. The camera leaves a
+ * plate as soon as the page does (only the first leg waits, for the doors) and
+ * settles onto the next one.
  */
 
 export function tourAt(p: number) {
@@ -277,7 +292,7 @@ export function tourAt(p: number) {
   // parked on the stop for the first part of the gap, then a long flight
   const local = (q - from) / (to - from);
   const dwell = i === 0 ? DWELL_FIRST : TOUR.dwell;
-  const t = local <= dwell ? 0 : smooth(Math.min((local - dwell) / (1 - dwell), 1));
+  const t = local <= dwell ? 0 : depart(Math.min((local - dwell) / (1 - dwell), 1));
   return { i, next: i + 1, t };
 }
 
